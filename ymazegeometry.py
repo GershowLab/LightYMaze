@@ -12,7 +12,7 @@ class YMazeGeometry:
         self.circle_dia = 2.5 #mm
         self.circle_offset = 3.052 #mm
         self.central_circle_dia = .462 #mm -- exclude overlapping channel regions
-        self.im_size_px = np.array([800,800])
+        self.im_size_px = np.array([1000,1000])
         self.center_px = self.im_size_px/2.0
         self.rotation = 0 #radians
         self.mm_per_px = 0.05
