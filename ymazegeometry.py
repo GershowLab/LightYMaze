@@ -19,6 +19,16 @@ class YMazeGeometry:
         self.generate_coordinates()
         #TODO more general affine transformation
 
+    def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
+        self.center_px = centerPoint
+        distmm = np.linalg.norm(self.maze_centers[3])*self.maze_spacing
+        delta_px = maze4Center-centerPoint
+        distpx = np.linalg.norm(delta_px)
+        self.mm_per_px = distmm/distpx
+        #this is hacky based on knowing maze4 is horizontally offset
+        self.rotation = np.arctan2(delta_px[1], delta_px[0])
+
+
     def generate_coordinates(self):
         x,y = np.meshgrid(np.arange(self.im_size_px[0])-self.center_px[0], np.arange(self.im_size_px[1])-self.center_px[1])
         c = np.cos(self.rotation)
