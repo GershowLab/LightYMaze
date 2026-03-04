@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import cv2
+import glob
 
 class YMazeGeometry:
     def __init__(self):
@@ -26,7 +29,7 @@ class YMazeGeometry:
         distpx = np.linalg.norm(delta_px)
         self.mm_per_px = distmm/distpx
         #this is hacky based on knowing maze4 is horizontally offset
-        self.rotation = np.arctan2(delta_px[1], delta_px[0])
+        self.rotation = np.arctan2(-delta_px[1], delta_px[0])
 
 
     def generate_coordinates(self):
@@ -73,6 +76,127 @@ class YMazeGeometry:
         return maze_mask, regionmask
 
 
+def calibrate_geometry_from_image(frame, ymg):
+
+    points = []
+
+    def click_event(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(f"Selected: ({x}, {y})")
+            points.append(np.array([x, y]))
+
+    cv2.imshow("Click Center Maze, then Right Maze", frame)
+    cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
+
+    while len(points) < 2:
+        cv2.waitKey(1)
+
+    cv2.destroyAllWindows()
+
+    centerPoint = points[0]
+    rightMazePoint = points[1]
+
+    ymg.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+    ymg.generate_coordinates()
+
+    [mm,rm] = ymg.generate_maze_mask()
+    plt.imshow(frame)
+    plt.contour(mm)
+    print("Calibration complete.")
+    plt.show()
+
+def split_tiff_folder_into_9(folder_path, ymg, fps=30):
+
+    # Collect TIFF files (supports .tif and .tiff)
+    tiff_files = sorted(
+        glob.glob(os.path.join(folder_path, "*.tif")) +
+        glob.glob(os.path.join(folder_path, "*.tiff"))
+    )
+
+    if len(tiff_files) == 0:
+        raise ValueError("No TIFF files found in folder.")
+
+    print(f"Found {len(tiff_files)} TIFF frames.")
+
+    # Load first frame for mask sizing
+    first_frame = cv2.imread(tiff_files[0])
+
+    maze_mask, _ = ymg.generate_maze_mask()
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    writers = []
+    bounding_boxes = []
+
+    # Precompute bounding boxes
+    for i in range(9):
+        mask = (maze_mask == i + 1)
+        coords = np.column_stack(np.where(mask))
+        y_min, x_min = coords.min(axis=0)
+        y_max, x_max = coords.max(axis=0)
+        bounding_boxes.append((x_min, x_max, y_min, y_max))
+
+        width = x_max - x_min
+        height = y_max - y_min
+
+        output_path = os.path.join(folder_path, f"maze_{i+1}.mp4")
+        writers.append(cv2.VideoWriter(output_path, fourcc, fps, (width, height)))
+
+    print("Splitting TIFF sequence...")
+
+    for file in tiff_files:
+        frame = cv2.imread(file)
+        if frame is None:
+            continue  # skip unreadable frames
+        for i in range(9):
+            x_min, x_max, y_min, y_max = bounding_boxes[i]
+            cropped = frame[y_min:y_max, x_min:x_max]
+            writers[i].write(cropped)
+
+    for w in writers:
+        w.release()
+
+    print("Finished. 9 maze videos saved in folder:", folder_path)
+
+
+def main(folder_path):
+    if not os.path.isdir(folder_path):
+        raise FileNotFoundError("Provided path is not a folder.")
+
+    # Collect TIFF files
+    tiff_files = sorted(
+        glob.glob(os.path.join(folder_path, "*.tif")) +
+        glob.glob(os.path.join(folder_path, "*.tiff"))
+    )
+
+    if len(tiff_files) == 0:
+        raise ValueError("No TIFF files found.")
+
+    # Load first frame
+    first_frame = cv2.imread(tiff_files[0])
+    if first_frame is None:
+        raise ValueError("Could not read first TIFF frame.")
+
+    # ⚡ Adjust mask size to match actual frame size
+    ymg = YMazeGeometry()
+    frame_h, frame_w = first_frame.shape[:2]
+    ymg.im_size_px = np.array([frame_w, frame_h])
+    ymg.center_px = ymg.im_size_px / 2.0
+    ymg.generate_coordinates()
+
+    # Calibration
+    calibrate_geometry_from_image(first_frame, ymg)
+
+    # Split TIFF frames
+    split_tiff_folder_into_9(folder_path, ymg)
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: python3 ymazegeometry.py /path/to/tiff_folder")
+    else:
+        main(sys.argv[1])
+
 def marctest():
     ymg = YMazeGeometry()
     [mm,rm] = ymg.generate_maze_mask()
@@ -83,6 +207,9 @@ def marctest():
     plt.imshow(rm)
     plt.show(block=True)
     print("test finished")
+
+
+
 
 marctest()
 
