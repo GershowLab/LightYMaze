@@ -13,6 +13,6 @@ class LightController:
     def update_leds(self):
         with self.semaphore:
             self.strip.show()
-    
+
 
 
