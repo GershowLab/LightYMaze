@@ -27,38 +27,42 @@ class BakCreator:
                 for i in range(len(stack) - 1):
                     or_i = cv2.bitwise_or(a, stack[i + 1])
                     a = or_i
-                return or_i
+                return a
         else:
             print("Problem wih orStack: input stack is empty")
 
-    # def makeORStack(self):
-    #     self._timsOR = self.orStack(self._Tims)
-    #     print("Initial OR stack created")
-
-    def _update(self, newIm, fgthresh):
+    def _update(self, newIm, fgthresh = None):
         self._Ims.add(newIm)
-        self._Tims.add(fgthresh)
+        if not (fgthresh is None):
+            self._Tims.add(fgthresh)
         if self._Ims.loading == False:
             self._bgim = np.median(self._Ims.stack, axis=0).astype(dtype=np.uint8)
 
-    def updageBackground(self, newIm, fgthresh):
-		if (self._semaphore.acquire(blocking=False)):
-			if self._Tims.loading:
-				self._Tims.add(fgthresh)
-			else:
-				self._timsOR = self._or_stack(self._Tims.stack)
-				numNewPix = cv2.countNonZero(cv2.bitwise_and(fgthresh, cv2.bitwise_not(self._timsOR)))
-				if numNewPix > (self._alpha * cv2.countNonZero(fgthresh)):
-					self._update(newIm, fgthresh)
-					self._updatetime = 0
-				else:
-					self._updatetime += 1
-			self._semaphore.release()
-
-	def getBackground(self: object) -> object:
+    def updageBackground(self, newIm, fgthresh = None):
+        if (self._semaphore.acquire(blocking=False)):
+            if fgthresh is None:
+                self._update(newIm, fgthresh)
+                self._updatetime = 0
+            if self._Tims.loading:
+                self._Tims.add(fgthresh)
+            else:
+                self._timsOR = self._or_stack(self._Tims.stack)
+                numNewPix = cv2.countNonZero(cv2.bitwise_and(fgthresh, cv2.bitwise_not(self._timsOR)))
+                if numNewPix > (self._alpha * cv2.countNonZero(fgthresh)):
+                    self._update(newIm, fgthresh)
+                    self._updatetime = 0
+                else:
+                    self._updatetime += 1
+            self._semaphore.release()
+    def getBackground(self):
         return self._bgim
-
-
+	def getForeground(self, im):
+		return cv2.subtract(im, self.getBackground())
+	def getThresholdedImage(self, im, thresh):
+		_, fgthresh = cv2.threshold(self.getForeground(), thresh, 255, cv2.THRESH_BINARY)
+		fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+		fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+		return fgthresh
 class FIFO:
     def __init__(self, maxlength, name):
         self.maxlength = maxlength
