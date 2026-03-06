@@ -75,35 +75,66 @@ class YMazeGeometry:
             regionmask[rm>0] = rm[rm>0]
         return maze_mask, regionmask
 
+    def calibrate_geometry_from_image(self, frame):
+
+        points = []
+
+        def click_event(event, x, y, flags, param):
+            if event == cv2.EVENT_LBUTTONDOWN:
+                print(f"Selected: ({x}, {y})")
+                points.append(np.array([x, y]))
+
+        cv2.namedWindow("Click Center Maze, then Right Maze", cv2.WINDOW_KEEPRATIO)
+        cv2.imshow("Click Center Maze, then Right Maze", frame)
+        cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
+
+        while len(points) < 2:
+            cv2.waitKey(1)
+
+        cv2.destroyAllWindows()
+
+        centerPoint = points[0]
+        rightMazePoint = points[1]
+
+        self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+        self.generate_coordinates()
+
+        [mm, rm] = self.generate_maze_mask()
+        plt.imshow(frame)
+        plt.contour(mm)
+        print("Calibration complete.")
+        plt.show()
+
 
 def calibrate_geometry_from_image(frame, ymg):
-
-    points = []
-
-    def click_event(event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            print(f"Selected: ({x}, {y})")
-            points.append(np.array([x, y]))
-
-    cv2.imshow("Click Center Maze, then Right Maze", frame)
-    cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
-
-    while len(points) < 2:
-        cv2.waitKey(1)
-
-    cv2.destroyAllWindows()
-
-    centerPoint = points[0]
-    rightMazePoint = points[1]
-
-    ymg.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
-    ymg.generate_coordinates()
-
-    [mm,rm] = ymg.generate_maze_mask()
-    plt.imshow(frame)
-    plt.contour(mm)
-    print("Calibration complete.")
-    plt.show()
+    ymg.calibrate_geometry_from_image(frame)
+    #
+    # points = []
+    #
+    # def click_event(event, x, y, flags, param):
+    #     if event == cv2.EVENT_LBUTTONDOWN:
+    #         print(f"Selected: ({x}, {y})")
+    #         points.append(np.array([x, y]))
+    #
+    # cv2.imshow("Click Center Maze, then Right Maze", frame)
+    # cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
+    #
+    # while len(points) < 2:
+    #     cv2.waitKey(1)
+    #
+    # cv2.destroyAllWindows()
+    #
+    # centerPoint = points[0]
+    # rightMazePoint = points[1]
+    #
+    # ymg.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+    # ymg.generate_coordinates()
+    #
+    # [mm,rm] = ymg.generate_maze_mask()
+    # plt.imshow(frame)
+    # plt.contour(mm)
+    # print("Calibration complete.")
+    # plt.show()
 
 def split_tiff_folder_into_9(folder_path, ymg, fps=30):
 
@@ -211,7 +242,7 @@ def marctest():
 
 
 
-marctest()
+#marctest()
 
 #from documentation
 #• Intersection: state 1

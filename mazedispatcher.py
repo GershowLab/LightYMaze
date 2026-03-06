@@ -1,18 +1,19 @@
 import time
 
-import lightcontroller
-import ymazegeometry
+from lightcontroller import LightController
+from ymazegeometry import YMazeGeometry
 from mazecontroller import MazeController
 import cv2
 import numpy as np
-from dataclasses import dataclass
 from threading import Thread
+import matplotlib.pyplot as plt
 
 class MazeDispatcher:
-    def __init__(self, ymg:ymazegeometry.YMazeGeometry, light_controller:lightcontroller.LightController = None):
+    def __init__(self, ymg:YMazeGeometry, light_controller:LightController = None):
         self._ymg = ymg
         self._maze_mask, self._region_mask = ymg.generate_maze_mask()
-        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, self._light_controller) for i in range(1,np.max(self._maze_mask))]
+        self._light_controller = light_controller
+        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, self._light_controller) for i in range(1,np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
 
     def open_csv(self, fstub):
@@ -31,21 +32,26 @@ class MazeDispatcher:
         for mm in self._maze_minions:
             mm.close_video()
 
-    def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None):
+    def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False):
         if frame_number is None:
             self._frame_number += 1
         else:
             self._frame_number = frame_number
         if frame_time is None:
             frame_time = time.monotonic()
-        for mm in self._maze_minions:
-            mm.new_frame(img, frame_number,frame_time)
+        tt = [mm.new_frame(img, frame_number,frame_time) for mm in self._maze_minions]
+        if wait_for_completion:
+            for t in tt:
+                t.join()
+
+
+
 
 
 
 class MazeMinion:
     def __init__(self, maze_id, maze_mask, region_mask, light_controller = None):
-        self._x, self._y, self._w, self._h = cv2.boundingRect(maze_mask == maze_id)
+        self._x, self._y, self._w, self._h = cv2.boundingRect(((maze_mask == maze_id) * 255).astype(np.uint8))
         self._maze_id = maze_id
         self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), maze_id)
 
@@ -55,6 +61,7 @@ class MazeMinion:
         roi = self.get_subim(img).copy()
         t = Thread(target=self._maze_controller.new_image, args=(roi, frame_number, frame_time))
         t.start() # maze_controller.new_image returs immediately if processing another frame
+        return t
 
     def open_csv(self, fstub):
         self._maze_controller.open_csv(fstub + self._maze_id + ".csv")
@@ -68,12 +75,5 @@ class MazeMinion:
     def close_video(self):
         self._maze_controller.close_video_out()
 
-
-
-@dataclass
-class img_cap:
-    img : np.ndarray
-    frame_number : int
-    frame_time : float
 
 
