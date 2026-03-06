@@ -106,6 +106,19 @@ class MazeController:
         self._stats["Region"] = number
         self._stats["LarvaX"],self._stats["LarvaY"] = self._larva_loc
 
+    def debug_montage(self):
+        img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
+        bak = cv2.cvtColor(self._bak.getBackground(), cv2.COLOR_GRAY2BGR)
+        thresh = cv2.cvtColor(self._bak.getThresholdedImage(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
+        r = self._img.copy()
+        r[self._larva_mask] = 255
+        b = self._img.copy()
+        b[self._region_map == self._stats["Region"]] = 255
+        img_annotate = np.concatenate((b,self._img,r), axis=3)
+        montage = np.vstack(np.hstack((img,bak)), np.hstack(thresh, img_annotate))
+        return montage
+
+
     def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
         self._csvwriter = csv.writer(self._csvfile, delimiter='\t')

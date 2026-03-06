@@ -72,9 +72,13 @@ class MazeMinion:
     def open_video(self, fstub):
         self._maze_controller.open_video_out(f"{fstub}{self._maze_id}.mp4")
 
-
     def close_video(self):
         self._maze_controller.close_video_out()
+
+    def debug_display(self):
+        cv2.namedWindow(f"Maze{self._maze_id} Debug", cv2.WINDOW_NORMAL)
+        img = self._maze_controller.debug_montage()
+        cv2.imshow(f"Maze{self._maze_id} Debug", img)
 
 
 
