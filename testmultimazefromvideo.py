@@ -26,6 +26,6 @@ for j in range(200):
     if not ret:
         print("could not read frame " + j)
         break
-    mc.new_frame(frame, wait_for_completion=True)
+    mc.new_frame(frame, multi_thread=False)
 mc.close_csv()
 mc.close_video()

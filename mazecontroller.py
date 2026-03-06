@@ -15,6 +15,8 @@ import time
 
 from threading import Lock
 
+import matplotlib.pyplot as plt
+
 class MazeController:
     _vid_writer: cv2.VideoWriter
 
@@ -70,29 +72,32 @@ class MazeController:
 
     def new_image(self, img, frame_number = None, capture_time = None):
         if self._lock.acquire(blocking=False):
-            self._img = img # pass a copy to new_image
-            if frame_number is None:
-                self._frame_number += 1
-            else:
-                self._frame_number = frame_number
-            if capture_time is None:
-                self._stats["FrameTime"] = time.monotonic()
-            else:
-                self._stats["FrameTime"]  = capture_time
-            if self._bak is None:
-                self._bak = BakCreator(self._stack_len, 0.02, img)
-            #during initialization period, just update background
-            if (self._num_frames_to_initialize > 0):
-                self._bak.updageBackground(img)
-                self._num_frames_to_initialize -= 1
-                return
-            thresh = self._bak.getThresholdedImage(img)
-            self._bak.updageBackground(img, thresh)
-            self._stats["Frame"] = self._frame_number
-            self._updateLarva(thresh)
-            self._write_video()
-            self._write_data()
-            self._lock.release()
+            try:
+                self._img = img # pass a copy to new_image
+                if frame_number is None:
+                    self._frame_number += 1
+                else:
+                    self._frame_number = frame_number
+                if capture_time is None:
+                    self._stats["FrameTime"] = time.monotonic()
+                else:
+                    self._stats["FrameTime"]  = capture_time
+                if self._bak is None:
+                    self._bak = BakCreator(self._stack_len, 0.02, img)
+                #during initialization period, just update background
+                if (self._num_frames_to_initialize > 0):
+                    self._bak.update_background(img)
+                    self._num_frames_to_initialize -= 1
+                    print(f"{self._maze_ID}: frames left to initialize = {self._num_frames_to_initialize}")
+                else:
+                    thresh = self._bak.get_thresholded_image(img, self._threshold)
+                    self._bak.update_background(img, thresh)
+                    self._stats["Frame"] = self._frame_number
+                    self._updateLarva(thresh)
+                    self._write_video()
+                    self._write_data()
+            finally:
+                self._lock.release()
 
     def _updateLarva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
@@ -150,6 +155,7 @@ class MazeController:
         #TODO annotate
 
     def _write_data(self):
+        print(self._stats)
         self._write_state_to_text()
         self._write_video()
 
