@@ -20,11 +20,12 @@ mc = MazeDispatcher(ymg)
 mc.open_csv(fstub)
 mc.open_video(fstub)
 for j in range(200):
+    print(f"processing frame {j}")
     [ret,frame] = vc.read()
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     if not ret:
         print("could not read frame " + j)
         break
-    mc.new_frame(frame)
+    mc.new_frame(frame, wait_for_completion=True)
 mc.close_csv()
 mc.close_video()

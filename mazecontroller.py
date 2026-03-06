@@ -25,7 +25,7 @@ class MazeController:
         self._region_map = region_map
         self._h, self._w = self._region_map.shape # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))
-        self._num_regions = np.max(region_map).astype(int) + 1
+        self._num_regions = np.max(region_map).astype(int)
         locs = self._get_region_centers()
         self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 60
@@ -108,7 +108,7 @@ class MazeController:
 
     def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
-        self._csvwriter = csv.writer(self._csvfile, delimiter=', ')
+        self._csvwriter = csv.writer(self._csvfile, delimiter='\t')
         self._csvwriter.writerow(self._stats.keys())
 
     def close_csv(self):
@@ -137,7 +137,7 @@ class MazeController:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
 
     def open_video_out(self, vidfilename):
-        fourcc = cv2.VideoWriter_fourcc('MP4V')
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
         self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), False)
 
     def close_video_out(self):

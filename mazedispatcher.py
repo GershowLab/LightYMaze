@@ -64,13 +64,14 @@ class MazeMinion:
         return t
 
     def open_csv(self, fstub):
-        self._maze_controller.open_csv(fstub + self._maze_id + ".csv")
+        self._maze_controller.open_csv(f"{fstub}{self._maze_id}.csv")
 
     def close_csv(self):
         self._maze_controller.close_csv()
 
     def open_video(self, fstub):
-        self._maze_controller.open_video_out(fstub + self._maze_id + ".mp4")
+        self._maze_controller.open_video_out(f"{fstub}{self._maze_id}.mp4")
+
 
     def close_video(self):
         self._maze_controller.close_video_out()
