@@ -20,11 +20,13 @@ class MazeController:
         self._num_regions = np.max(region_map)
         locs = self._get_region_centers()
         self._state_machine = StateMachine(locs[0], locs)
-        self._num_frames_to_initialize = 100
+        self._stack_len = 60
+        self._num_frames_to_initialize =  self._stack_len
         self._threshold = 30
         self._larva_loc:ndarray = np.array([-1,-1])
         self._csvfile = None
         self._csvwriter: '_csv._writer' = None
+        self._frame_number = 0
         self._stats = {
             "Frame": 0,
             "LarvaX": -1,
@@ -41,6 +43,7 @@ class MazeController:
             "Led3G": 0,
             "Led3B": 0
         }
+
     def _get_region_centers(self):
         locs: list[ndarray] = []
         for j in range(self._num_regions):
@@ -49,9 +52,13 @@ class MazeController:
             locs.append(np.array([x, y]))
         return locs
 
-    def newImage(self, img):
+    def new_image(self, img, frame_number = None):
+        if frame_number is None:
+            self._frame_number += 1
+        else:
+            self._frame_number = frame_number
         if self._bak is None:
-            self._bak = BakCreator(img)
+            self._bak = BakCreator(self._stack_len, 0.02, img)
         #during initialization period, just update background
         if (self._num_frames_to_initialize > 0):
             self._bak.updageBackground(img)
@@ -59,7 +66,9 @@ class MazeController:
             return
         thresh = self._bak.getThresholdedImage(img)
         self._bak.updageBackground(img, thresh)
+        self._stats["Frame"] = self._frame_number
         self._updateLarva(thresh)
+
     def _updateLarva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
             thresh, connectivity=8, ltype=cv2.CV_32S
@@ -71,11 +80,11 @@ class MazeController:
         prevnumber, number, nextnum = self._state_machine.on_input(self._larva_loc)
         self._stats["Region"] = number
         self._stats["LarvaX"],self._stats["LarvaY"] = self._larva_loc
+
     def openCSV(self, filename):
         self._csvfile = open(filename, 'w', newline='')
         self._csvwriter = csv.writer(self._csvfile, delimiter=', ')
         self._csvwriter.writerow(self._stats.keys())
-
 
     def closeCSV(self):
         self._csvfile.close()
