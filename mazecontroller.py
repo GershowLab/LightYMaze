@@ -11,7 +11,8 @@ from lightcontroller import LightController
 import csv
 import _csv
 class MazeController:
-    def __init__(self, light_controller: LightController, region_map: ndarray):
+    def __init__(self, light_controller: LightController, region_map: ndarray, maze_ID):
+        self._maze_ID = maze_ID
         self._bak:BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map
@@ -29,6 +30,7 @@ class MazeController:
         self._frame_number = 0
         self._stats = {
             "Frame": 0,
+            "MazeID": self._maze_ID,
             "LarvaX": -1,
             "LarvaY": -1,
             "LarvaArea": -1,
@@ -36,12 +38,15 @@ class MazeController:
             "Led1R": 0,
             "Led1G": 0,
             "Led1B": 0,
+            "Led1PCT": 100,
             "Led2R": 0,
             "Led2G": 0,
             "Led2B": 0,
+            "Led2PCT": 100,
             "Led3R": 0,
             "Led3G": 0,
-            "Led3B": 0
+            "Led3B": 0,
+            "Led3PCT": 100
         }
 
     def _get_region_centers(self):
@@ -81,18 +86,37 @@ class MazeController:
         self._stats["Region"] = number
         self._stats["LarvaX"],self._stats["LarvaY"] = self._larva_loc
 
-    def openCSV(self, filename):
+    def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
         self._csvwriter = csv.writer(self._csvfile, delimiter=', ')
         self._csvwriter.writerow(self._stats.keys())
 
-    def closeCSV(self):
+    def close_csv(self):
         self._csvfile.close()
         self._csvwriter = None
         self._csvfile = None
-    def _writeStateToText(self):
+
+    def _write_state_to_text(self):
         if self._csvwriter is not None:
             self._csvwriter.writerow(self._stats.values())
+
+    def _set_leds(self, led1rgb = None, led2rgb = None, led3rgb = None):
+        if led1rgb is not None:
+            self._set_led(1, led1rgb[0], led1rgb[1],led1rgb[2])
+        if led2rgb is not None:
+            self._set_led(2, led2rgb[0], led2rgb[1], led2rgb[2])
+        if led3rgb is not None:
+            self._set_led(3, led3rgb[0], led3rgb[1], led3rgb[2])
+
+    def _set_led(self, led_ind, red, green, blue, bright_pct = 100):
+        self._stats["LED"+led_ind+"R"] = red
+        self._stats["LED" + led_ind + "G"] = green
+        self._stats["LED" + led_ind + "B"] = blue
+        self._stats["LED" + led_ind + "PCT"] = bright_pct
+        if self._light_controller is not None:
+            self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
+
+
 
 
 

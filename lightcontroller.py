@@ -6,6 +6,9 @@ class LightController:
         self.strip = apa102.APA102(num_led=3*self.num_mazes, global_brightness=9)
         self.semaphore = threading.Semaphore(1)
 
+    def set_global_brightness(self, global_brightness):
+        self.strip.
+
     def set_led(self, maze_num, channel_num, red, green, blue, bright_pct = 100):
         with self.semaphore:
             self.strip.set_pixel(3*maze_num+channel_num,red, green, blue, bright_percent=bright_pct)
