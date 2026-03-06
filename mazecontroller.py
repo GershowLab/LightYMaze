@@ -23,9 +23,9 @@ class MazeController:
         self._bak:BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map
-        self._w, self._h = self._region_map.shape
+        self._h, self._w = self._region_map.shape # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))
-        self._num_regions = np.max(region_map).astype(int)
+        self._num_regions = np.max(region_map).astype(int) + 1
         locs = self._get_region_centers()
         self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 60
@@ -62,7 +62,7 @@ class MazeController:
 
     def _get_region_centers(self):
         locs: list[ndarray] = []
-        for j in range(self._num_regions):
+        for j in range(1,self._num_regions+1):
             x = np.mean(self._x[self._region_map == j])
             y = np.mean(self._y[self._region_map == j])
             locs.append(np.array([x, y]))
