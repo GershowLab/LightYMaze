@@ -10,7 +10,14 @@ from lightcontroller import LightController
 
 import csv
 import _csv
+
+import time
+
+from threading import Lock
+
 class MazeController:
+    _vid_writer: cv2.VideoWriter
+
     def __init__(self, light_controller: LightController, region_map: ndarray, maze_ID):
         self._maze_ID = maze_ID
         self._bak:BakCreator = None
@@ -28,9 +35,12 @@ class MazeController:
         self._csvfile = None
         self._csvwriter: '_csv._writer' = None
         self._frame_number = 0
+        self._vid_writer: cv2.VideoWriter = None
+        self._img = None
         self._stats = {
-            "Frame": 0,
             "MazeID": self._maze_ID,
+            "Frame": 0,
+            "FrameTime": 0,
             "LarvaX": -1,
             "LarvaY": -1,
             "LarvaArea": -1,
@@ -48,6 +58,7 @@ class MazeController:
             "Led3B": 0,
             "Led3PCT": 100
         }
+        self._lock = Lock()
 
     def _get_region_centers(self):
         locs: list[ndarray] = []
@@ -57,27 +68,36 @@ class MazeController:
             locs.append(np.array([x, y]))
         return locs
 
-    def new_image(self, img, frame_number = None):
-        if frame_number is None:
-            self._frame_number += 1
-        else:
-            self._frame_number = frame_number
-        if self._bak is None:
-            self._bak = BakCreator(self._stack_len, 0.02, img)
-        #during initialization period, just update background
-        if (self._num_frames_to_initialize > 0):
-            self._bak.updageBackground(img)
-            self._num_frames_to_initialize -= 1
-            return
-        thresh = self._bak.getThresholdedImage(img)
-        self._bak.updageBackground(img, thresh)
-        self._stats["Frame"] = self._frame_number
-        self._updateLarva(thresh)
+    def new_image(self, img, frame_number = None, capture_time = None):
+        if self._lock.acquire(blocking=False):
+            self._img = img # pass a copy to new_image
+            if frame_number is None:
+                self._frame_number += 1
+            else:
+                self._frame_number = frame_number
+            if capture_time is None:
+                self._stats["FrameTime"] = time.monotonic()
+            else:
+                self._stats["FrameTime"]  = capture_time
+            if self._bak is None:
+                self._bak = BakCreator(self._stack_len, 0.02, img)
+            #during initialization period, just update background
+            if (self._num_frames_to_initialize > 0):
+                self._bak.updageBackground(img)
+                self._num_frames_to_initialize -= 1
+                return
+            thresh = self._bak.getThresholdedImage(img)
+            self._bak.updageBackground(img, thresh)
+            self._stats["Frame"] = self._frame_number
+            self._updateLarva(thresh)
+            self._write_video()
+            self._write_data()
+            self._lock.release()
 
     def _updateLarva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
-            thresh, connectivity=8, ltype=cv2.CV_32S
-        )
+            thresh, connectivity=8
+        ) # , ltype=cv2.CV_32S
         area = [stats[i, cv2.CC_STAT_AREA] for i in range(1,num_labels)]
         larva_ind = np.argmax(area) + 1
         self._larva_loc = centroids[larva_ind]
@@ -115,6 +135,26 @@ class MazeController:
         self._stats["LED" + led_ind + "PCT"] = bright_pct
         if self._light_controller is not None:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
+
+    def open_video_out(self, vidfilename):
+        fourcc = cv2.VideoWriter_fourcc('MP4V')
+        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), False)
+
+    def close_video_out(self):
+        self._vid_writer.release()
+        self._vid_writer = None
+
+    def _write_video(self):
+        if self._vid_writer is not None:
+            self._vid_writer.write(self._img)
+        #TODO annotate
+
+    def _write_data(self):
+        self._write_state_to_text()
+        self._write_video()
+
+
+
 
 
 

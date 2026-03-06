@@ -56,13 +56,13 @@ class BakCreator:
             self._semaphore.release()
     def getBackground(self):
         return self._bgim
-	def getForeground(self, im):
-		return cv2.subtract(im, self.getBackground())
-	def getThresholdedImage(self, im, thresh):
-		_, fgthresh = cv2.threshold(self.getForeground(), thresh, 255, cv2.THRESH_BINARY)
-		fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-		fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-		return fgthresh
+    def getForeground(self, im):
+        return cv2.subtract(im, self.getBackground())
+    def getThresholdedImage(self, im, thresh):
+        _, fgthresh = cv2.threshold(self.getForeground(), thresh, 255, cv2.THRESH_BINARY)
+        fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+        fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        return fgthresh
 class FIFO:
     def __init__(self, maxlength, name):
         self.maxlength = maxlength
