@@ -31,9 +31,13 @@ class YMazeGeometry:
         #this is hacky based on knowing maze4 is horizontally offset
         self.rotation = np.arctan2(-delta_px[1], delta_px[0])
 
+    def set_image_size(self, sz):
+        self.im_size_px = np.array(sz)
+        self.center_px = self.im_size_px/2.0
+        self.generate_coordinates()
 
     def generate_coordinates(self):
-        x,y = np.meshgrid(np.arange(self.im_size_px[0])-self.center_px[0], np.arange(self.im_size_px[1])-self.center_px[1])
+        x,y = np.meshgrid(np.arange(self.im_size_px[1])-self.center_px[0], np.arange(self.im_size_px[0])-self.center_px[1])
         c = np.cos(self.rotation)
         s = np.sin(self.rotation)
 
@@ -78,7 +82,7 @@ class YMazeGeometry:
     def calibrate_geometry_from_image(self, frame):
 
         points = []
-
+        self.set_image_size(frame.shape)
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 print(f"Selected: ({x}, {y})")

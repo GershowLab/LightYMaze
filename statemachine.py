@@ -9,13 +9,13 @@ class StateMachine:
 		self.state = Initializer(self.initial,self.locs).starting_point(self.initial)
 	def on_input(self, input):
 		self.prevnumber = self.state.mynumber
-		if input == [-1,-1]: #if tracker lost larva, keep previous state
-                        try:
-                                self.prevnumber
-                        except NameError:
-                                return 0, 0, 0
-                        else:
-                                return self.prevnumber, self.prevnumber, self.prevnumber
+		if any(input < 0): #if tracker lost larva, keep previous state
+			try:
+					self.prevnumber
+			except NameError:
+					return 0, 0, 0
+			else:
+					return self.prevnumber, self.prevnumber, self.prevnumber
 		else:
 			self.state = self.state.on_input(input)
 			self.number = self.state.getState(input)
@@ -31,7 +31,7 @@ class Initializer(Region):
 class Zero(Region):
 	mynumber = 0
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : self, 1 : One(self.locs[1],self.locs), 2 : Two(self.locs[2],self.locs), 3: Three(self.locs[3],self.locs), 4: Four(self.locs[4],self.locs), 5: Five(self.locs[5],self.locs), 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -43,7 +43,7 @@ class Zero(Region):
 class One(Region):
 	mynumber = 1
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0],self.locs), 1 : self, 2 : Two(self.locs[2],self.locs), 3: Three(self.locs[3],self.locs), 4: Four(self.locs[4],self.locs), 5: Five(self.locs[5],self.locs), 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -55,7 +55,7 @@ class One(Region):
 class Two(Region):
 	mynumber = 2
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0], self.locs), 1 : One(self.locs[1],self.locs), 2 : self, 3: Three(self.locs[3],self.locs), 4: Four(self.locs[4],self.locs), 5: Five(self.locs[5],self.locs), 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -67,7 +67,7 @@ class Two(Region):
 class Three(Region):
 	mynumber = 3
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0], self.locs), 1 : One(self.locs[1],self.locs), 2 : Two(self.locs[2],self.locs), 3: self, 4: Four(self.locs[4],self.locs), 5: Five(self.locs[5],self.locs), 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -79,7 +79,7 @@ class Three(Region):
 class Four(Region):
 	mynumber = 4
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0], self.locs), 1 : One(self.locs[1],self.locs), 2 : Two(self.locs[2],self.locs), 3: Three(self.locs[3],self.locs), 4: self, 5: Five(self.locs[5],self.locs), 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -91,7 +91,7 @@ class Four(Region):
 class Five(Region):
 	mynumber = 5
 	def on_input(self, input):
-		if input != [-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0], self.locs), 1 : One(self.locs[1],self.locs), 2 : Two(self.locs[2],self.locs), 3: Three(self.locs[3],self.locs), 4: Four(self.locs[4],self.locs), 5: self, 6: Six(self.locs[6], self.locs)}
 			transition = self.processPoint(input)
 			state = self.getState(input)
@@ -103,7 +103,7 @@ class Five(Region):
 class Six(Region):
 	mynumber = 6
 	def on_input(self, input):
-		if input !=[-1,-1]:
+		if all(input >= 0):
 			states = {0 : Zero(self.locs[0], self.locs), 1 : One(self.locs[1],self.locs), 2 : Two(self.locs[2],self.locs), 3: Three(self.locs[3],self.locs), 4: Four(self.locs[4],self.locs), 5: Five(self.locs[5],self.locs), 6: self}
 			transition = self.processPoint(input)
 			state = self.getState(input)

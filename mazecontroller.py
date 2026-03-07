@@ -24,7 +24,7 @@ class MazeController:
         self._maze_ID = maze_ID
         self._bak:BakCreator = None
         self._light_controller = light_controller
-        self._region_map = region_map
+        self._region_map = region_map.astype(int)
         self._h, self._w = self._region_map.shape # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))
         self._num_regions = np.max(region_map).astype(int)
@@ -32,13 +32,14 @@ class MazeController:
         self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 60
         self._num_frames_to_initialize =  self._stack_len
-        self._threshold = 30
+        self._threshold = 20
         self._larva_loc:ndarray = np.array([-1,-1])
         self._csvfile = None
         self._csvwriter: '_csv._writer' = None
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
-        self._img = None
+        self._img = np.zeros_like(self._region_map)
+        self._larva_mask = np.zeros_like(self._region_map)
         self._stats = {
             "MazeID": self._maze_ID,
             "Frame": 0,
@@ -104,23 +105,31 @@ class MazeController:
             thresh, connectivity=8
         ) # , ltype=cv2.CV_32S
         area = [stats[i, cv2.CC_STAT_AREA] for i in range(1,num_labels)]
-        larva_ind = np.argmax(area) + 1
-        self._larva_loc = centroids[larva_ind]
-        self._larva_mask = (labels == larva_ind)
+        try:
+            larva_ind = np.argmax(area) + 1
+            self._larva_loc = centroids[larva_ind]
+            self._larva_mask = (labels == larva_ind)
+            self._stats["LarvaArea"] = float(area[larva_ind-1])
+        except:
+            larva_ind = 1
+            self._larva_loc = np.array([-1,-1])
+
+
         prevnumber, number, nextnum = self._state_machine.on_input(self._larva_loc)
         self._stats["Region"] = number
-        self._stats["LarvaX"],self._stats["LarvaY"] = self._larva_loc
+        self._stats["LarvaX"] = float(self._larva_loc[0])
+        self._stats["LarvaY"] = float(self._larva_loc[1])
 
     def debug_montage(self):
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
-        bak = cv2.cvtColor(self._bak.getBackground(), cv2.COLOR_GRAY2BGR)
-        thresh = cv2.cvtColor(self._bak.getThresholdedImage(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
+        bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
+        thresh = cv2.cvtColor(self._bak.get_thresholded_image(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
         r = self._img.copy()
         r[self._larva_mask] = 255
         b = self._img.copy()
         b[self._region_map == self._stats["Region"]] = 255
-        img_annotate = np.concatenate((b,self._img,r), axis=3)
-        montage = np.vstack(np.hstack((img,bak)), np.hstack(thresh, img_annotate))
+        img_annotate = cv2.merge((b,self._img,r))
+        montage = np.vstack((np.hstack((img,bak)), np.hstack((thresh, img_annotate))))
         return montage
 
 
@@ -136,8 +145,10 @@ class MazeController:
 
     def _write_state_to_text(self):
         if self._csvwriter is not None:
-            self._csvwriter.writerow(self._stats.values())
-
+            try:
+                self._csvwriter.writerow(self._stats.keys())
+            except TimeoutError:
+                pass # nothing
     def _set_leds(self, led1rgb = None, led2rgb = None, led3rgb = None):
         if led1rgb is not None:
             self._set_led(1, led1rgb[0], led1rgb[1],led1rgb[2])
