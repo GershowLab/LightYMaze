@@ -32,17 +32,21 @@ class MazeDispatcher:
         for mm in self._maze_minions:
             mm.close_video()
 
-    def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False):
+    def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False, multi_thread = True):
         if frame_number is None:
             self._frame_number += 1
         else:
             self._frame_number = frame_number
         if frame_time is None:
             frame_time = time.monotonic()
-        tt = [mm.new_frame(img, frame_number,frame_time) for mm in self._maze_minions]
-        if wait_for_completion:
-            for t in tt:
-                t.join()
+        if multi_thread:
+            tt = [mm.new_frame(img, frame_number,frame_time) for mm in self._maze_minions]
+            if wait_for_completion:
+                for t in tt:
+                    t.join()
+        else:
+            for mm in self._maze_minions:
+                mm.new_frame_nothread(img, frame_number, frame_time)
 
 
 
@@ -57,6 +61,10 @@ class MazeMinion:
 
     def get_subim(self, img):
         return img[self._y:(self._y+self._h), self._x:(self._x + self._w)]
+
+    def new_frame_nothread(self, img, frame_number = None, frame_time = None):
+        roi = self.get_subim(img).copy()
+        self._maze_controller.new_image(roi, frame_number, frame_time)
     def new_frame(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
         t = Thread(target=self._maze_controller.new_image, args=(roi, frame_number, frame_time))
