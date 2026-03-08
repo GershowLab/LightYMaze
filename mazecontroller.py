@@ -124,13 +124,26 @@ class MazeController:
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         thresh = cv2.cvtColor(self._bak.get_thresholded_image(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
+        # r = self._img.copy()
+        # r[self._larva_mask] = 255
+        # b = self._img.copy()
+        # b[self._region_map == self._stats["Region"]] = 255
+        # img_annotate = cv2.merge((b,self._img,r))
+        img_annotate = self.debug_image()
+        montage = np.vstack((np.hstack((img,bak)), np.hstack((thresh, img_annotate))))
+        return montage
+
+    def debug_image(self):
         r = self._img.copy()
         r[self._larva_mask] = 255
         b = self._img.copy()
         b[self._region_map == self._stats["Region"]] = 255
-        img_annotate = cv2.merge((b,self._img,r))
-        montage = np.vstack((np.hstack((img,bak)), np.hstack((thresh, img_annotate))))
-        return montage
+        img_annotate = cv2.merge((b, self._img, r))
+        for j in range(len(self._state_machine.locs)):
+            cv2.putText(img_annotate, f"{j+1}", self._state_machine.locs[j], cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        current_region = self._stats["Region"]
+        cv2.putText(img_annotate, f"{current_region}", self._larva_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        return img_annotate
 
 
     def open_csv(self, filename):
