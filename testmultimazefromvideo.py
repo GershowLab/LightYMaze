@@ -6,10 +6,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
-basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
+#basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
+basedir = Path('G:\\')
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'y-maze pictures' / 'y-maze feb 26' / 'Basler_acA1920-150um__21902780__20260226_125212812_%04d.tiff'
 
-
+print(fstub)
 
 #fstub = '/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/Shared drives/ugns-larval-behavior/y-maze pictures/y-maze feb 26/Basler_acA1920-150um__21902780__20260226_125212812_%4d.tiff'
 
@@ -45,6 +46,6 @@ for j in range(1000):
             t.join()
     md.new_frame(frame, multi_thread=False)
     md._maze_minions[1].debug_display()
-    cv2.waitKey(100)
+    cv2.waitKey(1)
 md.close_csv()
 md.close_video()

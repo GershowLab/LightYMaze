@@ -82,8 +82,8 @@ class YMazeGeometry:
         c = np.zeros((8,8))
 
         #intersection is connected to channels bidirectionally
-        c[1,(1,2,3)] = 1
-        c[(1,2,3),1] = 1
+        c[1,(2,3,4)] = 1
+        c[(2,3,4),1] = 1
 
         #channels are connected to circles bidirectionally
         for j in range(2,5):
@@ -93,6 +93,7 @@ class YMazeGeometry:
         c = transition_probability*c
         for j in range(8):
             c[j,j] = 1 - np.sum(c[j,:])
+        return c
 
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
@@ -258,6 +259,7 @@ if __name__ == "__main__":
 
 def marctest():
     ymg = YMazeGeometry()
+    print(ymg.generate_connectivity_matrix())
     [mm,rm] = ymg.generate_maze_mask()
     plt.figure(1)
     plt.imshow(mm)

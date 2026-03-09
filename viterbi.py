@@ -16,13 +16,13 @@ class Viterbi:
         pobs = np.log(np.clip(pobs, 1e-12, 1))
 
         T,S = np.shape(pobs)
-        prob = np.zeros(T,S) - 1e12
-        prev = np.zeros(T,S)
+        prob = np.zeros((T,S)) - 1e12
+        prev = np.zeros((T,S))
 
         prob[0, :] = pobs[0, :]
 
         if init_prob is None:
-            init_prob = np.zeros((S,1))
+            init_prob = np.zeros(S)
 
         prob[0, :] = init_prob + pobs[0, :]
 
@@ -33,7 +33,7 @@ class Viterbi:
             for s in range(0,S):
                 for r in range(0,S):
                     if tvalid[r,s]:
-                        trial_prob = prob[t-1,r]+self._trans_prob[r,s]+pobs[t,s]
+                        trial_prob = prob[t-1,r]+tp[r,s]+pobs[t,s]
                         if trial_prob > prob[t,s]:
                             prob[t,s] = trial_prob
                             prev[t,s] = r

@@ -2,8 +2,6 @@ from typing import List
 
 import cv2
 import numpy as np
-from astropy.utils.masked.function_helpers import zeros_like
-from numpy import ndarray
 
 from BakCreator import BakCreator
 from statemachine import StateMachine
@@ -35,7 +33,7 @@ class MazeController:
         self._stack_len = 60
         self._num_frames_to_initialize =  self._stack_len
         self._threshold = 20
-        self._larva_loc:ndarray = np.array([-1,-1])
+        self._larva_loc:np.ndarray = np.array([-1,-1])
         self._csvfile = None
         self._csvwriter: '_csv._writer' = None
         self._frame_number = 0
@@ -45,6 +43,7 @@ class MazeController:
         self._region_sums = []
         self._region_baseline = np.zeros(self._num_regions)
         self._transition_probs = transition_probabilities
+        self._state_history = None
         self._stats = {
             "MazeID": self._maze_ID,
             "Frame": 0,
@@ -69,7 +68,7 @@ class MazeController:
         self._lock = Lock()
 
     def _get_region_centers(self):
-        locs: list[ndarray] = []
+        locs: list[np.ndarray] = []
         for j in range(1,self._num_regions+1):
             x = np.mean(self._x[self._region_map == j])
             y = np.mean(self._y[self._region_map == j])
@@ -90,6 +89,8 @@ class MazeController:
                     self._stats["FrameTime"]  = capture_time
                 if self._bak is None:
                     self._bak = BakCreator(self._stack_len, 0.02, img)
+
+                self._calc_region_sums(img)
                 #during initialization period, just update background
                 if (self._num_frames_to_initialize > 0):
                     self._bak.update_background(img)
@@ -108,26 +109,36 @@ class MazeController:
     def _calc_region_sums(self, img):
         pxsum = np.zeros(self._num_regions+1)
         for j in range(1,self._num_regions+1):
-            pxsum[j] = np.sum(img(self._region_map == j))
+            pxsum[j] = np.sum(img[self._region_map == j])
         self._region_sums.append(pxsum)
 
     def _calc_region_baseline(self, state_hist = None):
-        if state_hist is None:
-            self._baseline =  np.median(self._region_sums, axis = 1)
-        self._baseline = np.zeros(self._num_regions+1)
-        for i in range(1,self._num_regions+1):
-            rs = self._region_sums[i]
-            v = self._transition_probs[i,:] == 0 # larva is known to be in a non-adjoining region
-            self._baseline[i] = np.median(rs[v])
+        self._baseline =  np.median(self._region_sums, axis = 1)
+        # if state_hist is None:
+        #     return
+        # for i in range(1,self._num_regions+1):
+        #     rs = self._region_sums[i]
+        #     v = self._transition_probs[i,:] == 0 # larva is known to be in a non-adjoining region
+        #     if len(v) > 10:
+        #         self._baseline[i] = np.median(rs[v])
 
-    def calc_prob_sequence(self):
-        pobs = self._region_sums - self._baseline[:,np.newaxis]
+    def calc_prob_sequence(self, debug=False):
+        pobs = np.array(self._region_sums) - self._baseline[:,np.newaxis]
         pobs = np.clip(pobs, 0, np.inf)
         pdiv = np.sum(pobs, axis = 1)
         pobs = pobs / pdiv[:,np.newaxis]
         pobs[:,0] = 0
         v = Viterbi(self._transition_probs)
         pseq = v.decode(pobs)
+        if debug:
+            plt.subplot(3,1,1)
+            plt.plot(np.arange(len(pseq)), self._region_sums- self._baseline[:,np.newaxis])
+            plt.subplot(3, 1, 2)
+            plt.plot(np.arange(len(pseq)), pobs)
+            plt.subplot(3, 1, 3)
+            plt.plot(np.arange(len(pseq)), pseq)
+
+        return pseq
 
 
 
@@ -144,6 +155,11 @@ class MazeController:
         except:
             larva_ind = 1
             self._larva_loc = np.array([-1,-1])
+
+
+        # self._calc_region_baseline(self._state_history)
+        # self._state_history = self.calc_prob_sequence()
+        # self._stats["Region"] = self._state_history[-1]
 
 
         prevnumber, number, nextnum = self._state_machine.on_input(self._larva_loc) #state numbers differ from region numbers by 1 in statemachine/regions vs. pdf
@@ -177,6 +193,11 @@ class MazeController:
             cv2.putText(img_annotate, f"{j+1}", rr, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return img_annotate
 
+    def debug_plots(self):
+        plt.subplot(3,1,1)
+        plt.plot(self._region_sums)
+        plt.subplot(3, 1, 1)
+        plt.plot(self._cal)
 
     def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
@@ -211,7 +232,7 @@ class MazeController:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
 
     def open_video_out(self, vidfilename):
-        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), True)
 
     def close_video_out(self):

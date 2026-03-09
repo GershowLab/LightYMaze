@@ -13,7 +13,7 @@ class MazeDispatcher:
         self._ymg = ymg
         self._maze_mask, self._region_mask = ymg.generate_maze_mask()
         self._light_controller = light_controller
-        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, self._light_controller) for i in range(1,np.max(self._maze_mask).astype(int))]
+        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
 
     def open_csv(self, fstub):
@@ -56,10 +56,10 @@ class MazeDispatcher:
 
 
 class MazeMinion:
-    def __init__(self, maze_id, maze_mask, region_mask, light_controller = None):
+    def __init__(self, maze_id, maze_mask, region_mask, transition_probs, light_controller = None):
         self._x, self._y, self._w, self._h = cv2.boundingRect(((maze_mask == maze_id) * 255).astype(np.uint8))
         self._maze_id = maze_id
-        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), maze_id)
+        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id)
 
     def get_subim(self, img):
         return img[self._y:(self._y+self._h), self._x:(self._x + self._w)]
@@ -71,6 +71,12 @@ class MazeMinion:
         roi = self.get_subim(img).copy()
         t = Thread(target=self._maze_controller.new_image, args=(roi, frame_number, frame_time))
         t.start() # maze_controller.new_image returs immediately if processing another frame
+        # if (self._maze_id == 4):
+        #     t.join()
+        #     plt.figure(4)
+        #     plt.clf()
+        #     self._maze_controller.calc_prob_sequence(True)
+        #     plt.show(False)
         return t
 
     def open_csv(self, fstub):
