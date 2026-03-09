@@ -2,11 +2,13 @@ from typing import List
 
 import cv2
 import numpy as np
+from astropy.utils.masked.function_helpers import zeros_like
 from numpy import ndarray
 
 from BakCreator import BakCreator
 from statemachine import StateMachine
 from lightcontroller import LightController
+from viterbi import Viterbi
 
 import csv
 import _csv
@@ -20,7 +22,7 @@ import matplotlib.pyplot as plt
 class MazeController:
     _vid_writer: cv2.VideoWriter
 
-    def __init__(self, light_controller: LightController, region_map: ndarray, maze_ID):
+    def __init__(self, light_controller: LightController, region_map: np.ndarray, transition_probabilities:np.ndarray, maze_ID:int):
         self._maze_ID = maze_ID
         self._bak:BakCreator = None
         self._light_controller = light_controller
@@ -40,6 +42,9 @@ class MazeController:
         self._vid_writer: cv2.VideoWriter = None
         self._img = np.zeros_like(self._region_map)
         self._larva_mask = np.zeros_like(self._region_map)
+        self._region_sums = []
+        self._region_baseline = np.zeros(self._num_regions)
+        self._transition_probs = transition_probabilities
         self._stats = {
             "MazeID": self._maze_ID,
             "Frame": 0,
@@ -100,6 +105,32 @@ class MazeController:
             finally:
                 self._lock.release()
 
+    def _calc_region_sums(self, img):
+        pxsum = np.zeros(self._num_regions+1)
+        for j in range(1,self._num_regions+1):
+            pxsum[j] = np.sum(img(self._region_map == j))
+        self._region_sums.append(pxsum)
+
+    def _calc_region_baseline(self, state_hist = None):
+        if state_hist is None:
+            self._baseline =  np.median(self._region_sums, axis = 1)
+        self._baseline = np.zeros(self._num_regions+1)
+        for i in range(1,self._num_regions+1):
+            rs = self._region_sums[i]
+            v = self._transition_probs[i,:] == 0 # larva is known to be in a non-adjoining region
+            self._baseline[i] = np.median(rs[v])
+
+    def calc_prob_sequence(self):
+        pobs = self._region_sums - self._baseline[:,np.newaxis]
+        pobs = np.clip(pobs, 0, np.inf)
+        pdiv = np.sum(pobs, axis = 1)
+        pobs = pobs / pdiv[:,np.newaxis]
+        pobs[:,0] = 0
+        v = Viterbi(self._transition_probs)
+        pseq = v.decode(pobs)
+
+
+
     def _updateLarva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
             thresh, connectivity=8
@@ -115,8 +146,8 @@ class MazeController:
             self._larva_loc = np.array([-1,-1])
 
 
-        prevnumber, number, nextnum = self._state_machine.on_input(self._larva_loc)
-        self._stats["Region"] = number
+        prevnumber, number, nextnum = self._state_machine.on_input(self._larva_loc) #state numbers differ from region numbers by 1 in statemachine/regions vs. pdf
+        self._stats["Region"] = number+1
         self._stats["LarvaX"] = float(self._larva_loc[0])
         self._stats["LarvaY"] = float(self._larva_loc[1])
 
@@ -139,10 +170,11 @@ class MazeController:
         b = self._img.copy()
         b[self._region_map == self._stats["Region"]] = 255
         img_annotate = cv2.merge((b, self._img, r))
-        for j in range(len(self._state_machine.locs)):
-            cv2.putText(img_annotate, f"{j+1}", self._state_machine.locs[j], cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         current_region = self._stats["Region"]
-        cv2.putText(img_annotate, f"{current_region}", self._larva_loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        cv2.putText(img_annotate, f"{current_region}", self._larva_loc.astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        for j in range(len(self._state_machine.locs)):
+            rr = self._state_machine.locs[j].astype(int)
+            cv2.putText(img_annotate, f"{j+1}", rr, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return img_annotate
 
 
@@ -152,14 +184,14 @@ class MazeController:
         self._csvwriter.writerow(self._stats.keys())
 
     def close_csv(self):
-        self._csvfile.close()
+#        self._csvfile.close()
         self._csvwriter = None
         self._csvfile = None
 
     def _write_state_to_text(self):
         if self._csvwriter is not None:
             try:
-                self._csvwriter.writerow(self._stats.keys())
+                self._csvwriter.writerow(self._stats.values())
             except TimeoutError:
                 pass # nothing
     def _set_leds(self, led1rgb = None, led2rgb = None, led3rgb = None):
@@ -180,7 +212,7 @@ class MazeController:
 
     def open_video_out(self, vidfilename):
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), False)
+        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), True)
 
     def close_video_out(self):
         self._vid_writer.release()
@@ -188,7 +220,7 @@ class MazeController:
 
     def _write_video(self):
         if self._vid_writer is not None:
-            self._vid_writer.write(self._img)
+            self._vid_writer.write(self.debug_image())
         #TODO annotate
 
     def _write_data(self):

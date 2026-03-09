@@ -31,7 +31,8 @@ fstub = fstub.parents[0] / 'python test' / 'test100'
 md = MazeDispatcher(ymg)
 md.open_csv(fstub)
 md.open_video(fstub)
-for j in range(200):
+tt = None
+for j in range(1000):
     print(f"processing frame {j}")
     [ret,frame] = vc.read()
     if frame.ndim == 3:
@@ -39,6 +40,9 @@ for j in range(200):
     if not ret:
         print("could not read frame " + j)
         break
+    if tt is not None:
+        for t in tt:
+            t.join()
     md.new_frame(frame, multi_thread=False)
     md._maze_minions[1].debug_display()
     cv2.waitKey(100)

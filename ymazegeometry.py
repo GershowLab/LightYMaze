@@ -70,6 +70,30 @@ class YMazeGeometry:
         state1 = x**2 + y**2 <= (self.central_circle_dia/2)**2
         mask[state1] = 1
         return mask
+    # from documentation
+    # • Intersection: state 1
+    # • Channel 1: state 2
+    # • Channel 2: state 3
+    # • Channel 3: state 4
+    # • Circle 1: state 5
+    # • Circle 2: state 6
+    # • Circle 3: state 7
+    def generate_connectivity_matrix(self, transition_probability = 0.01):
+        c = np.zeros((8,8))
+
+        #intersection is connected to channels bidirectionally
+        c[1,(1,2,3)] = 1
+        c[(1,2,3),1] = 1
+
+        #channels are connected to circles bidirectionally
+        for j in range(2,5):
+            c[j,j+3] = 1
+            c[j+3,j] = 1
+
+        c = transition_probability*c
+        for j in range(8):
+            c[j,j] = 1 - np.sum(c[j,:])
+
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
         regionmask = np.zeros_like(maze_mask);

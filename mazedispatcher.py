@@ -47,6 +47,8 @@ class MazeDispatcher:
         else:
             for mm in self._maze_minions:
                 mm.new_frame_nothread(img, frame_number, frame_time)
+            tt = None
+        return tt
 
 
 
