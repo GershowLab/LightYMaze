@@ -8,6 +8,8 @@ from statemachine import StateMachine
 from lightcontroller import LightController
 from viterbi import Viterbi
 
+from pathlib import Path
+
 import csv
 import _csv
 
@@ -44,6 +46,7 @@ class MazeController:
         self._region_baseline = np.zeros(self._num_regions)
         self._transition_probs = transition_probabilities
         self._state_history = None
+        self._im_min = None
         self._stats = {
             "MazeID": self._maze_ID,
             "Frame": 0,
@@ -79,6 +82,10 @@ class MazeController:
         if self._lock.acquire(blocking=False):
             try:
                 self._img = img # pass a copy to new_image
+                if self._im_min is None:
+                    self._im_min = img.copy()
+                else:
+                    self._im_min = np.minimum(self._im_min, img)
                 if frame_number is None:
                     self._frame_number += 1
                 else:
@@ -90,7 +97,7 @@ class MazeController:
                 if self._bak is None:
                     self._bak = BakCreator(self._stack_len, 0.02, img)
 
-                self._calc_region_sums(img)
+                self._calc_region_sums(img-self._im_min)
                 #during initialization period, just update background
                 if (self._num_frames_to_initialize > 0):
                     self._bak.update_background(img)
@@ -191,6 +198,7 @@ class MazeController:
         for j in range(len(self._state_machine.locs)):
             rr = self._state_machine.locs[j].astype(int)
             cv2.putText(img_annotate, f"{j+1}", rr, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.putText(img_annotate, f"{self._frame_number}", (5,15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return img_annotate
 
     def debug_plots(self):
@@ -201,11 +209,13 @@ class MazeController:
 
     def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
+      #  self._regions_file_name = Path(filename).with_suffix(".txt")
         self._csvwriter = csv.writer(self._csvfile, delimiter='\t')
         self._csvwriter.writerow(self._stats.keys())
 
     def close_csv(self):
 #        self._csvfile.close()
+       # np.savetxt(self._regions_file_name, self._region_sums)
         self._csvwriter = None
         self._csvfile = None
 
@@ -245,7 +255,7 @@ class MazeController:
         #TODO annotate
 
     def _write_data(self):
-        print(self._stats)
+       # print(self._stats)
         self._write_state_to_text()
         self._write_video()
 

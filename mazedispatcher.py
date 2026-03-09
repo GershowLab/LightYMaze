@@ -32,6 +32,10 @@ class MazeDispatcher:
         for mm in self._maze_minions:
             mm.close_video()
 
+    def save_regions(self,fstub):
+        for mm in self._maze_minions:
+            mm.save_region_sums(fstub)
+
     def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False, multi_thread = True):
         if frame_number is None:
             self._frame_number += 1
@@ -79,6 +83,8 @@ class MazeMinion:
         #     plt.show(False)
         return t
 
+    def save_region_sums(self, fstub):
+        np.savetxt(f"{fstub}{self._maze_id}regions.txt",self._maze_controller._region_sums)
     def open_csv(self, fstub):
         self._maze_controller.open_csv(f"{fstub}{self._maze_id}.csv")
 

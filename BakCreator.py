@@ -1,11 +1,11 @@
 import numpy as np
 import cv2
 from collections import deque
-from threading import BoundedSemaphore
+from threading import Lock
 
 
 class BakCreator:
-    _semaphore: BoundedSemaphore
+    _lock: Lock
 
     def __init__(self, stacklen, alpha, bgim):
         self._stack_len = stacklen
@@ -15,46 +15,39 @@ class BakCreator:
         self._Tims = FIFO(10,
                          'Tims')  # thresholded images - used to detect periods of no motion so background does not update
         self._updatetime = 0
-        self._semaphore = BoundedSemaphore(1)
+        self._lock = Lock()
 
     def _or_stack(self, stack):
-        if stack:
-            if len(stack) == 1:
-                print("Premature Stack")
-                return stack[0]
-            else:
-                a = stack[0]
-                for i in range(len(stack) - 1):
-                    or_i = cv2.bitwise_or(a, stack[i + 1])
-                    a = or_i
-                return a
-        else:
-            print("Problem wih orStack: input stack is empty")
+        a = stack[0].copy()
+        for i in range(1,len(stack)):
+            a = cv2.bitwise_or(a,stack[i],a)
+        return a
 
     def _update(self, newIm, fgthresh = None):
         self._Ims.add(newIm)
         if not (fgthresh is None):
             self._Tims.add(fgthresh)
-        if self._Ims.loading == False:
-            self._bgim = np.median(self._Ims.stack, axis=0).astype(dtype=np.uint8)
+        self._bgim = np.min(self._Ims.stack, axis=0).astype(dtype=np.uint8) #changed from median to min
+        self._updatetime = 0
 
+    def _check_thresh_movement(self, fgthresh = None):
+        if fgthresh is None:
+            return True #do update
+        if self._Tims.loading:
+            return True #change from previous behavior where bg was not updated until tims loaded
+        tmask = self._or_stack(self._Tims) # or of recently added thresholded images
+        nnz = 0
+        for ti in self._Tims.stack:
+            nnz += cv2.countNonZero(ti)
+        nnz /= len(self._Tims.stack)
+        nnew = cv2.countNonZero(cv2.bitwise_and(cv2.bitwise_not(tmask), fgthresh))
+        return nnew >= self._alpha*nnz
     def update_background(self, newIm, fgthresh = None):
-        if self._semaphore.acquire(blocking=False):
-            if fgthresh is None:
+        with self._lock:
+            if self._check_thresh_movement(fgthresh):
                 self._update(newIm, fgthresh)
-                self._updatetime = 0
             else:
-                if self._Tims.loading:
-                    self._Tims.add(fgthresh)
-                else:
-                    self._timsOR = self._or_stack(self._Tims.stack)
-                    numNewPix = cv2.countNonZero(cv2.bitwise_and(fgthresh, cv2.bitwise_not(self._timsOR)))
-                    if numNewPix > (self._alpha * cv2.countNonZero(fgthresh)):
-                        self._update(newIm, fgthresh)
-                        self._updatetime = 0
-                    else:
-                        self._updatetime += 1
-            self._semaphore.release()
+                self._updatetime += 1
     def get_background(self):
         return self._bgim
     def get_foreground(self, im):

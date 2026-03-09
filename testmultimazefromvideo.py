@@ -33,19 +33,22 @@ md = MazeDispatcher(ymg)
 md.open_csv(fstub)
 md.open_video(fstub)
 tt = None
-for j in range(1000):
-    print(f"processing frame {j}")
-    [ret,frame] = vc.read()
-    if frame.ndim == 3:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    if not ret:
-        print("could not read frame " + j)
-        break
-    if tt is not None:
-        for t in tt:
-            t.join()
-    md.new_frame(frame, multi_thread=False)
-    md._maze_minions[1].debug_display()
-    cv2.waitKey(1)
-md.close_csv()
-md.close_video()
+try:
+    for j in range(3600):
+        print(f"processing frame {j}")
+        [ret,frame] = vc.read()
+        if frame.ndim == 3:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if not ret:
+            print("could not read frame " + j)
+            break
+        if tt is not None:
+            for t in tt:
+                t.join()
+        md.new_frame(frame, multi_thread=False)
+        md._maze_minions[1].debug_display()
+        cv2.waitKey(1)
+finally:
+    md.save_regions(fstub)
+    md.close_csv()
+    md.close_video()
