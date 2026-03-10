@@ -1,5 +1,7 @@
 import time
 
+import pandas as pd
+
 from lightcontroller import LightController
 from ymazegeometry import YMazeGeometry
 from mazecontroller import MazeController
@@ -13,28 +15,32 @@ class MazeDispatcher:
         self._ymg = ymg
         self._maze_mask, self._region_mask = ymg.generate_maze_mask()
         self._light_controller = light_controller
-        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,np.max(self._maze_mask).astype(int))]
+        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
 
-    def open_csv(self, fstub):
-        for mm in self._maze_minions:
-            mm.open_csv(fstub)
+    # def open_csv(self, fstub):
+    #     for mm in self._maze_minions:
+    #         mm.open_csv(fstub)
 
     def open_video(self, fstub):
         for mm in self._maze_minions:
             mm.open_video(fstub)
 
-    def close_csv(self):
-        for mm in self._maze_minions:
-            mm.close_csv()
+    # def close_csv(self):
+    #     for mm in self._maze_minions:
+    #         mm.close_csv()
 
     def close_video(self):
         for mm in self._maze_minions:
             mm.close_video()
 
-    def save_regions(self,fstub):
-        for mm in self._maze_minions:
-            mm.save_region_sums(fstub)
+    # def save_regions(self,fstub):
+    #     for mm in self._maze_minions:
+    #         mm.save_region_sums(fstub)
+
+    def get_data_frame(self):
+        df = [mm.get_dataframe() for mm in self._maze_minions]
+        return pd.concat(df)
 
     def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False, multi_thread = True):
         if frame_number is None:
@@ -74,22 +80,19 @@ class MazeMinion:
     def new_frame(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
         t = Thread(target=self._maze_controller.new_image, args=(roi, frame_number, frame_time))
-        t.start() # maze_controller.new_image returs immediately if processing another frame
-        # if (self._maze_id == 4):
-        #     t.join()
-        #     plt.figure(4)
-        #     plt.clf()
-        #     self._maze_controller.calc_prob_sequence(True)
-        #     plt.show(False)
+        t.start() # maze_controller.new_image returns immediately if processing another frame
         return t
 
     def save_region_sums(self, fstub):
         np.savetxt(f"{fstub}{self._maze_id}regions.txt",self._maze_controller._region_sums)
-    def open_csv(self, fstub):
-        self._maze_controller.open_csv(f"{fstub}{self._maze_id}.csv")
+    # def open_csv(self, fstub):
+    #     self._maze_controller.open_csv(f"{fstub}{self._maze_id}.csv")
+    #
+    # def close_csv(self):
+    #     self._maze_controller.close_csv()
 
-    def close_csv(self):
-        self._maze_controller.close_csv()
+    def get_dataframe(self) -> pd.DataFrame:
+        return self._maze_controller.get_dataframe()
 
     def open_video(self, fstub):
         self._maze_controller.open_video_out(f"{fstub}{self._maze_id}.mp4")

@@ -2,6 +2,7 @@ from typing import List
 
 import cv2
 import numpy as np
+import pandas as pd
 
 from BakCreator import BakCreator
 from statemachine import StateMachine
@@ -69,8 +70,11 @@ class MazeController:
             "Led3B": 0,
             "Led3PCT": 100
         }
+        self._df = pd.DataFrame(columns=self._stats.keys())
         self._lock = Lock()
 
+    def get_dataframe(self):
+        return self._df
     def _get_region_centers(self):
         locs: list[np.ndarray] = []
         for j in range(1,self._num_regions+1):
@@ -87,6 +91,7 @@ class MazeController:
                     self._frame_number += 1
                 else:
                     self._frame_number = frame_number
+                self._stats["Frame"] = self._frame_number
                 if capture_time is None:
                     self._stats["FrameTime"] = time.monotonic()
                 else:
@@ -103,10 +108,9 @@ class MazeController:
                 else:
                     thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
                     self._bak.update_background(img, thresh, self._larva_mask)
-                    self._stats["Frame"] = self._frame_number
                     self._updateLarva(thresh)
-                    self._write_video()
-                    self._write_data()
+                self._write_video()
+                self._df.loc[len(self._df)] = self._stats
             finally:
                 self._lock.release()
 
@@ -199,21 +203,21 @@ class MazeController:
         plt.subplot(3, 1, 1)
         plt.plot(self._cal)
 
-    def open_csv(self, filename):
-        self._csvfile = open(filename, 'w', newline='')
-        self._csvwriter = csv.writer(self._csvfile, delimiter='\t')
-        self._csvwriter.writerow(self._stats.keys())
-
-    def close_csv(self):
-        self._csvwriter = None
-        self._csvfile = None
-
-    def _write_state_to_text(self):
-        if self._csvwriter is not None:
-            try:
-                self._csvwriter.writerow(self._stats.values())
-            except TimeoutError:
-                pass # nothing
+    # def open_csv(self, filename):
+    #     self._csvfile = open(filename, 'w', newline='')
+    #     self._csvwriter = csv.writer(self._csvfile, delimiter='\t')
+    #     self._csvwriter.writerow(self._stats.keys())
+    #
+    # def close_csv(self):
+    #     self._csvwriter = None
+    #     self._csvfile = None
+    #
+    # def _write_state_to_text(self):
+    #     if self._csvwriter is not None:
+    #         try:
+    #             self._csvwriter.writerow(self._stats.values())
+    #         except TimeoutError:
+    #             pass # nothing
     def _set_leds(self, led1rgb = None, led2rgb = None, led3rgb = None):
         if led1rgb is not None:
             self._set_led(1, led1rgb[0], led1rgb[1],led1rgb[2])
@@ -244,11 +248,6 @@ class MazeController:
     def _write_video(self):
         if self._vid_writer is not None:
             self._vid_writer.write(self.debug_image())
-
-    def _write_data(self):
-       # print(self._stats)
-        self._write_state_to_text()
-        self._write_video()
 
 
 
