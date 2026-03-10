@@ -26,10 +26,11 @@ class MazeController:
         self._maze_ID = maze_ID
         self._bak:BakCreator = None
         self._light_controller = light_controller
-        self._region_map = region_map.astype(int)
+        self._region_map = region_map.astype(np.uint8)
+        self._maze_mask = 255 * (self._region_map > 0).astype(np.uint8) # cv2.morphologyEx((self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
         self._h, self._w = self._region_map.shape # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))
-        self._num_regions = np.max(region_map).astype(int)
+        self._num_regions = np.max(region_map).astype(np.uint8)
         locs = self._get_region_centers()
         self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 60
@@ -82,10 +83,6 @@ class MazeController:
         if self._lock.acquire(blocking=False):
             try:
                 self._img = img # pass a copy to new_image
-                if self._im_min is None:
-                    self._im_min = img.copy()
-                else:
-                    self._im_min = np.minimum(self._im_min, img)
                 if frame_number is None:
                     self._frame_number += 1
                 else:
@@ -95,17 +92,17 @@ class MazeController:
                 else:
                     self._stats["FrameTime"]  = capture_time
                 if self._bak is None:
-                    self._bak = BakCreator(self._stack_len, 0.02, img)
+                    self._bak = BakCreator(self._stack_len, 0.1, img)
 
-                self._calc_region_sums(img-self._im_min)
+                self._calc_region_sums(img)
                 #during initialization period, just update background
-                if (self._num_frames_to_initialize > 0):
+                if self._num_frames_to_initialize > 0:
                     self._bak.update_background(img)
                     self._num_frames_to_initialize -= 1
-                    print(f"{self._maze_ID}: frames left to initialize = {self._num_frames_to_initialize}")
+                    # print(f"{self._maze_ID}: frames left to initialize = {self._num_frames_to_initialize}")
                 else:
-                    thresh = self._bak.get_thresholded_image(img, self._threshold)
-                    self._bak.update_background(img, thresh)
+                    thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
+                    self._bak.update_background(img, thresh, self._larva_mask)
                     self._stats["Frame"] = self._frame_number
                     self._updateLarva(thresh)
                     self._write_video()
@@ -119,15 +116,15 @@ class MazeController:
             pxsum[j] = np.sum(img[self._region_map == j])
         self._region_sums.append(pxsum)
 
-    def _calc_region_baseline(self, state_hist = None):
-        self._baseline =  np.median(self._region_sums, axis = 1)
-        # if state_hist is None:
-        #     return
-        # for i in range(1,self._num_regions+1):
-        #     rs = self._region_sums[i]
-        #     v = self._transition_probs[i,:] == 0 # larva is known to be in a non-adjoining region
-        #     if len(v) > 10:
-        #         self._baseline[i] = np.median(rs[v])
+    def _calc_region_baseline(self, state_history = None):
+        self._baseline = np.median(self._region_sums, axis = 1)
+        if state_history is None:
+            return
+        for i in range(1,self._num_regions+1):
+            rs = self._region_sums[i]
+            v = self._transition_probs[i,state_history] == 0 # larva is known to be in a non-adjoining region
+            if len(v) > 10:
+                self._baseline[i] = np.median(rs[v])
 
     def calc_prob_sequence(self, debug=False):
         pobs = np.array(self._region_sums) - self._baseline[:,np.newaxis]
@@ -152,12 +149,12 @@ class MazeController:
     def _updateLarva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
             thresh, connectivity=8
-        ) # , ltype=cv2.CV_32S
+        )
         area = [stats[i, cv2.CC_STAT_AREA] for i in range(1,num_labels)]
         try:
             larva_ind = np.argmax(area) + 1
             self._larva_loc = centroids[larva_ind]
-            self._larva_mask = (labels == larva_ind)
+            self._larva_mask = (labels == larva_ind).astype(np.uint8)*255
             self._stats["LarvaArea"] = float(area[larva_ind-1])
         except:
             larva_ind = 1
@@ -178,18 +175,13 @@ class MazeController:
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         thresh = cv2.cvtColor(self._bak.get_thresholded_image(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
-        # r = self._img.copy()
-        # r[self._larva_mask] = 255
-        # b = self._img.copy()
-        # b[self._region_map == self._stats["Region"]] = 255
-        # img_annotate = cv2.merge((b,self._img,r))
         img_annotate = self.debug_image()
         montage = np.vstack((np.hstack((img,bak)), np.hstack((thresh, img_annotate))))
         return montage
 
     def debug_image(self):
         r = self._img.copy()
-        r[self._larva_mask] = 255
+        r[self._larva_mask > 0] = 255
         b = self._img.copy()
         b[self._region_map == self._stats["Region"]] = 255
         img_annotate = cv2.merge((b, self._img, r))
@@ -209,13 +201,10 @@ class MazeController:
 
     def open_csv(self, filename):
         self._csvfile = open(filename, 'w', newline='')
-      #  self._regions_file_name = Path(filename).with_suffix(".txt")
         self._csvwriter = csv.writer(self._csvfile, delimiter='\t')
         self._csvwriter.writerow(self._stats.keys())
 
     def close_csv(self):
-#        self._csvfile.close()
-       # np.savetxt(self._regions_file_name, self._region_sums)
         self._csvwriter = None
         self._csvfile = None
 
@@ -244,7 +233,10 @@ class MazeController:
     def open_video_out(self, vidfilename):
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), True)
-
+        if self._vid_writer is not None:
+            print(f"{vidfilename} writer open: {self._vid_writer.isOpened()}")#, backend = {self._vid_writer.getBackendName()}")
+        else:
+            print(f"failed to open {vidfilename}")
     def close_video_out(self):
         self._vid_writer.release()
         self._vid_writer = None
@@ -252,7 +244,6 @@ class MazeController:
     def _write_video(self):
         if self._vid_writer is not None:
             self._vid_writer.write(self.debug_image())
-        #TODO annotate
 
     def _write_data(self):
        # print(self._stats)

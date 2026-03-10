@@ -23,8 +23,14 @@ class BakCreator:
             a = cv2.bitwise_or(a,stack[i],a)
         return a
 
-    def _update(self, newIm, fgthresh = None):
-        self._Ims.add(newIm)
+    def _update(self, newIm, fgthresh = None, larvathresh = None):
+        if larvathresh is not None:
+            li = cv2.morphologyEx(larvathresh, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8)) > 0
+            ni = newIm.copy()
+            ni[li] = self._bgim[li]
+            self._Ims.add(ni)
+        else:
+            self._Ims.add(newIm)
         if not (fgthresh is None):
             self._Tims.add(fgthresh)
         self._bgim = np.min(self._Ims.stack, axis=0).astype(dtype=np.uint8) #changed from median to min
@@ -35,17 +41,17 @@ class BakCreator:
             return True #do update
         if self._Tims.loading:
             return True #change from previous behavior where bg was not updated until tims loaded
-        tmask = self._or_stack(self._Tims) # or of recently added thresholded images
+        tmask = self._or_stack(self._Tims.stack) # or of recently added thresholded images
         nnz = 0
         for ti in self._Tims.stack:
             nnz += cv2.countNonZero(ti)
         nnz /= len(self._Tims.stack)
         nnew = cv2.countNonZero(cv2.bitwise_and(cv2.bitwise_not(tmask), fgthresh))
         return nnew >= self._alpha*nnz
-    def update_background(self, newIm, fgthresh = None):
+    def update_background(self, newIm, fgthresh = None, larvathresh = None):
         with self._lock:
             if self._check_thresh_movement(fgthresh):
-                self._update(newIm, fgthresh)
+                self._update(newIm, fgthresh, larvathresh)
             else:
                 self._updatetime += 1
     def get_background(self):

@@ -6,8 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
-#basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
-basedir = Path('G:\\')
+basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
+#basedir = Path('G:\\')
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'y-maze pictures' / 'y-maze feb 26' / 'Basler_acA1920-150um__21902780__20260226_125212812_%04d.tiff'
 
 print(fstub)
@@ -33,10 +33,10 @@ md = MazeDispatcher(ymg)
 md.open_csv(fstub)
 md.open_video(fstub)
 tt = None
+#written assuming you've already got a frame from above
 try:
     for j in range(3600):
         print(f"processing frame {j}")
-        [ret,frame] = vc.read()
         if frame.ndim == 3:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if not ret:
@@ -46,8 +46,11 @@ try:
             for t in tt:
                 t.join()
         md.new_frame(frame, multi_thread=False)
-        md._maze_minions[1].debug_display()
+        md._maze_minions[3].debug_display()
         cv2.waitKey(1)
+        [ret, frame] = vc.read()
+        if not ret:
+            break
 finally:
     md.save_regions(fstub)
     md.close_csv()
