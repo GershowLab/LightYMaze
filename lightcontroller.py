@@ -6,7 +6,7 @@ try:
         def __init__(self):
             self.num_mazes = 9
             self.strip = apa102.APA102(num_led=3*self.num_mazes, global_brightness=9)
-            self.semaphore = threading.Lock()
+            self.lock = threading.Lock()
 
         def set_global_brightness(self, global_brightness):
             self.strip.set_global_brightness(global_brightness)
@@ -14,6 +14,7 @@ try:
         def set_led(self, maze_num, channel_num, red, green, blue, bright_pct = 100):
             with self.lock:
                 self.strip.set_pixel(3*maze_num+channel_num,red, green, blue, bright_percent=bright_pct)
+                print(f"{maze_num}, {channel_num}: {red},{green},{blue}")
 
         def update_leds(self):
             with self.lock:
@@ -33,10 +34,22 @@ except:
 
 def ledtest():
     lc = LightController()
+    to = 0.2
     for m in range(lc.num_mazes):
         for c in range(3):
             lc.set_led(m,c,0,0,255)
-            sleep(0.1)
+            lc.update_leds()
+            sleep(to)
+            lc.set_led(m,c,255,0,0)
+            lc.update_leds()
+            sleep(to)
+            lc.update_leds()
+            lc.set_led(m,c,0,255,0)
+            lc.update_leds()
+            sleep(to)
+            lc.set_led(m,c,0,0,0)
+
+           
 
 if __name__ == "__main__":
     ledtest()
