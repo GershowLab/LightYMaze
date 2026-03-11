@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import cv2
 import glob
+from enum import Enum
 
 class YMazeGeometry:
     def __init__(self):
@@ -248,6 +249,28 @@ def main(folder_path):
 
     # Split TIFF frames
     split_tiff_folder_into_9(folder_path, ymg)
+#from documentation
+#• Intersection: state 1
+#• Channel 1: state 2
+#• Channel 2: state 3
+#• Channel 3: state 4
+#• Circle 1: state 5
+#• Circle 2: state 6
+#• Circle 3: state 7
+class MazePart(Enum):
+    INTERSECTION = 1
+    CHANNEL1 = 2
+    CHANNEL2 = 3
+    CHANNEL3 = 4
+    CHANNEL4 = 5
+    CHANNEL5 = 6
+    CHANNEL6 = 7
+
+    @staticmethod
+    def all_parts():
+        return range(1,8)
+
+
 
 if __name__ == "__main__":
     import sys
@@ -268,7 +291,6 @@ def marctest():
     plt.imshow(rm)
     plt.show(block=True)
     print("test finished")
-
 
 
 
