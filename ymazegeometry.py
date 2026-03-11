@@ -270,7 +270,7 @@ class MazePart(Enum):
     CHANNEL3 = 4
     CIRCLE1 = 5
     CIRCLE2 = 6
-    CHANNEL6 = 7
+    CIRCLE3 = 7
 
     @staticmethod
     def all_parts():
