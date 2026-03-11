@@ -5,45 +5,47 @@ import cv2
 import glob
 from enum import Enum
 
+
 class YMazeGeometry:
     def __init__(self):
         self.y_mm = None
         self.x_mm = None
-        self.maze_spacing = 9 #mm
-        self.maze_centers = np.array([[0,2], [-1,1],[1,1], [2,0],[0,0],[-2,0],[-1,-1],[1,-1],[0,-2]])
-        self.channel_length = 1.818 #mm
-        self.channel_width = 0.4 #mm
-        self.circle_dia = 2.5 #mm
-        self.circle_offset = 3.052 #mm
-        self.central_circle_dia = .462 #mm -- exclude overlapping channel regions
-        self.im_size_px = np.array([1000,1000])
-        self.center_px = self.im_size_px/2.0
-        self.rotation = 0 #radians
+        self.maze_spacing = 9  # mm
+        self.maze_centers = np.array([[0, 2], [-1, 1], [1, 1], [2, 0], [0, 0], [-2, 0], [-1, -1], [1, -1], [0, -2]])
+        self.channel_length = 1.818  # mm
+        self.channel_width = 0.4  # mm
+        self.circle_dia = 2.5  # mm
+        self.circle_offset = 3.052  # mm
+        self.central_circle_dia = .462  # mm -- exclude overlapping channel regions
+        self.im_size_px = np.array([1000, 1000])
+        self.center_px = self.im_size_px / 2.0
+        self.rotation = 0  # radians
         self.mm_per_px = 0.05
         self.generate_coordinates()
-        #TODO more general affine transformation
+        # TODO more general affine transformation
 
     def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
         self.center_px = centerPoint
-        distmm = np.linalg.norm(self.maze_centers[3])*self.maze_spacing
-        delta_px = maze4Center-centerPoint
+        distmm = np.linalg.norm(self.maze_centers[3]) * self.maze_spacing
+        delta_px = maze4Center - centerPoint
         distpx = np.linalg.norm(delta_px)
-        self.mm_per_px = distmm/distpx
-        #this is hacky based on knowing maze4 is horizontally offset
+        self.mm_per_px = distmm / distpx
+        # this is hacky based on knowing maze4 is horizontally offset
         self.rotation = np.arctan2(-delta_px[1], delta_px[0])
 
     def set_image_size(self, sz):
         self.im_size_px = np.array(sz)
-        self.center_px = self.im_size_px/2.0
+        self.center_px = self.im_size_px / 2.0
         self.generate_coordinates()
 
     def generate_coordinates(self):
-        x,y = np.meshgrid(np.arange(self.im_size_px[1])-self.center_px[0], np.arange(self.im_size_px[0])-self.center_px[1])
+        x, y = np.meshgrid(np.arange(self.im_size_px[1]) - self.center_px[0],
+                           np.arange(self.im_size_px[0]) - self.center_px[1])
         c = np.cos(self.rotation)
         s = np.sin(self.rotation)
 
-        self.x_mm = (c*x - s*y)*self.mm_per_px
-        self.y_mm = (s*x + c*y)*self.mm_per_px
+        self.x_mm = (c * x - s * y) * self.mm_per_px
+        self.y_mm = (s * x + c * y) * self.mm_per_px
 
     # from documentation
     # • Intersection: state 1
@@ -55,22 +57,23 @@ class YMazeGeometry:
     # • Circle 3: state 7
     def generate_region_mask(self, maze_index):
         mask = np.zeros_like(self.x_mm)
-        ctr_mm = self.maze_centers[maze_index]*self.maze_spacing
-        #reference geometry to maze center
+        ctr_mm = self.maze_centers[maze_index] * self.maze_spacing
+        # reference geometry to maze center
         x = self.x_mm - ctr_mm[0]
         y = self.y_mm - ctr_mm[1]
         for j in range(3):
-            c = np.cos(2*np.pi/3 * j)
-            s = np.sin(2*np.pi/3*j)
-            xr = c*x - s*y
-            yr = c*y + s*x
+            c = np.cos(2 * np.pi / 3 * j)
+            s = np.sin(2 * np.pi / 3 * j)
+            xr = c * x - s * y
+            yr = c * y + s * x
             channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width);
-            circle = (xr - self.circle_offset)**2 + yr**2 < (self.circle_dia/2)**2
+            circle = (xr - self.circle_offset) ** 2 + yr ** 2 < (self.circle_dia / 2) ** 2
             mask[channel] = j + 2
             mask[circle] = j + 5
-        state1 = x**2 + y**2 <= (self.central_circle_dia/2)**2
+        state1 = x ** 2 + y ** 2 <= (self.central_circle_dia / 2) ** 2
         mask[state1] = 1
         return mask
+
     # from documentation
     # • Intersection: state 1
     # • Channel 1: state 2
@@ -79,21 +82,21 @@ class YMazeGeometry:
     # • Circle 1: state 5
     # • Circle 2: state 6
     # • Circle 3: state 7
-    def generate_connectivity_matrix(self, transition_probability = 0.01):
-        c = np.zeros((8,8))
+    def generate_connectivity_matrix(self, transition_probability=0.01):
+        c = np.zeros((8, 8))
 
-        #intersection is connected to channels bidirectionally
-        c[1,(2,3,4)] = 1
-        c[(2,3,4),1] = 1
+        # intersection is connected to channels bidirectionally
+        c[1, (2, 3, 4)] = 1
+        c[(2, 3, 4), 1] = 1
 
-        #channels are connected to circles bidirectionally
-        for j in range(2,5):
-            c[j,j+3] = 1
-            c[j+3,j] = 1
+        # channels are connected to circles bidirectionally
+        for j in range(2, 5):
+            c[j, j + 3] = 1
+            c[j + 3, j] = 1
 
-        c = transition_probability*c
+        c = transition_probability * c
         for j in range(8):
-            c[j,j] = 1 - np.sum(c[j,:])
+            c[j, j] = 1 - np.sum(c[j, :])
         return c
 
     def generate_maze_mask(self):
@@ -101,14 +104,15 @@ class YMazeGeometry:
         regionmask = np.zeros_like(maze_mask);
         for j in range(len(self.maze_centers)):
             rm = self.generate_region_mask(j)
-            maze_mask[rm>0] = j+1
-            regionmask[rm>0] = rm[rm>0]
+            maze_mask[rm > 0] = j + 1
+            regionmask[rm > 0] = rm[rm > 0]
         return maze_mask, regionmask
 
     def calibrate_geometry_from_image(self, frame):
 
         points = []
         self.set_image_size(frame.shape)
+
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 print(f"Selected: ({x}, {y})")
@@ -166,8 +170,8 @@ def calibrate_geometry_from_image(frame, ymg):
     # print("Calibration complete.")
     # plt.show()
 
-def split_tiff_folder_into_9(folder_path, ymg, fps=30):
 
+def split_tiff_folder_into_9(folder_path, ymg, fps=30):
     # Collect TIFF files (supports .tif and .tiff)
     tiff_files = sorted(
         glob.glob(os.path.join(folder_path, "*.tif")) +
@@ -199,7 +203,7 @@ def split_tiff_folder_into_9(folder_path, ymg, fps=30):
         width = x_max - x_min
         height = y_max - y_min
 
-        output_path = os.path.join(folder_path, f"maze_{i+1}.mp4")
+        output_path = os.path.join(folder_path, f"maze_{i + 1}.mp4")
         writers.append(cv2.VideoWriter(output_path, fourcc, fps, (width, height)))
 
     print("Splitting TIFF sequence...")
@@ -249,27 +253,28 @@ def main(folder_path):
 
     # Split TIFF frames
     split_tiff_folder_into_9(folder_path, ymg)
-#from documentation
-#• Intersection: state 1
-#• Channel 1: state 2
-#• Channel 2: state 3
-#• Channel 3: state 4
-#• Circle 1: state 5
-#• Circle 2: state 6
-#• Circle 3: state 7
+
+
+# from documentation
+# • Intersection: state 1
+# • Channel 1: state 2
+# • Channel 2: state 3
+# • Channel 3: state 4
+# • Circle 1: state 5
+# • Circle 2: state 6
+# • Circle 3: state 7
 class MazePart(Enum):
     INTERSECTION = 1
     CHANNEL1 = 2
     CHANNEL2 = 3
     CHANNEL3 = 4
-    CHANNEL4 = 5
-    CHANNEL5 = 6
+    CIRCLE1 = 5
+    CIRCLE2 = 6
     CHANNEL6 = 7
 
     @staticmethod
     def all_parts():
-        return range(1,8)
-
+        return range(1, 8)
 
 
 if __name__ == "__main__":
@@ -280,10 +285,11 @@ if __name__ == "__main__":
     else:
         main(sys.argv[1])
 
+
 def marctest():
     ymg = YMazeGeometry()
     print(ymg.generate_connectivity_matrix())
-    [mm,rm] = ymg.generate_maze_mask()
+    [mm, rm] = ymg.generate_maze_mask()
     plt.figure(1)
     plt.imshow(mm)
     plt.show(block=False)
@@ -292,15 +298,13 @@ def marctest():
     plt.show(block=True)
     print("test finished")
 
+# marctest()
 
-
-#marctest()
-
-#from documentation
-#• Intersection: state 1
-#• Channel 1: state 2
-#• Channel 2: state 3
-#• Channel 3: state 4
-#• Circle 1: state 5
-#• Circle 2: state 6
-#• Circle 3: state 7
+# from documentation
+# • Intersection: state 1
+# • Channel 1: state 2
+# • Channel 2: state 3
+# • Channel 3: state 4
+# • Circle 1: state 5
+# • Circle 2: state 6
+# • Circle 3: state 7
