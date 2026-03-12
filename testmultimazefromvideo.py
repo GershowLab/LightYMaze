@@ -45,7 +45,7 @@ try:
             for t in tt:
                 t.join()
         md.new_frame(frame, multi_thread=False)
-        md._maze_minions[3].debug_display()
+        md._maze_minions[4].debug_display()
         cv2.waitKey(1)
         [ret, frame] = vc.read()
         if not ret:

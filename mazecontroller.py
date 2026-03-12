@@ -163,6 +163,7 @@ class MazeController:
         b = self._img.copy().astype(np.uint16)
         g = self._img.copy().astype(np.uint16)
 
+        h,w = self._img.shape
         for reg,led in zip((MazePart.CIRCLE1, MazePart.CIRCLE2, MazePart.CIRCLE3),
                   (1,2,3)):
             for im, suf in zip((r,g,b),("R","G","B")):
@@ -173,11 +174,10 @@ class MazeController:
 
         img_annotate = cv2.merge((b.astype(np.uint8), g.astype(np.uint8), r.astype(np.uint8)))
         current_region = self._stats["Region"]
-        print(self._larva_loc.astype(int))
         cv2.putText(img_annotate, f"{current_region}", self._larva_loc.astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1,
                     (255, 255, 0), 2)
         if (self._frame_number < self._last_msg_frame + 30):
-            cv2.putText(img_annotate, self._last_msg, (5, 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
+            cv2.putText(img_annotate, self._last_msg, (5, h-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                         1, bottomLeftOrigin=False)
 
         for r in self._regions:

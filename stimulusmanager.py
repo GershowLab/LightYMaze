@@ -58,7 +58,6 @@ class StimulusManager:
             return
         old_location = self.current_location
         self.current_location = new_location
-        print (f"{self.current_state} from {old_location} to {new_location}")
         for a in self.actions:
             a.poll(old_location, new_location)
 
