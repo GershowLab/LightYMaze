@@ -75,7 +75,14 @@ class MazeController:
         self._set_regions()
 
     def get_dataframe(self):
-        return self._df
+        df = self._df.copy()
+        #try:
+        path = self._viterbi.most_likely_path()
+        p = np.zeros_like(df['Frame'])
+        p[-(len(path)+1):-1] = np.asarray(path)+1
+        df['viterbi_path'] = p
+        #finally:
+        return df
 
     def _set_regions(self):
         self._regions = ymazegeometry.Region.all_regions(self._region_map)

@@ -28,9 +28,9 @@ ymg.generate_coordinates()
 #ymg.calibrate_geometry_from_image(frame)
 
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\python test\\test100'
-fstub = fstub.parents[0] / 'python test' / 'test100'
+fstub = fstub.parents[0] / 'python test' / 'test'
 md = MazeDispatcher(ymg)
-#md.open_video(fstub)
+md.open_video(fstub)
 tt = None
 #written assuming you've already got a frame from above
 try:
@@ -44,8 +44,8 @@ try:
         if tt is not None:
             for t in tt:
                 t.join()
-        md.new_frame(frame, multi_thread=False)
-        md._maze_minions[4].debug_display()
+        tt = md.new_frame(frame, multi_thread=True)
+        md._maze_minions[6].debug_display()
         cv2.waitKey(1)
         [ret, frame] = vc.read()
         if not ret:
