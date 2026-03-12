@@ -134,10 +134,14 @@ class YMazeGeometry:
         self.generate_coordinates()
 
         [mm, rm] = self.generate_maze_mask()
-        plt.imshow(frame)
-        plt.contour(mm)
-        print("Calibration complete.")
-        plt.show()
+        img = frame.copy()
+        r = img.copy()
+        r[mm > 0] = 255
+        return cv2.merge((img,img,r))
+        # plt.imshow(frame)
+        # plt.contour(mm)
+        # print("Calibration complete.")
+        # plt.show()
 
 
 def calibrate_geometry_from_image(frame, ymg):
