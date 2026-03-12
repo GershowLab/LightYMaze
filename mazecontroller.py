@@ -73,6 +73,7 @@ class MazeController:
         self._last_msg_frame = -1000
         self._last_msg = "no message"
         self._set_regions()
+        self._led_update = False
 
     def get_dataframe(self):
         df = self._df.copy()
@@ -130,6 +131,9 @@ class MazeController:
                         self._stats["Message"] = ""
                 self._write_video()
                 self._df.loc[len(self._df)] = self._stats
+                if self._led_update and self._light_controller is not None:
+                    self._light_controller.update_leds()
+                    self._led_update = False
             finally:
                 self._lock.release()
 
@@ -206,6 +210,7 @@ class MazeController:
         self._stats[f"Led{led_ind}PCT"] = bright_pct
         if self._light_controller is not None:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
+            self._led_update = True
 
     def set_ledrgbpct(self, led_ind, rgbpct):
         if rgbpct is None:
