@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import cv2
 import glob
-from enum import Enum
+from enum import IntEnum
 
 
 class YMazeGeometry:
@@ -263,7 +263,7 @@ def main(folder_path):
 # • Circle 1: state 5
 # • Circle 2: state 6
 # • Circle 3: state 7
-class MazePart(Enum):
+class MazePart(IntEnum):
     INTERSECTION = 1
     CHANNEL1 = 2
     CHANNEL2 = 3
@@ -274,7 +274,44 @@ class MazePart(Enum):
 
     @staticmethod
     def all_parts():
-        return range(1, 8)
+        return [MazePart(i) for i in range(1, 8)]
+
+class Region:
+    def __init__(self, part: MazePart, region_map:np.ndarray = None):
+        self.part = part
+        self.loc = np.array((0,0))
+        self.cov = np.eye(2)
+        self.det_cov = np.linalg.det(self.cov)
+        self.icov = np.linalg.inv(self.cov)
+        self.set_region_stats(region_map)
+
+    def set_region_stats(self, region_map:np.ndarray):
+        if region_map is None:
+            return
+        [x, y] = np.meshgrid(np.arange(region_map.shape[1]), np.arange(region_map.shape[0]))
+        xv = x[region_map == self.part]
+        yv = y[region_map == self.part]
+        self.loc = np.array((np.mean(xv), np.mean(yv)))
+        self.cov = np.cov((xv, yv))
+        self.det_cov = np.linalg.det(self.cov)
+        self.icov = np.linalg.inv(self.cov)
+
+    def distance(self, loc):
+        return np.linalg.norm(self.loc - np.asarray(loc))
+
+    def logP(self, loc):
+        dx = np.asarray(loc) - self.loc
+        logP = -0.5*(dx@self.icov@dx + np.log(self.det_cov)) #TODO this formula is wrong
+        return logP
+
+    @staticmethod
+    def all_regions(region_map:np.ndarray):
+        return [Region(r, region_map) for r in MazePart.all_parts()]
+
+    @staticmethod
+    def log_prob_region_list(loc, region_list):
+        log_prob = [r.logP(loc) for r in region_list]
+        return log_prob, region_list[np.argmax(log_prob)].part
 
 
 if __name__ == "__main__":

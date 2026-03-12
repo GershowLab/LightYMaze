@@ -6,8 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
-#basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
-basedir = Path('G:\\')
+basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
+#basedir = Path('G:\\')
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'y-maze pictures' / 'y-maze feb 26' / 'Basler_acA1920-150um__21902780__20260226_125212812_%04d.tiff'
 
 print(fstub)
@@ -30,7 +30,7 @@ ymg.generate_coordinates()
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\python test\\test100'
 fstub = fstub.parents[0] / 'python test' / 'test100'
 md = MazeDispatcher(ymg)
-md.open_video(fstub)
+#md.open_video(fstub)
 tt = None
 #written assuming you've already got a frame from above
 try:
