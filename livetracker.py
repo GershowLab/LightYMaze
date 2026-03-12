@@ -40,14 +40,7 @@ md = MazeDispatcher(ymg)
 for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
     im = frame.array
     im=cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-	
-    if N == fps:            #add a new frame to kernel each second
-            Ims.append(im)
-            N = 1
-    if len(Ims)==window:
-            bgim = np.median(Ims, axis=0).astype(dtype = np.uint8)
-            break
-    N +=1
+	md.new_frame(img, wait_for_completion=True)
     cv2.imshow('background', im)
     key= cv2.waitKey(1) & 0xFF
     rawCapture.truncate(0)
