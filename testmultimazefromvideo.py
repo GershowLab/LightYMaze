@@ -25,7 +25,15 @@ ymg = YMazeGeometry()
 ymg.set_image_size(frame.shape)
 ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
 ymg.generate_coordinates()
-#ymg.calibrate_geometry_from_image(frame)
+for j in range(1000):
+    testim = ymg.calibrate_geometry_from_image(frame)
+    cv2.imshow('mazes', testim)
+    key= cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        break
+    response = input("Are you satisfied with the regions you have selected? (yes/no)")
+    if response == "yes":
+        break
 
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\python test\\test100'
 fstub = fstub.parents[0] / 'python test' / 'test'
