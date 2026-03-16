@@ -23,6 +23,14 @@ camera.resolution = (resx,resy)
 rawCapture = PiRGBArray(camera, size=(resx,resy))
 rawCapture_0 = PiRGBArray(camera, size=(resx,resy))
 
+for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = False):
+	im = frame.array
+	im=cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+	cv2.imshow('focus - c to continue', im)
+	key = cv2.waitKey(1) & 0xFF
+	if key == ord('c'):
+		break
+
 current = read_image(rawCapture_0)
 
 ymg = YMazeGeometry()
