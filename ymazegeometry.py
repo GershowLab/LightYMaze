@@ -38,6 +38,31 @@ class YMazeGeometry:
         self.center_px = self.im_size_px / 2.0
         self.generate_coordinates()
 
+    def sub_image(self, x, y, w, h):
+        self.im_size_px = np.array([h, w])
+        self.center_px = [x,y]
+        self.generate_coordinates()
+
+    def clip_to_mazes(self, pad_px = 5, size_multiple = 32):
+        mm, rm = self.generate_maze_mask()
+        xv = np.any(mm>0, axis=0)
+        yv = np.any(mm>0, axis=1)
+        x1 = np.where(xv)[0]
+        x2 = np.where(xv)[-1]
+        y1 = np.where(yv)[0]
+        y2 = np.where(yv)[-1]
+        cx = 0.5*(x2 + x1)
+        cy = 0.5*(y2 + y1)
+        w = x2 - x1
+        h = y2 - y1
+        w = np.clip(size_multiple * np.ceil((w+pad_px*2) / size_multiple),0, self.im_size_px[1])
+        h = np.clip(size_multiple * np.ceil((h+pad_px*2) / size_multiple), 0, self.im_size_px[0])
+        x = np.max((0,np.round(cx - w/2)))
+        y = np.max((0,np.round(cy - h/2)))
+        self.sub_image(x, y, w, h)
+        return x,y,w,h
+
+
     def generate_coordinates(self):
         x, y = np.meshgrid(np.arange(self.im_size_px[1]) - self.center_px[0],
                            np.arange(self.im_size_px[0]) - self.center_px[1])
@@ -66,7 +91,7 @@ class YMazeGeometry:
             s = np.sin(2 * np.pi / 3 * j)
             xr = c * x - s * y
             yr = c * y + s * x
-            channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width);
+            channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width)
             circle = (xr - self.circle_offset) ** 2 + yr ** 2 < (self.circle_dia / 2) ** 2
             mask[channel] = j + 2
             mask[circle] = j + 5
@@ -146,33 +171,7 @@ class YMazeGeometry:
 
 def calibrate_geometry_from_image(frame, ymg):
     ymg.calibrate_geometry_from_image(frame)
-    #
-    # points = []
-    #
-    # def click_event(event, x, y, flags, param):
-    #     if event == cv2.EVENT_LBUTTONDOWN:
-    #         print(f"Selected: ({x}, {y})")
-    #         points.append(np.array([x, y]))
-    #
-    # cv2.imshow("Click Center Maze, then Right Maze", frame)
-    # cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
-    #
-    # while len(points) < 2:
-    #     cv2.waitKey(1)
-    #
-    # cv2.destroyAllWindows()
-    #
-    # centerPoint = points[0]
-    # rightMazePoint = points[1]
-    #
-    # ymg.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
-    # ymg.generate_coordinates()
-    #
-    # [mm,rm] = ymg.generate_maze_mask()
-    # plt.imshow(frame)
-    # plt.contour(mm)
-    # print("Calibration complete.")
-    # plt.show()
+
 
 
 def split_tiff_folder_into_9(folder_path, ymg, fps=30):

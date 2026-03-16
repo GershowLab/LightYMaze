@@ -7,7 +7,8 @@ from mazedispatcher import MazeDispatcher
 from ymazegeometry import YMazeGeometry
 
 
-def readImage(cap):
+
+def read_image(cap):
 	im = camera.capture(cap, format = 'bgr')
 	im = cap.array
 	im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -16,13 +17,13 @@ def readImage(cap):
 resx,resy = 2464,2464
 camera = PiCamera()
 camera.resolution = (resx,resy)
-camera.framerate = 20
+#camera.framerate = 20
 
 #getting the first frame
 rawCapture = PiRGBArray(camera, size=(resx,resy))
 rawCapture_0 = PiRGBArray(camera, size=(resx,resy))
 
-current = readImage(rawCapture_0)
+current = read_image(rawCapture_0)
 
 ymg = YMazeGeometry()
 while True:
