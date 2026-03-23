@@ -12,15 +12,19 @@ print("boot")
 cap = CameraCapture()
 
 print("cam cap")
-cv2.namedWindow('focus - c to continue');
+cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
 
 print("focus")
 while True:
-	im,ts = cap.capture_frame()
-	cv2.imshow('focus - c to continue', im)
-	key = cv2.waitKey(1) & 0xFF
-	if key == ord('c'):
-		break
+	try:
+		im,ts = cap.capture_frame()
+		cv2.imshow('focus - c to continue', im)
+		key = cv2.waitKey(1) & 0xFF
+		if key == ord('c'):
+			break
+	except:
+		print("error")
+
 
 
 ymg = YMazeGeometry()
