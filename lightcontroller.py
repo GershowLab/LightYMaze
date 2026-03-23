@@ -34,7 +34,7 @@ except:
 
 def ledtest():
     lc = LightController()
-    to = 0.2
+    to = 1
     for m in range(lc.num_mazes):
         for c in range(3):
             lc.set_led(m,c,0,0,255)

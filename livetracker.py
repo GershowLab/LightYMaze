@@ -8,10 +8,13 @@ from ymazegeometry import YMazeGeometry
 
 from cameracapture import CameraCapture
 
+print("boot")
 cap = CameraCapture()
 
+print("cam cap")
+cv2.namedWindow('focus - c to continue');
 
-
+print("focus")
 while True:
 	im,ts = cap.capture_frame()
 	cv2.imshow('focus - c to continue', im)

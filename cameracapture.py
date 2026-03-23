@@ -8,7 +8,8 @@ from picamera2 import Picamera2, Metadata
 class CameraCapture:
     def __init__(self):
         self.cam = Picamera2()
-        paa = self.cam.camera_properties["PixelArrayActiveAreas"]
+        paa = self.cam.camera_properties["PixelArrayActiveAreas"][0]
+        print(paa)
         self.set_bounding_box(*paa)
         self.cam.start()
 
