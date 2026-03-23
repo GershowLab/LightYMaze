@@ -40,28 +40,27 @@ class YMazeGeometry:
 
     def sub_image(self, x, y, w, h):
         self.im_size_px = np.array([h, w])
-        self.center_px = [x,y]
+        self.center_px = [x, y]
         self.generate_coordinates()
 
-    def clip_to_mazes(self, pad_px = 5, size_multiple = 32):
+    def clip_to_mazes(self, pad_px=5, size_multiple=32):
         mm, rm = self.generate_maze_mask()
-        xv = np.any(mm>0, axis=0)
-        yv = np.any(mm>0, axis=1)
+        xv = np.any(mm > 0, axis=0)
+        yv = np.any(mm > 0, axis=1)
         x1 = np.where(xv)[0]
         x2 = np.where(xv)[-1]
         y1 = np.where(yv)[0]
         y2 = np.where(yv)[-1]
-        cx = 0.5*(x2 + x1)
-        cy = 0.5*(y2 + y1)
+        cx = 0.5 * (x2 + x1)
+        cy = 0.5 * (y2 + y1)
         w = x2 - x1
         h = y2 - y1
-        w = np.clip(size_multiple * np.ceil((w+pad_px*2) / size_multiple),0, self.im_size_px[1])
-        h = np.clip(size_multiple * np.ceil((h+pad_px*2) / size_multiple), 0, self.im_size_px[0])
-        x = np.max((0,np.round(cx - w/2)))
-        y = np.max((0,np.round(cy - h/2)))
+        w = np.clip(size_multiple * np.ceil((w + pad_px * 2) / size_multiple), 0, self.im_size_px[1])
+        h = np.clip(size_multiple * np.ceil((h + pad_px * 2) / size_multiple), 0, self.im_size_px[0])
+        x = np.max((0, np.round(cx - w / 2)))
+        y = np.max((0, np.round(cy - h / 2)))
         self.sub_image(x, y, w, h)
-        return x,y,w,h
-
+        return x, y, w, h
 
     def generate_coordinates(self):
         x, y = np.meshgrid(np.arange(self.im_size_px[1]) - self.center_px[0],
@@ -158,20 +157,22 @@ class YMazeGeometry:
         self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
         self.generate_coordinates()
 
-        [mm, rm] = self.generate_maze_mask()
-        img = frame.copy()
-        r = img.copy()
-        r[mm > 0] = 255
-        return cv2.merge((img,img,r))
+        return self.diagnostic_image(frame)
+
         # plt.imshow(frame)
         # plt.contour(mm)
         # print("Calibration complete.")
         # plt.show()
 
+    def diagnostic_image(self, img):
+        [mm, rm] = self.generate_maze_mask()
+        r = img.copy()
+        r[mm > 0] = 255
+        return cv2.merge((img, img, r))
+
 
 def calibrate_geometry_from_image(frame, ymg):
     ymg.calibrate_geometry_from_image(frame)
-
 
 
 def split_tiff_folder_into_9(folder_path, ymg, fps=30):
@@ -279,16 +280,17 @@ class MazePart(IntEnum):
     def all_parts():
         return [MazePart(i) for i in range(1, 8)]
 
+
 class Region:
-    def __init__(self, part: MazePart, region_map:np.ndarray = None):
+    def __init__(self, part: MazePart, region_map: np.ndarray = None):
         self.part = part
-        self.loc = np.array((0,0))
+        self.loc = np.array((0, 0))
         self.cov = np.eye(2)
         self.det_cov = np.linalg.det(self.cov)
         self.icov = np.linalg.inv(self.cov)
         self.set_region_stats(region_map)
 
-    def set_region_stats(self, region_map:np.ndarray):
+    def set_region_stats(self, region_map: np.ndarray):
         if region_map is None:
             return
         [x, y] = np.meshgrid(np.arange(region_map.shape[1]), np.arange(region_map.shape[0]))
@@ -304,11 +306,11 @@ class Region:
 
     def logP(self, loc):
         dx = np.asarray(loc) - self.loc
-        logP = -0.5*(dx@self.icov@dx + np.log(self.det_cov)) #TODO this formula is wrong
+        logP = -0.5 * (dx @ self.icov @ dx + np.log(self.det_cov))  # TODO this formula is wrong
         return logP
 
     @staticmethod
-    def all_regions(region_map:np.ndarray):
+    def all_regions(region_map: np.ndarray):
         return [Region(r, region_map) for r in MazePart.all_parts()]
 
     @staticmethod

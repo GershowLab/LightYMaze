@@ -1,0 +1,31 @@
+#to install for windows/mac debugging
+#windows: set READTHEDOCS=True
+#unix: export READTHEDOCS=True
+#then pip install picamera2 --no-deps
+
+from picamera2 import Picamera2, Metadata
+
+class CameraCapture:
+    def __init__(self):
+        self.cam = Picamera2()
+        paa = self.cam.camera_properties["PixelArrayActiveAreas"]
+        self.set_bounding_box(*paa)
+        self.cam.start()
+
+    def capture_frame(self):
+        im = self.cam.capture_array()[:self.resy, :self.resx]
+        timestamp = self.cam.capture_metadata()['SensorTimestamp'] / 1e9
+        with self.cam.captured_request() as request:
+            grey = request.make_array('lores')[:self.resy, :self.resx]
+        return grey, timestamp
+
+    def set_bounding_box(self, x0, y0, w, h):
+        self.cam.stop()
+        self.w = w
+        self.h = h
+        self.x0 = x0
+        self.y0 = y0
+        self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)})
+        self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
+        self.cam.start()
+

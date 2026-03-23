@@ -1,41 +1,32 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+#from picamera.array import PiRGBArray
+
 import time
 import cv2
 import numpy as np
 from mazedispatcher import MazeDispatcher
 from ymazegeometry import YMazeGeometry
 
+from cameracapture import CameraCapture
+
+cap = CameraCapture()
 
 
-def read_image(cap):
-	im = camera.capture(cap, format = 'bgr')
-	im = cap.array
-	im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-	return im
 
-resx,resy = 2464,2464
-camera = PiCamera()
-camera.resolution = (resx,resy)
-#camera.framerate = 20
-
-#getting the first frame
-rawCapture = PiRGBArray(camera, size=(resx,resy))
-rawCapture_0 = PiRGBArray(camera, size=(resx,resy))
-
-for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = False):
-	im = frame.array
-	im=cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+while True:
+	im,ts = cap.capture_frame()
 	cv2.imshow('focus - c to continue', im)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord('c'):
 		break
 
-current = read_image(rawCapture_0)
 
 ymg = YMazeGeometry()
 while True:
-	img = ymg.calibrate_geometry_from_image(current)
+	im,ts = cap.capture_frame()
+	img = ymg.calibrate_geometry_from_image(im)
+	# x,y,w,h = ymg.clip_to_mazes(10)
+	# cap.set_bounding_box(x,y,w,h)
+	# im,ts = cap.capture_frame()
 	cv2.imshow('mazes', img)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord('q'):
@@ -47,14 +38,13 @@ while True:
 md = MazeDispatcher(ymg)
 
 frame_num = 0
-t0 = time.monotonic()
+t0 = ts
 tt = None
 #was use_video_port = True, but False may allow more resolution choices
-for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = False):
-	im = frame.array
-	im=cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+while True:
+	im,ts = cap.capture_frame()
 	frame_num += 1
-	frame_time = time.monotonic() - t0
+	frame_time = ts - t0
 
 	#wait for previous frame to finish processing
 	if tt is not None:
@@ -64,6 +54,5 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 	tt = md.new_frame(img, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False)
 	cv2.imshow('background', im)
 	key= cv2.waitKey(1) & 0xFF
-	rawCapture.truncate(0)
 	if key == ord('q'):
 		break
