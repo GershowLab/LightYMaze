@@ -16,9 +16,7 @@ class CameraCapture:
     def capture_frame(self):
         im = self.cam.capture_array()[:self.h, :self.w]
         timestamp = self.cam.capture_metadata()['SensorTimestamp'] / 1e9
-        with self.cam.captured_request() as request:
-            grey = request.make_array('lores')[:self.h, :self.w]
-        return grey, timestamp
+        return im, timestamp
 
     def set_bounding_box(self, x0, y0, w, h):
         self.cam.stop()
