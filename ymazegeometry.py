@@ -15,7 +15,7 @@ class YMazeGeometry:
         self.channel_length = 1.818  # mm
         self.channel_width = 0.4  # mm
         self.circle_dia = 2.5  # mm
-        self.circle_offset = 3.052  # mm
+        self.circle_offset = 3.052  # mm - circle center?
         self.central_circle_dia = .462  # mm -- exclude overlapping channel regions
         self.im_size_px = np.array([1000, 1000])
         self.center_px = self.im_size_px / 2.0
@@ -83,8 +83,18 @@ class YMazeGeometry:
         mask = np.zeros_like(self.x_mm)
         ctr_mm = self.maze_centers[maze_index] * self.maze_spacing
         # reference geometry to maze center
-        x = self.x_mm - ctr_mm[0]
-        y = self.y_mm - ctr_mm[1]
+
+        xaxis = self.x_mm[0,:] - ctr_mm[0]
+        yaxis = self.y_mm[:,0] - ctr_mm[1]
+
+        max_range = self.circle_offset + self.circle_dia/2
+        xi = np.abs(xaxis) <= max_range
+        yi = np.abs(yaxis) <= max_range
+
+        x = self.x_mm[yi,xi] - ctr_mm[0]
+        y = self.y_mm[yi,xi] - ctr_mm[1]
+
+        m = mask[yi,xi]
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
             s = np.sin(2 * np.pi / 3 * j)
@@ -92,10 +102,11 @@ class YMazeGeometry:
             yr = c * y + s * x
             channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width)
             circle = (xr - self.circle_offset) ** 2 + yr ** 2 < (self.circle_dia / 2) ** 2
-            mask[channel] = j + 2
-            mask[circle] = j + 5
+            m[channel] = j + 2
+            m[circle] = j + 5
         state1 = x ** 2 + y ** 2 <= (self.central_circle_dia / 2) ** 2
-        mask[state1] = 1
+        m[state1] = 1
+        mask[yi,xi] = m
         return mask
 
     # from documentation
