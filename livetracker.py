@@ -16,14 +16,14 @@ cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
 
 print("focus")
 while True:
-	try:
-		im,ts = cap.capture_frame()
-		cv2.imshow('focus - c to continue', im)
-		key = cv2.waitKey(1) & 0xFF
-		if key == ord('c'):
-			break
-	except:
-		print("error")
+	#try:
+	im,ts = cap.capture_frame()
+	cv2.imshow('focus - c to continue', im)
+	key = cv2.waitKey(1) & 0xFF
+	if key == ord('c'):
+		break
+#except:
+	#	print("error")
 
 
 
