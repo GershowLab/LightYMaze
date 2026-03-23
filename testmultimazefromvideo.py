@@ -25,15 +25,15 @@ ymg = YMazeGeometry()
 ymg.set_image_size(frame.shape)
 ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
 ymg.generate_coordinates()
-for j in range(1000):
-    testim = ymg.calibrate_geometry_from_image(frame)
-    cv2.imshow('mazes', testim)
-    key= cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        break
-    response = input("Are you satisfied with the regions you have selected? (yes/no)")
-    if response == "yes":
-        break
+# for j in range(1000):
+#     testim = ymg.calibrate_geometry_from_image(frame)
+#     cv2.imshow('mazes', testim)
+#     key= cv2.waitKey(1) & 0xFF
+#     if key == ord('q'):
+#         break
+#     response = input("Are you satisfied with the regions you have selected? (yes/no)")
+#     if response == "yes":
+#         break
 
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\python test\\test100'
 fstub = fstub.parents[0] / 'python test' / 'test'
@@ -41,23 +41,23 @@ md = MazeDispatcher(ymg)
 md.open_video(fstub)
 tt = None
 #written assuming you've already got a frame from above
-try:
-    for j in range(3600):
-        print(f"processing frame {j}")
-        if frame.ndim == 3:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        if not ret:
-            print("could not read frame " + j)
-            break
-        if tt is not None:
-            for t in tt:
-                t.join()
-        tt = md.new_frame(frame, multi_thread=True)
-        md._maze_minions[6].debug_display()
-        cv2.waitKey(1)
-        [ret, frame] = vc.read()
-        if not ret:
-            break
-finally:
-    md.get_data_frame().to_csv(f"{fstub} data.csv")
-    md.close_video()
+#try:
+for j in range(3600):
+    print(f"processing frame {j}")
+    if frame.ndim == 3:
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if not ret:
+        print("could not read frame " + j)
+        break
+    if tt is not None:
+        for t in tt:
+            t.join()
+    tt = md.new_frame(frame, multi_thread=True)
+    md._maze_minions[1].debug_display()
+    cv2.waitKey(1)
+    [ret, frame] = vc.read()
+    if not ret:
+        break
+#finally:
+ #   md.get_data_frame().to_csv(f"{fstub} data.csv")
+  #  md.close_video()

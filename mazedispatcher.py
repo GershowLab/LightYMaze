@@ -58,7 +58,8 @@ class MazeDispatcher:
             for mm in self._maze_minions:
                 mm.new_frame_nothread(img, frame_number, frame_time)
             tt = None
-        self._light_controller.update_leds()
+        if  self._light_controller is not None:
+            self._light_controller.update_leds()
         return tt
 
 

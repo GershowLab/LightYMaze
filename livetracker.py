@@ -24,10 +24,11 @@ while True:
 		break
 #except:
 	#	print("error")
-
+cv2.destroyAllWindows()
 
 
 ymg = YMazeGeometry()
+cv2.namedWindow('mazes', cv2.WINDOW_NORMAL)
 while True:
 	im,ts = cap.capture_frame()
 	img = ymg.calibrate_geometry_from_image(im)
@@ -41,6 +42,7 @@ while True:
 	response = input("Are you satisfied with the maze locations? (yes/no)")
 	if response == "yes":
 		break
+cv2.destroyAllWindows()
 
 md = MazeDispatcher(ymg)
 
