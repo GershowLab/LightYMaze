@@ -4,6 +4,7 @@
 #then pip install picamera2 --no-deps
 
 from picamera2 import Picamera2, Metadata
+from libcamera import Transform
 
 class CameraCapture:
     def __init__(self):
@@ -24,7 +25,7 @@ class CameraCapture:
         self.h = h
         self.x0 = x0
         self.y0 = y0
-        self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)})
+        self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h),"Transform": Transform(hflip=True)})
         self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
         self.cam.configure(self.main_configuration)
         self.cam.start()
