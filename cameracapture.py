@@ -14,10 +14,10 @@ class CameraCapture:
         self.cam.start()
 
     def capture_frame(self):
-        im = self.cam.capture_array()[:self.resy, :self.resx]
+        im = self.cam.capture_array()[:self.h, :self.w]
         timestamp = self.cam.capture_metadata()['SensorTimestamp'] / 1e9
         with self.cam.captured_request() as request:
-            grey = request.make_array('lores')[:self.resy, :self.resx]
+            grey = request.make_array('lores')[:self.h, :self.w]
         return grey, timestamp
 
     def set_bounding_box(self, x0, y0, w, h):
@@ -28,5 +28,6 @@ class CameraCapture:
         self.y0 = y0
         self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)})
         self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
+        self.cam.configure(self.main_configuration)
         self.cam.start()
 
