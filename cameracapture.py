@@ -8,9 +8,14 @@ from libcamera import Transform
 
 class CameraCapture:
     def __init__(self):
-        self.cam = Picamera2()
+        self.cam : Picamera2 = Picamera2()
         paa = self.cam.camera_properties["PixelArrayActiveAreas"][0]
         print(paa)
+        self.w = paa["Width"]
+        self.h = paa["Height"]
+        self.x0 = paa["XOffset"]
+        self.y0 = paa["YOffset"]
+        self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
         self.cam.start()
 
@@ -25,7 +30,7 @@ class CameraCapture:
         self.h = h
         self.x0 = x0
         self.y0 = y0
-        self.main_configuration = self.cam.create_preview_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
+        self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
         self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
         self.cam.configure(self.main_configuration)
 
