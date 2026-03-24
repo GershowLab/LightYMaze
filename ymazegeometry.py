@@ -10,6 +10,7 @@ class YMazeGeometry:
     def __init__(self):
         self.y_mm = None
         self.x_mm = None
+        self.origin = np.array([0, 0]) #x,y
         self.maze_spacing = 9  # mm
         self.maze_centers = np.array([[0, 2], [-1, 1], [1, 1], [2, 0], [0, 0], [-2, 0], [-1, -1], [1, -1], [0, -2]])
         self.channel_length = 1.818  # mm
@@ -17,13 +18,15 @@ class YMazeGeometry:
         self.circle_dia = 2.5  # mm
         self.circle_offset = 3.052  # mm - circle center?
         self.central_circle_dia = self.channel_width*1.55  # mm -- exclude overlapping channel regions
-        self.im_size_px = np.array([1000, 1000])
-        self.center_px = self.im_size_px / 2.0
+        self.im_size_px = np.array([1000, 1000]) #h,w
+        self.center_px = self.im_size_px[::-1] / 2.0 #x,y
         self.rotation = 0  # radians
         self.mm_per_px = 0.05
         self.generate_coordinates()
         # TODO more general affine transformation
 
+    def bounding_box(self):
+        return(self.center_px[0] - self.im_size_px / 2, self.center_px + self.im_size_px / 2)
     def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
         centerPoint = np.asarray(centerPoint)
         maze4Center = np.asarray(maze4Center)
@@ -37,36 +40,37 @@ class YMazeGeometry:
 
     def set_image_size(self, sz):
         self.im_size_px = np.array(sz)
-        self.center_px = self.im_size_px / 2.0
+        self.center_px = self.im_size_px[::-1] / 2.0
         self.generate_coordinates()
 
     def sub_image(self, x, y, w, h):
         self.im_size_px = np.array([h, w])
-        self.center_px = [x, y]
+        self.origin = self.origin + np.array([x, y])
         self.generate_coordinates()
 
     def clip_to_mazes(self, pad_px=5, size_multiple=32):
         mm, rm = self.generate_maze_mask()
         xv = np.any(mm > 0, axis=0)
         yv = np.any(mm > 0, axis=1)
-        x1 = np.where(xv)[0]
-        x2 = np.where(xv)[-1]
-        y1 = np.where(yv)[0]
-        y2 = np.where(yv)[-1]
+        x1 = np.where(xv)[0][0]
+        x2 = np.where(xv)[0][-1]
+        y1 = np.where(yv)[0][0]
+        y2 = np.where(yv)[0][-1]
         cx = 0.5 * (x2 + x1)
         cy = 0.5 * (y2 + y1)
         w = x2 - x1
         h = y2 - y1
-        w = np.clip(size_multiple * np.ceil((w + pad_px * 2) / size_multiple), 0, self.im_size_px[1])
-        h = np.clip(size_multiple * np.ceil((h + pad_px * 2) / size_multiple), 0, self.im_size_px[0])
-        x = np.max((0, np.round(cx - w / 2)))
-        y = np.max((0, np.round(cy - h / 2)))
+        w = np.clip(size_multiple * np.ceil((w + pad_px * 2) / size_multiple), 0, self.im_size_px[1]).astype(int)
+        h = np.clip(size_multiple * np.ceil((h + pad_px * 2) / size_multiple), 0, self.im_size_px[0]).astype(int)
+        x = np.max((0, np.round(cx - w / 2))).astype(int)
+        y = np.max((0, np.round(cy - h / 2))).astype(int)
+
         self.sub_image(x, y, w, h)
         return x, y, w, h
 
     def generate_coordinates(self):
-        x, y = np.meshgrid(np.arange(self.im_size_px[1]) - self.center_px[0],
-                           np.arange(self.im_size_px[0]) - self.center_px[1])
+        x, y = np.meshgrid(np.arange(self.im_size_px[1]) + self.origin[0]- self.center_px[0],
+                           np.arange(self.im_size_px[0]) + self.origin[1] - self.center_px[1])
         c = np.cos(self.rotation)
         s = np.sin(self.rotation)
 
