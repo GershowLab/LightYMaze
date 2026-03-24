@@ -11,10 +11,10 @@ class CameraCapture:
         self.cam : Picamera2 = Picamera2()
         paa = self.cam.camera_properties["PixelArrayActiveAreas"][0]
         print(paa)
-        self.w = paa["Width"]
-        self.h = paa["Height"]
-        self.x0 = paa["XOffset"]
-        self.y0 = paa["YOffset"]
+        self.w = paa[2]
+        self.h = paa[3]
+        self.x0 = paa[0]
+        self.y0 = paa[1]
         self.main_configuration = self.cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
         self.cam.start()
