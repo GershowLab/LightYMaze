@@ -91,10 +91,12 @@ class YMazeGeometry:
         xi = np.abs(xaxis) <= max_range
         yi = np.abs(yaxis) <= max_range
 
-        x = self.x_mm[yi,xi] - ctr_mm[0]
-        y = self.y_mm[yi,xi] - ctr_mm[1]
+        inds = np._ix(np.where(xi), np.where(yi))
 
-        m = mask[yi,xi]
+        x = self.x_mm[inds] - ctr_mm[0]
+        y = self.y_mm[inds] - ctr_mm[1]
+
+        m = mask[inds]
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
             s = np.sin(2 * np.pi / 3 * j)
@@ -108,7 +110,7 @@ class YMazeGeometry:
 
         state1 = x ** 2 + y ** 2 <= (self.central_circle_dia / 2) ** 2
         m[state1] = 1
-        mask[yi,xi] = m
+        mask[inds] = m
         return mask
 
     # from documentation
