@@ -91,8 +91,7 @@ class YMazeGeometry:
         xi = np.abs(xaxis) <= max_range
         yi = np.abs(yaxis) <= max_range
 
-        inds = np._ix(np.where(xi), np.where(yi))
-
+        inds = np.ix_(yi,xi)
         x = self.x_mm[inds] - ctr_mm[0]
         y = self.y_mm[inds] - ctr_mm[1]
 
