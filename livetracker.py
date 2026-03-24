@@ -15,7 +15,7 @@ print("cam cap")
 cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
 
 print("focus")
-while True:
+while False: #should be True, changed to speed up testing
 	#try:
 	im,ts = cap.capture_frame()
 	cv2.imshow('focus - c to continue', im)

@@ -103,8 +103,8 @@ class YMazeGeometry:
             yr = c * y + s * x
             channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width)
             circle = (xr - self.circle_offset) ** 2 + yr ** 2 < (self.circle_dia / 2) ** 2
-            mask[channel] = j + 2
-            mask[circle] = j + 5
+            m[channel] = j + 2
+            m[circle] = j + 5
             print(f"region mask iteration {j}")
 
         state1 = x ** 2 + y ** 2 <= (self.central_circle_dia / 2) ** 2
