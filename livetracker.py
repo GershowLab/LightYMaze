@@ -42,7 +42,7 @@ while True:
 	response = input("Are you satisfied with the maze locations? (yes/no)")
 	if response == "yes":
 		break
-cv2.destroyAllWindows()
+#cv2.destroyAllWindows()
 
 md = MazeDispatcher(ymg)
 
