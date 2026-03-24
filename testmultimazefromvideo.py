@@ -6,8 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
-basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
-#basedir = Path('G:\\')
+#basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
+basedir = Path('G:\\')
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'y-maze pictures' / 'y-maze feb 26' / 'Basler_acA1920-150um__21902780__20260226_125212812_%04d.tiff'
 
 print(fstub)
@@ -25,6 +25,10 @@ ymg = YMazeGeometry()
 ymg.set_image_size(frame.shape)
 ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
 ymg.generate_coordinates()
+testim = ymg.diagnostic_image(frame)
+cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
+cv2.imshow('mazes', testim)
+cv2.waitKey(1)
 # for j in range(1000):
 #     testim = ymg.calibrate_geometry_from_image(frame)
 #     cv2.imshow('mazes', testim)
