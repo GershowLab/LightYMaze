@@ -70,6 +70,9 @@ while True:
 	frame_num += 1
 	frame_time = ts - t0
 
+	print(f"frame: {frame_num}, elapsed time: {frame_time}")
+
+
 	#wait for previous frame to finish processing
 	if tt is not None:
 		for t in tt:
