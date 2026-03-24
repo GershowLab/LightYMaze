@@ -28,6 +28,7 @@ cv2.destroyAllWindows()
 
 
 ymg = YMazeGeometry()
+ymg.set_image_size((cap.w, cap.h))
 while True:
 	cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 	im,ts = cap.capture_frame()
