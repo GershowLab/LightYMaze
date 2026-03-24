@@ -29,12 +29,16 @@ cv2.destroyAllWindows()
 
 ymg = YMazeGeometry()
 while True:
+	cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 	im,ts = cap.capture_frame()
-	img = ymg.calibrate_geometry_from_image(im)
+#	img = ymg.calibrate_geometry_from_image(im)
+	cv2.imshow('mazes', im)
+	cv2.waitKey(1)
+	ymg.two_point_rotation_and_scaling((1763,1349), (1055,2116))
+	img = ymg.diagnostic_image(im.copy())
 	# x,y,w,h = ymg.clip_to_mazes(10)
 	# cap.set_bounding_box(x,y,w,h)
 	# im,ts = cap.capture_frame()
-	cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 	cv2.imshow('mazes', img)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord('q'):
