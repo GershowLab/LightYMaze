@@ -160,7 +160,8 @@ class YMazeGeometry:
         while len(points) < 2:
             cv2.waitKey(1)
 
-        cv2.destroyAllWindows()
+        cv2.destroyWindow("Click Center Maze, then Right Maze")
+#        cv2.destroyAllWindows()
 
         centerPoint = points[0]
         rightMazePoint = points[1]

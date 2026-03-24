@@ -28,13 +28,13 @@ cv2.destroyAllWindows()
 
 
 ymg = YMazeGeometry()
-cv2.namedWindow('mazes', cv2.WINDOW_NORMAL)
 while True:
 	im,ts = cap.capture_frame()
 	img = ymg.calibrate_geometry_from_image(im)
 	# x,y,w,h = ymg.clip_to_mazes(10)
 	# cap.set_bounding_box(x,y,w,h)
 	# im,ts = cap.capture_frame()
+	cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 	cv2.imshow('mazes', img)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord('q'):
@@ -49,7 +49,7 @@ md = MazeDispatcher(ymg)
 frame_num = 0
 t0 = ts
 tt = None
-#was use_video_port = True, but False may allow more resolution choices
+
 while True:
 	im,ts = cap.capture_frame()
 	frame_num += 1
