@@ -25,6 +25,8 @@ class YMazeGeometry:
         # TODO more general affine transformation
 
     def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
+        centerPoint = np.asarray(centerPoint)
+        maze4Center = np.asarray(maze4Center)
         self.center_px = centerPoint
         distmm = np.linalg.norm(self.maze_centers[3]) * self.maze_spacing
         delta_px = maze4Center - centerPoint
