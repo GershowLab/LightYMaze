@@ -48,6 +48,7 @@ def ledtest():
             lc.update_leds()
             sleep(to)
             lc.set_led(m,c,0,0,0)
+    lc.update_leds()
 
            
 
