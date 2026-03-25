@@ -124,7 +124,7 @@ while True:
 			t.join()
 
 
-	tt = md.new_frame(img, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False, multi_thread=False)
+	tt = md.new_frame(im, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False, multi_thread=False)
 	cv2.imshow('background', im)
 	key= cv2.waitKey(1) & 0xFF
 	if key == ord('q'):
