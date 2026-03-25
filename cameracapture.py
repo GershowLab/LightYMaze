@@ -33,6 +33,7 @@ class CameraCapture:
         self.start()
         im = self._cam.capture_array()[:self.h, :self.w]
         timestamp = self._cam.capture_metadata()['SensorTimestamp'] / 1e9
+        print(f"image captured - size = {im.shape}, timestamp = {timestamp}")
         return im, timestamp
 
     def set_bounding_box(self, x0, y0, w, h):
