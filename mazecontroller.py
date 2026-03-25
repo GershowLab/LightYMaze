@@ -35,7 +35,7 @@ class MazeController:
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 10
         self._bak_initialized = False
-        self._threshold = 20
+        self._threshold = 10
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
