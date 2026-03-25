@@ -35,7 +35,7 @@ if express:
 	img = ymg.diagnostic_image(im)
 	cv2.imshow('clipped mazes', img)
 	print(f"debug image captured created - {time.monotonic() - tstart}")
-	cv2.waitKey(1)
+	cv2.waitKey(0)
 else:
 	print("cam cap")
 	cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
@@ -83,6 +83,7 @@ else:
 			break
 	#cv2.destroyAllWindows()
 #print ("creating maze dispatcher")
+print(f"ymaze geometry imsize = {ymg.im_size_px}")
 md = MazeDispatcher(ymg)
 print(f"created maze dispatcher - {time.monotonic() - tstart}")
 
