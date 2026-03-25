@@ -37,6 +37,7 @@ class YMazeGeometry:
         self.mm_per_px = distmm / distpx
         # this is hacky based on knowing maze4 is horizontally offset
         self.rotation = np.arctan2(-delta_px[1], delta_px[0])
+        self.generate_coordinates()
 
     def set_image_size(self, sz):
         self.im_size_px = np.array(sz)

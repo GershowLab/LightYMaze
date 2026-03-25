@@ -45,6 +45,7 @@ if express:
 	ymg.set_image_size(im.shape)
 	print(f"ymg.im_size_px = {ymg.im_size_px}, im.shape = {im.shape}")
 	ymg.two_point_rotation_and_scaling(c, m4)
+	ymg.generate_coordinates()
 	img = ymg.diagnostic_image(im)
 	cv2.imshow('mazes', img)
 	cv2.waitKey(1)
