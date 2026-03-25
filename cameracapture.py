@@ -9,6 +9,7 @@ from libcamera import Transform
 class CameraCapture:
     def __init__(self):
         self._cam : Picamera2 = Picamera2()
+        self.started = False
         paa = self._cam.camera_properties["PixelArrayActiveAreas"][0]
         print(paa)
         self.w = paa[2]
@@ -17,7 +18,6 @@ class CameraCapture:
         self.y0 = paa[1]
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
-        self.started = False
         #self.cam.start()
 
     def start(self):
