@@ -1,18 +1,19 @@
-#from picamera.array import PiRGBArray
-
 import time
+tstart = time.monotonic()
+
 import cv2
 import numpy as np
 from mazedispatcher import MazeDispatcher
 from ymazegeometry import YMazeGeometry
 
+print(f"import most libaries - {time.monotonic() - tstart}")
 from cameracapture import CameraCapture
+print(f"import CameraCapture - {time.monotonic() - tstart}")
 
-tstart = time.monotonic()
 print("boot")
 cap = CameraCapture()
 print(f"camera setup - {time.monotonic() - tstart}")
-express = False
+express = True
 c = (1764,1345)
 m4 = (1053, 2101)
 if express:
