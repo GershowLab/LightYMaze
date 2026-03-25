@@ -8,6 +8,7 @@ from libcamera import Transform
 
 class CameraCapture:
     def __init__(self):
+        Picamera2.set_logging(Picamera2.ERROR)
         self._cam : Picamera2 = Picamera2()
         self.started = False
         paa = self._cam.camera_properties["PixelArrayActiveAreas"][0]
