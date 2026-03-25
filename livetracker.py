@@ -21,7 +21,6 @@ if express:
 	ymg.two_point_rotation_and_scaling(c, m4)
 	x, y, w, h = ymg.clip_to_mazes(10)
 	cap.set_bounding_box(x, y, w, h)
-	cap.cam.start()
 else:
 	print("cam cap")
 	cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
@@ -54,9 +53,7 @@ else:
 		cv2.imshow('mazes', img)
 		cv2.waitKey(1)
 		x,y,w,h = ymg.clip_to_mazes(10)
-		cap.cam.stop()
 		cap.set_bounding_box(x,y,w,h)
-		cap.cam.start()
 		im,ts = cap.capture_frame()
 		cv2.namedWindow('clipped mazes', cv2.WINDOW_NORMAL)
 		img = ymg.diagnostic_image(im)
