@@ -128,7 +128,7 @@ try:
 		if ord('0') <= k <= ord('9'):
 			old_maze = display_maze
 			display_maze = k-ord('1')
-			if display_maze != old_maze:
+			if  display_maze > 0 and display_maze != old_maze:
 				if win is not None:
 					cv2.destroyWindow(win)
 
