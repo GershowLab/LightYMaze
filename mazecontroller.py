@@ -1,4 +1,3 @@
-from typing import List
 
 import cv2
 import numpy as np
@@ -8,10 +7,9 @@ import ymazegeometry
 from BakCreator import BakCreator
 from lightcontroller import LightController
 from viterbi import Viterbi
-from ymazegeometry import MazePart, Region
+from ymazegeometry import MazePart
 import stimulusmanager
 
-import _csv
 
 import time
 
@@ -35,8 +33,8 @@ class MazeController:
         self._num_regions = np.max(region_map).astype(np.uint8)
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
-        self._stack_len = 60
-        self._num_frames_to_initialize = self._stack_len
+        self._stack_len = 10
+        self._bak_initialized = False
         self._threshold = 20
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
@@ -45,6 +43,8 @@ class MazeController:
         self._larva_mask = np.zeros_like(self._region_map)
         self._viterbi = Viterbi(transition_probabilities)
         self._larva_region: MazePart = MazePart.INTERSECTION
+        self._update_frame_interval = None
+        self._update_time_interval = 3
         self._stats = {
             "MazeID": self._maze_ID,
             "Frame": 0,
@@ -111,12 +111,11 @@ class MazeController:
                     self._stats["FrameTime"] = capture_time
                 if self._bak is None:
                     self._bak = BakCreator(self._stack_len, 0.1, img)
+                    self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
                 # during initialization period, just update background
-                if self._num_frames_to_initialize > 0:
-                    self._bak.update_background(img)
-                    self._num_frames_to_initialize -= 1
-                    # print(f"{self._maze_ID}: frames left to initialize = {self._num_frames_to_initialize}")
+                if not self._bak_initialized:
+                    self._bak_initialized = self._bak.update_background(img)
                 else:
                     thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
                     self._bak.update_background(img, thresh, self._larva_mask)
@@ -150,7 +149,6 @@ class MazeController:
             log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
         except:
-            larva_ind = 1
             self._larva_loc = np.array([-1, -1])
         self._stats["Region"] = self._larva_region
         self._stats["LarvaX"] = float(self._larva_loc[0])
@@ -187,7 +185,7 @@ class MazeController:
         current_region = self._stats["Region"]
         cv2.putText(img_annotate, f"{current_region}", self._larva_loc.astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1,
                     (255, 255, 0), 2)
-        if (self._frame_number < self._last_msg_frame + 30):
+        if self._frame_number < self._last_msg_frame + 30:
             cv2.putText(img_annotate, self._last_msg, (5, h-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                         1, bottomLeftOrigin=False)
 

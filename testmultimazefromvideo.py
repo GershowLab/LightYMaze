@@ -66,7 +66,7 @@ for j in range(3600):
         for t in tt:
             t.join()
     tt = md.new_frame(frame, multi_thread=True)
-    md._maze_minions[1].debug_display()
+    md._maze_minions[2].debug_display()
     cv2.waitKey(1)
     [ret, frame] = vc.read()
     if not ret:
