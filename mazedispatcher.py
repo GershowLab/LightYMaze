@@ -105,9 +105,11 @@ class MazeMinion:
         self._maze_controller.close_video_out()
 
     def debug_display(self):
-        cv2.namedWindow(f"Maze{self._maze_id} Debug", cv2.WINDOW_NORMAL)
+        winname = f"Maze{self._maze_id} Debug"
+        cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
         img = self._maze_controller.debug_montage()
-        cv2.imshow(f"Maze{self._maze_id} Debug", img)
+        cv2.imshow(winname, img)
+        return winname
 
 
 

@@ -19,6 +19,23 @@ try:
         def update_leds(self):
             with self.lock:
                 self.strip.show()
+
+        def test_leds(self, timeout = 0.1):
+            for m in range(self.num_mazes):
+                for c in range(3):
+                    self.set_led(m, c, 0, 0, 255)
+                    self.update_leds()
+                    sleep(timeout)
+                    self.set_led(m, c, 255, 0, 0)
+                    self.update_leds()
+                    sleep(timeout)
+                    self.update_leds()
+                    self.set_led(m, c, 0, 255, 0)
+                    self.update_leds()
+                    sleep(timeout)
+                    self.set_led(m, c, 0, 0, 0)
+            self.update_leds()
+
 except:
     class LightController:
         def __init__(self):

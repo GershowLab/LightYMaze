@@ -22,6 +22,8 @@ class YMazeGeometry:
         self.center_px = self.im_size_px[::-1] / 2.0 #x,y
         self.rotation = 0  # radians
         self.mm_per_px = 0.05
+        #self._maze_mask = None
+        #self._region_mask = None
         self.generate_coordinates()
         # TODO more general affine transformation
 
@@ -89,16 +91,9 @@ class YMazeGeometry:
     def generate_region_mask(self, maze_index):
         mask = np.zeros_like(self.x_mm)
         ctr_mm = self.maze_centers[maze_index] * self.maze_spacing
-        # reference geometry to maze center
 
-      #  xaxis = self.x_mm[0,:] - ctr_mm[0]
-      #  yaxis = self.y_mm[:,0] - ctr_mm[1]
 
         max_range = self.circle_offset + self.circle_dia/2
-#        xi = np.abs(xaxis) <= max_range
- #       yi = np.abs(yaxis) <= max_range
-
-  #      inds = np.ix_(yi,xi)
         x = self.x_mm - ctr_mm[0]
         y = self.y_mm - ctr_mm[1]
         inds = (np.abs(x) <= max_range) & (np.abs(y) <= max_range)
