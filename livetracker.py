@@ -8,9 +8,10 @@ from ymazegeometry import YMazeGeometry
 
 from cameracapture import CameraCapture
 
+tstart = time.monotonic()
 print("boot")
 cap = CameraCapture()
-
+print(f"camera setup - {time.monotonic() - tstart}")
 express = False
 c = (1764,1345)
 m4 = (1053, 2101)
@@ -20,13 +21,19 @@ if express:
 	ymg = YMazeGeometry()
 	ymg.set_image_size((cap.h, cap.w))
 	ymg.two_point_rotation_and_scaling(c, m4)
+	print(f"ymaze geometry created - {time.monotonic() - tstart}")
 	x, y, w, h = ymg.clip_to_mazes(10)
+	print(f"ymaze geometry clipped - {time.monotonic() - tstart}")
+
 	cap.set_bounding_box(x, y, w, h)
+	print(f"bounding box set - {time.monotonic() - tstart}")
+
 	print(w,y,w,h)
 	im, ts = cap.capture_frame()
 	cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
 	img = ymg.diagnostic_image(im)
 	cv2.imshow('clipped mazes', img)
+	print(f"debug image captured created - {time.monotonic() - tstart}")
 	cv2.waitKey(1)
 else:
 	print("cam cap")
@@ -74,14 +81,16 @@ else:
 		if response == "yes":
 			break
 	#cv2.destroyAllWindows()
-print ("creating maze dispatcher")
+#print ("creating maze dispatcher")
 md = MazeDispatcher(ymg)
+print(f"created maze dispatcher - {time.monotonic() - tstart}")
 
-print ("capturing first frame")
+#print ("capturing first frame")
 im, ts = cap.capture_frame()
 frame_num = 0
 t0 = ts
 tt = None
+print(f"captured first frame - {time.monotonic() - tstart}")
 
 while True:
 	frame_time = ts - t0

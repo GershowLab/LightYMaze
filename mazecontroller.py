@@ -100,6 +100,7 @@ class MazeController:
         if self._lock.acquire(blocking=False):
             try:
                 self._img = img  # pass a copy to new_image
+                print (f"img shape = {img.shape}")
                 if frame_number is None:
                     self._frame_number += 1
                 else:
@@ -118,7 +119,7 @@ class MazeController:
                     self._bak_initialized = self._bak.update_background(img)
                 else:
                     tim = self._bak.get_thresholded_image(img, self._threshold)
-                    print(f"debug thresholding - img.shape = {img.shape} thresholded image shape = {tim.shape} _maze_mask.shape = {self._maze_mask}")
+                    print(f"debug thresholding - img.shape = {img.shape} thresholded image shape = {tim.shape} _maze_mask.shape = {self._maze_mask.shape}")
                     thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
                     self._bak.update_background(img, thresh, self._larva_mask)
                     self._update_larva(thresh)
