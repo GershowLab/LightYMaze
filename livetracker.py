@@ -117,13 +117,14 @@ print(f"captured first frame - {time.monotonic() - tstart}")
 
 while True:
 	frame_time = ts - t0
-	print(f"frame: {frame_num}, elapsed time: {frame_time}")
+	print(f"frame: {frame_num}, elapsed time: {frame_time}, imsize: {im.shape}")
 	#wait for previous frame to finish processing
 	if tt is not None:
 		for t in tt:
 			t.join()
 
-	tt = md.new_frame(img, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False)
+
+	tt = md.new_frame(img, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False, multi_thread=False)
 	cv2.imshow('background', im)
 	key= cv2.waitKey(1) & 0xFF
 	if key == ord('q'):

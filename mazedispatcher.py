@@ -49,6 +49,7 @@ class MazeDispatcher:
             self._frame_number = frame_number
         if frame_time is None:
             frame_time = time.monotonic()
+        print(f"maze dispatcher img shape = {img.shape}")
         if multi_thread:
             tt = [mm.new_frame(img, frame_number,frame_time) for mm in self._maze_minions]
             if wait_for_completion:
@@ -78,6 +79,7 @@ class MazeMinion:
 
     def new_frame_nothread(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
+        print(f'maze minion {self._maze_id} roi.shape = {roi.shape}')
         self._maze_controller.new_image(roi, frame_number, frame_time)
     def new_frame(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
