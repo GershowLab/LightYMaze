@@ -117,6 +117,7 @@ class MazeController:
                 if not self._bak_initialized:
                     self._bak_initialized = self._bak.update_background(img)
                 else:
+                    print(f"debug thresholding - img.shape = {img.shape} _threshold.shape = {self._threshold.shape} _maze_mask.shape = {self._maze_mask}")
                     thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
                     self._bak.update_background(img, thresh, self._larva_mask)
                     self._update_larva(thresh)
