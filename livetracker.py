@@ -94,7 +94,7 @@ else:
 		if response == "yes":
 			break
 
-md = MazeDispatcher(ymg)
+md = MazeDispatcher(ymg, light_controller=light_controller)
 print(f"created maze dispatcher - {time.monotonic() - tstart}")
 
 im, t0 = cap.capture_frame()
