@@ -16,6 +16,7 @@ c = (1764,1345)
 m4 = (1053, 2101)
 if express:
 	print("express setup")
+	print(f"capture w = {cap.w}, capture h = {cap.h}")
 	ymg = YMazeGeometry()
 	ymg.set_image_size((cap.h, cap.w))
 	ymg.two_point_rotation_and_scaling(c, m4)
