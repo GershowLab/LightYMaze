@@ -11,7 +11,7 @@ from cameracapture import CameraCapture
 print("boot")
 cap = CameraCapture()
 
-express = True
+express = False
 c = (1764,1345)
 m4 = (1053, 2101)
 if express:
