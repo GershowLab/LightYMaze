@@ -1,6 +1,4 @@
 import numpy as np
-from mpl_toolkits.mplot3d.proj3d import transform
-
 
 class AffineCalculator:
     def __init__(self, srcpts=None,dstpts=None):
