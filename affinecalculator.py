@@ -37,8 +37,8 @@ class AffineCalculator:
         dim = s.shape[1] - 1
         if s.shape[0] < s.shape[1]:
             return #not enough pts
-        self.fwdmat = np.linalg.pinv(s)@d
-        self.revmat = np.linalg.pinv(d)@s
+        self.fwdmat = (np.linalg.pinv(s)@d).astype(np.float32)
+        self.revmat = (np.linalg.pinv(d)@s).astype(np.float32)
         #
         # self.fwdrot = self.fwdmat[:dim,:dim]
         # self.fwdoffset = self.fwdmat[-1,:dim]
@@ -49,13 +49,13 @@ class AffineCalculator:
 
     @staticmethod
     def transform(mat, x, y, z = None):
-        xx = np.asarray(x).flatten().reshape(-1,1)
-        yy = np.asarray(y).flatten().reshape(-1,1)
+        xx = np.asarray(x, np.float32).flatten().reshape(-1,1)
+        yy = np.asarray(y, np.float32).flatten().reshape(-1,1)
         o = np.ones_like(xx)
         if z is None:
             v = np.hstack((xx,yy,o))
         else:
-            zz = np.asarray(z).flatten().reshape(-1, 1)
+            zz = np.asarray(z, np.float32).flatten().reshape(-1, 1)
             v = np.hstack((xx,yy,zz,o))
         dd = v@mat
         xx = np.reshape(dd[:,0],x.shape)
