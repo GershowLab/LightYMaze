@@ -26,7 +26,7 @@ class MazeController:
         self._bak: BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map.astype(np.uint8)
-        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
+        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((9,9), np.uint8))
         # 255*cv2.morphologyEx((self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
         self._h, self._w = self._region_map.shape  # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))

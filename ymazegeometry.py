@@ -1,9 +1,13 @@
+from abc import abstractmethod
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import cv2
 import glob
 from enum import IntEnum
+
+from affinecalculator import AffineCalculator
 
 
 class YMazeGeometry:
@@ -19,32 +23,38 @@ class YMazeGeometry:
         self.circle_offset = 3.052  # mm - circle center?
         self.central_circle_dia = self.channel_width*1.55  # mm -- exclude overlapping channel regions
         self.im_size_px = np.array([1000, 1000]) #h,w
-        self.center_px = self.im_size_px[::-1] / 2.0 #x,y
-        self.rotation = 0  # radians
-        self.mm_per_px = 0.05
-        #self._maze_mask = None
-        #self._region_mask = None
+       # self.center_px = self.im_size_px[::-1] / 2.0 #x,y
+        # self.rotation = 0  # radians
+        # self.mm_per_px = 0.05
+        self._maze_mask = None
+        self._region_mask = None
+        self._imspace_to_real_space = AffineCalculator()
         self.generate_coordinates()
+
         # TODO more general affine transformation
 
+    def calculate_affine(self, imspacepts, realpts):
+        self._imspace_to_real_space = AffineCalculator(imspacepts, realpts)
+        self.generate_coordinates()
+
     def bounding_box(self):
-        return(self.center_px[0] - self.im_size_px / 2, self.center_px + self.im_size_px / 2)
+        return(self.origin, self.origin + self.im_size_px)#self.center_px - self.im_size_px / 2, self.center_px + self.im_size_px / 2)
+
     def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
         centerPoint = np.asarray(centerPoint)
         maze4Center = np.asarray(maze4Center)
-        self.center_px = centerPoint
-        distmm = np.linalg.norm(self.maze_centers[3]) * self.maze_spacing
-        delta_px = maze4Center - centerPoint
-        distpx = np.linalg.norm(delta_px)
-        self.mm_per_px = distmm / distpx
-        # this is hacky based on knowing maze4 is horizontally offset
-        self.rotation = np.arctan2(-delta_px[1], delta_px[0])
-        self.generate_coordinates()
+        delta = maze4Center - centerPoint
+        pt3 = centerPoint + np.array([-delta[1], delta[0]])
+        mc = self.maze_spacing*2
+        self.calculate_affine((centerPoint, maze4Center, pt3),
+                              ([0,0], [mc,0],[0,mc]))
+
 
     def set_image_size(self, sz):
         self.im_size_px = np.array(sz)
-        self.center_px = self.im_size_px[::-1] / 2.0
         self.generate_coordinates()
+    #     self.center_px = self.im_size_px[::-1] / 2.0
+    #     self.generate_coordinates()
 
     def sub_image(self, x, y, w, h):
         self.im_size_px = np.array([h, w])
@@ -71,14 +81,19 @@ class YMazeGeometry:
         self.sub_image(x, y, w, h)
         return x, y, w, h
 
-    def generate_coordinates(self):
-        x, y = np.meshgrid(np.arange(self.im_size_px[1]) + self.origin[0]- self.center_px[0],
-                           np.arange(self.im_size_px[0]) + self.origin[1] - self.center_px[1])
-        c = np.cos(self.rotation)
-        s = np.sin(self.rotation)
+    def pixel_axes(self):
+        x, y = np.meshgrid(np.arange(self.im_size_px[1]) + self.origin[0],
+                           np.arange(self.im_size_px[0]) + self.origin[1])
+        return x,y
 
-        self.x_mm = (c * x - s * y) * self.mm_per_px
-        self.y_mm = (s * x + c * y) * self.mm_per_px
+    def generate_coordinates(self):
+        x,y = self.pixel_axes()
+        # c = np.cos(self.rotation)
+        # s = np.sin(self.rotation)
+        self.x_mm, self.y_mm = self._imspace_to_real_space.transform_fwd(x,y)
+        #
+        # self.x_mm = (c * x - s * y) * self.mm_per_px
+        # self.y_mm = (s * x + c * y) * self.mm_per_px
 
     # from documentation
     # • Intersection: state 1
@@ -143,7 +158,7 @@ class YMazeGeometry:
 
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
-        regionmask = np.zeros_like(maze_mask);
+        regionmask = np.zeros_like(maze_mask)
         for j in range(len(self.maze_centers)):
             rm = self.generate_region_mask(j)
             maze_mask[rm > 0] = j + 1
@@ -160,21 +175,24 @@ class YMazeGeometry:
                 print(f"Selected: ({x}, {y})")
                 points.append(np.array([x, y]))
 
-        cv2.namedWindow("Click Center Maze, then Right Maze", cv2.WINDOW_KEEPRATIO)
-        cv2.imshow("Click Center Maze, then Right Maze", frame)
-        cv2.setMouseCallback("Click Center Maze, then Right Maze", click_event)
+        winname = "Click Center Maze, then Right Maze, then other mazes"
+        cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
+        cv2.imshow(winname, frame)
+        cv2.setMouseCallback(winname, click_event)
 
-        while len(points) < 2:
-            cv2.waitKey(1)
+        while len(points) < 9:
+            if (cv2.waitKey(1) & 0xFF == ord('q')):
+                break
 
-        cv2.destroyWindow("Click Center Maze, then Right Maze")
+
+        cv2.destroyWindow(winname)
 #        cv2.destroyAllWindows()
-
-        centerPoint = points[0]
-        rightMazePoint = points[1]
-
-        self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
-        self.generate_coordinates()
+#
+#         centerPoint = points[0]
+#         rightMazePoint = points[1]
+#
+#         self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+        self.multi_point_rotation_and_scaling(points)
 
         return self.diagnostic_image(frame)
 
@@ -182,14 +200,28 @@ class YMazeGeometry:
         # plt.contour(mm)
         # print("Calibration complete.")
         # plt.show()
+    def multi_point_rotation_and_scaling(self, points):
+        centerPoint = points[0]
+        rightMazePoint = points[1]
+        self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+        mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
+        dstpoints = []
+        for p in points:
+            p = self._imspace_to_real_space.transform_fwd(*p)
+            d = (np.asarray(mc)[:,0] - p[0])**2 + (np.asarray(mc)[:,1] - p[1])**2
+            dstpoints.append(mc[np.argmin(d)])
+        self.calculate_affine(points, dstpoints)
 
     def diagnostic_image(self, img):
         [mm, rm] = self.generate_maze_mask()
         r = img.copy()
         r[mm > 0] = 255
-        return cv2.merge((img, img, r))
-
-
+        img = cv2.merge((img, img, r))
+        mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
+        for i in range(len(mc)):
+            loc = (np.array(self._imspace_to_real_space.transform_rev(*mc[i])) - self.origin).astype(int)
+            cv2.putText(img, f"{i+1}", loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        return img
 def calibrate_geometry_from_image(frame, ymg):
     ymg.calibrate_geometry_from_image(frame)
 
@@ -278,6 +310,101 @@ def main(folder_path):
     split_tiff_folder_into_9(folder_path, ymg)
 
 
+class Shape:
+    def __init__(self, ID):
+        self.ID = ID
+    @abstractmethod
+    def interior(self,x,y):
+        pass
+    @abstractmethod
+    def bounding_box(self):
+        pass #xlist, ylist
+
+    def find_interior(self, ymg: YMazeGeometry):
+        #finds points in x_mm, y_mm that are internal to the shape
+        xc,yc = self.bounding_box()
+        xc,yc = ymg._imspace_to_real_space.transform_rev(xc,yc)
+        minx = np.min(xc)
+        maxx = np.max(xc)
+        miny = np.min(yc)
+        maxy = np.max(yc)
+        xa,ya = ymg.pixel_axes()
+        xi = minx <= xa <= maxx
+        yi = miny <= ya <= maxy
+        inds = np.ix_(yi,xi)
+        valid = self.interior(ymg.x_mm[inds], ymg.y_mm[inds])
+        return inds[valid]
+
+    def label_mask(self, mask, ymg, label = None):
+        if label is None:
+            label = self.ID
+        inds = self.find_interior(ymg)
+        mask[inds] = label
+        return inds
+
+class Polygon(Shape):
+    def __init__(self, ID, vertices):
+        super().__init__(ID)
+        self.vertices = vertices
+
+    def interior(self,x,y):
+        xx = np.asarray(x).flatten()
+        yy = np.asarray(y).flatten()
+        interior = np.array([self.interior_point(pt) for pt in zip(xx, yy)])
+        return interior.reshape(x.shape)
+    def bounding_box(self):
+        v = np.asarray(self.vertices)
+        minx = np.min(v[:,0])
+        maxx = np.max(v[:,0])
+        miny = np.min(v[:,1])
+        maxy = np.max(v[:,1])
+        return (minx,maxx,maxx,minx),(miny, miny, maxy, maxy)
+
+
+    def interior_point(self, point):
+        """
+        Checks if a point (2-element array) is inside a convex polygon (N, 2 array)
+        using the cross-product (same-side) method.
+        Vertices must be in consistent order (CW or CCW).
+        adapted from google search ai generated code
+        """
+        # Ensure points are numpy arrays
+        point = np.asarray(point)
+        vertices = np.asarray(self.vertices)
+
+        # Check if point is on the same side of all edges
+        num_vertices = len(vertices)
+        # Calculate initial cross product sign
+        v1 = vertices[-1] - vertices[0]  # Last vertex to first vertex
+        v2 = point - vertices[0]
+        # Use 2D cross product proxy: u[0]*v[1] - u[1]*v[0]
+        initial_sign = np.sign(v1[0] * v2[1] - v1[1] * v2[0])
+
+        for i in range(num_vertices):
+            v1 = vertices[i] - vertices[(i + 1) % num_vertices]  # Edge vector
+            v2 = point - vertices[(i + 1) % num_vertices]  # Point vector relative to end of edge
+
+            current_sign = np.sign(v1[0] * v2[1] - v1[1] * v2[0])
+
+            # If the sign changes, the point is outside.
+            # Points on the boundary (sign == 0) can be considered inside or outside based on needs.
+            if current_sign != initial_sign and current_sign != 0:
+                return False
+        return True
+class Circle(Shape):
+    def __init__(self, ID, center, radius):
+        super().__init__(ID)
+        self.center = center
+        self.radius = radius
+
+    def interior(self,x,y):
+        xx = np.asarray(x).flatten()
+        yy = np.asarray(y).flatten()
+        interior = (xx - self.center[0])**2 + (yy - self.center[1])**2 <= self.radius**2
+        return interior.reshape(x.shape)
+
+    def bounding_box(self):
+        return self.center[0] + self.radius*np.array((-1,1,1,-1)), self.center[1] + self.radius*np.array((-1,-1,1,1)),
 # from documentation
 # • Intersection: state 1
 # • Channel 1: state 2

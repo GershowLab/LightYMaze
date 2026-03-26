@@ -23,12 +23,14 @@ if not ret:
 print("calibrating geometry")
 ymg = YMazeGeometry()
 ymg.set_image_size(frame.shape)
-ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
-ymg.generate_coordinates()
-testim = ymg.diagnostic_image(frame)
+testim = ymg.calibrate_geometry_from_image(frame)
+#ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
+#ymg.generate_coordinates()
+#testim = ymg.diagnostic_image(frame)
 
 cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 cv2.imshow('mazes', testim)
+cv2.waitKey(0)
 
 x,y,w,h = ymg.clip_to_mazes(10)
 
@@ -37,7 +39,7 @@ clip_inds = np.ix_(y + range(h), x + range(w))
 clipim = ymg.diagnostic_image(frame[clip_inds])
 cv2.imshow('clipped mazes', clipim)
 
-cv2.waitKey(1)
+cv2.waitKey(0)
 # for j in range(1000):
 #     testim = ymg.calibrate_geometry_from_image(frame)
 #     cv2.imshow('mazes', testim)
