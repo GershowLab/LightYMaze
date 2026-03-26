@@ -106,12 +106,14 @@ for c in range(3):
 		print(f"setting maze {m}")
 		light_controller.set_led(m,c,255,255,255)
 		light_controller.update_leds()
+		if cv2.waitKey(100) & 0xFF == ord('q'):
+			break
 		im,ts = cap.capture_frame()
 		light_controller.set_led(m,c,0,0,0)
 		light_controller.update_leds()
 		img = ymg.diagnostic_image(im)
 		cv2.imshow(winname, img)
-		if cv2.waitKey(1) & 0xFF == ord('q'):
+		if cv2.waitKey(500) & 0xFF == ord('q'):
 			break
 
 
