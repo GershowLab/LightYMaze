@@ -1,3 +1,7 @@
+#install openblas on pi
+#sudo apt-get install -y libopenblas-dev
+
+
 import numpy as np
 
 class AffineCalculator:

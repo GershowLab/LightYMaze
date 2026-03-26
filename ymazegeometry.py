@@ -120,7 +120,7 @@ class YMazeGeometry:
         m = mask[inds]
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
-            s = np.sin(2 * np.pi / 3 * j)
+            s = np.sin(-2 * np.pi / 3 * j)
             xr = c * x - s * y
             yr = c * y + s * x
             channel = (xr >= 0) & (xr <= self.channel_length) & (np.abs(yr) <= self.channel_width/2)
@@ -221,8 +221,17 @@ class YMazeGeometry:
     def diagnostic_image(self, img):
         [mm, rm] = self.generate_maze_mask()
         r = img.copy()
-        r[mm > 0] = 255
-        img = cv2.merge((img, img, r))
+        b = img.copy()
+        g = img.copy()
+
+        # • Circle 1: state 5
+        # • Circle 2: state 6
+        # • Circle 3: state 7
+
+        r[np.logical_and(rm > 0, rm < 6)] = 255 #maze 1 = red
+        g[rm == 6] = 255 #maze 2 = green
+        b[rm == 7] = 255 #maze 3 = blue
+        img = cv2.merge((b, g, r))
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
         for i in range(len(mc)):
             loc = (np.array(self._imspace_to_real_space.transform_rev(*mc[i])) - self.origin).astype(int)
