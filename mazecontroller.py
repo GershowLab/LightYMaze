@@ -26,7 +26,7 @@ class MazeController:
         self._bak: BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map.astype(np.uint8)
-        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((9,9), np.uint8))
+        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((3,3), np.uint8), iterations=5)
         # 255*cv2.morphologyEx((self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
         self._h, self._w = self._region_map.shape  # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))
@@ -164,7 +164,10 @@ class MazeController:
     def debug_montage(self):
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
-        thresh = cv2.cvtColor(self._bak.get_thresholded_image(self._img, self._threshold), cv2.COLOR_GRAY2BGR)
+        thresh = self._bak.get_thresholded_image(self._img, self._threshold)
+        g = thresh.copy()
+        g[self._maze_mask == 0] = 255
+        thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))
         img_annotate = self.debug_image()
         montage = np.vstack((np.hstack((img, bak)), np.hstack((thresh, img_annotate))))
         return montage
