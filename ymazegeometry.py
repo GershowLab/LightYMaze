@@ -34,7 +34,9 @@ class YMazeGeometry:
         # TODO more general affine transformation
 
     def calculate_affine(self, imspacepts, realpts):
+        print ("calc affine: create calculator")
         self._imspace_to_real_space = AffineCalculator(imspacepts, realpts)
+        print("calc affine: generate coordinates")
         self.generate_coordinates()
 
     def bounding_box(self):
@@ -192,8 +194,9 @@ class YMazeGeometry:
 #         rightMazePoint = points[1]
 #
 #         self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+        print ("start multi point")
         self.multi_point_rotation_and_scaling(points)
-
+        print ("make diagnostic image")
         return self.diagnostic_image(frame)
 
         # plt.imshow(frame)
@@ -203,13 +206,16 @@ class YMazeGeometry:
     def multi_point_rotation_and_scaling(self, points):
         centerPoint = points[0]
         rightMazePoint = points[1]
+        print ("start two point")
         self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
+        print ("find matching points")
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
         dstpoints = []
         for p in points:
             p = self._imspace_to_real_space.transform_fwd(*p)
             d = (np.asarray(mc)[:,0] - p[0])**2 + (np.asarray(mc)[:,1] - p[1])**2
             dstpoints.append(mc[np.argmin(d)])
+        print ("calculate affine")
         self.calculate_affine(points, dstpoints)
 
     def diagnostic_image(self, img):
