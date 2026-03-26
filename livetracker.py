@@ -111,6 +111,8 @@ for c in range(3):
 		light_controller.update_leds()
 		img = ymg.diagnostic_image(im)
 		cv2.imshow(winname, img)
+		if cv2.waitKey(1) & 0xFF == ord('q'):
+			break
 
 
 md = MazeDispatcher(ymg, light_controller=light_controller)

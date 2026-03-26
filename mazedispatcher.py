@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 class MazeDispatcher:
     def __init__(self, ymg:YMazeGeometry, light_controller:LightController = None):
         self._ymg = ymg
-        self._maze_mask, self._region_mask = ymg.generate_maze_mask()
+        self._maze_mask, self._region_mask = ymg.get_maze_mask()
         self._light_controller = light_controller
         self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0

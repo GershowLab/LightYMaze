@@ -62,9 +62,11 @@ class YMazeGeometry:
         self.im_size_px = np.array([h, w])
         self.origin = self.origin + np.array([x, y])
         self.generate_coordinates()
+        self._region_mask = None
+        self._maze_mask = None
 
     def clip_to_mazes(self, pad_px=5, size_multiple=32):
-        mm, rm = self.generate_maze_mask()
+        mm, rm = self.get_maze_mask()
         xv = np.any(mm > 0, axis=0)
         yv = np.any(mm > 0, axis=1)
         x1 = np.where(xv)[0][0]
@@ -158,6 +160,11 @@ class YMazeGeometry:
             c[j, j] = 1 - np.sum(c[j, :])
         return c
 
+    def get_maze_mask(self):
+        if self._region_mask is None:
+            self.generate_maze_mask()
+        return self._maze_mask, self._region_mask
+
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
         regionmask = np.zeros_like(maze_mask)
@@ -165,7 +172,8 @@ class YMazeGeometry:
             rm = self.generate_region_mask(j)
             maze_mask[rm > 0] = j + 1
             regionmask[rm > 0] = rm[rm > 0]
-        return maze_mask, regionmask
+        self._maze_mask = maze_mask
+        self._region_mask = regionmask
 
     def calibrate_geometry_from_image(self, frame):
 
@@ -219,7 +227,7 @@ class YMazeGeometry:
         self.calculate_affine(points, dstpoints)
 
     def diagnostic_image(self, img):
-        [mm, rm] = self.generate_maze_mask()
+        [mm, rm] = self.get_maze_mask()
         r = img.copy()
         b = img.copy()
         g = img.copy()
@@ -492,7 +500,7 @@ if __name__ == "__main__":
 def marctest():
     ymg = YMazeGeometry()
     print(ymg.generate_connectivity_matrix())
-    [mm, rm] = ymg.generate_maze_mask()
+    [mm, rm] = ymg.get_maze_mask()
     plt.figure(1)
     plt.imshow(mm)
     plt.show(block=False)
