@@ -97,25 +97,25 @@ else:
 			break
 
 light_controller = LightController()
-
-winname = 'led correspondence test - remove filter'
-cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
-for c in range(3):
-	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
-	for m in range(9):
-		print(f"setting maze {m}")
-		light_controller.set_led(m,c,255,255,255)
-		light_controller.update_leds()
-		if cv2.waitKey(1000) & 0xFF == ord('q'):
-			break
-		im,ts = cap.capture_frame()
-		light_controller.set_led(m,c,0,0,0)
-		light_controller.update_leds()
-		img = ymg.diagnostic_image(im)
-		cv2.imshow(winname, img)
-		if cv2.waitKey(2000) & 0xFF == ord('q'):
-			break
-
+#
+# winname = 'led correspondence test - remove filter'
+# cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
+# for c in range(3):
+# 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
+# 	for m in range(9):
+# 		print(f"setting maze {m}")
+# 		light_controller.set_led(m,c,255,255,255)
+# 		light_controller.update_leds()
+# 		if cv2.waitKey(1000) & 0xFF == ord('q'):
+# 			break
+# 		im,ts = cap.capture_frame()
+# 		light_controller.set_led(m,c,0,0,0)
+# 		light_controller.update_leds()
+# 		img = ymg.diagnostic_image(im)
+# 		cv2.imshow(winname, img)
+# 		if cv2.waitKey(2000) & 0xFF == ord('q'):
+# 			break
+#
 
 md = MazeDispatcher(ymg, light_controller=light_controller)
 print(f"created maze dispatcher - {time.monotonic() - tstart}")
