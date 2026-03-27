@@ -21,7 +21,7 @@ class CameraCapture:
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
         self.exposure = 100000
-        self.gain = 4
+        self.gain = 8
         self.set_exposure()
         #self.cam.start()
 
