@@ -16,7 +16,7 @@ class YMazeGeometry:
         self.x_mm = None
         self.origin = np.array([0, 0]) #x,y
         self.maze_spacing = 9  # mm
-        self.maze_centers = np.array([[0, 2], [-1, 1], [1, 1], [2, 0], [0, 0], [-2, 0], [-1, -1], [1, -1], [0, -2]])
+        self.maze_centers = np.array([[0, -2], [-1, -1], [1, -1], [2, 0], [0, 0], [-2, 0], [-1, 1], [1, 1], [0, 2]])
         self.channel_length = 1.818  # mm
         self.channel_width = 0.7 # mm
         self.circle_dia = 2.5  # mm
@@ -358,7 +358,7 @@ class YMazeFootprint:
         self.shapes = []
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
-            s = np.sin(-2 * np.pi / 3 * j)
+            s = np.sin(2 * np.pi / 3 * j)
             r = np.array(((c, s), (-s, c))).astype(np.float32)
             self.shapes.append(Polygon(j+2,vertices@r + self.center))
             self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))

@@ -23,8 +23,8 @@ class CameraCapture:
         self.exposure = 50000
         self.gain = 4
         self.set_exposure()
-        self.hflip = True
-        self.vflip = False
+        self.hflip = False
+        self.vflip = True
         self.set_exposure()
         #self.cam.start()
 
