@@ -72,13 +72,13 @@ class YMazeGeometry:
         self._maze_mask = None
 
     def clip_to_mazes(self, pad_px=5, size_multiple=32):
-        mm, rm = self.get_maze_mask()
-        xv = np.any(mm > 0, axis=0)
-        yv = np.any(mm > 0, axis=1)
-        x1 = np.where(xv)[0][0]
-        x2 = np.where(xv)[0][-1]
-        y1 = np.where(yv)[0][0]
-        y2 = np.where(yv)[0][-1]
+        bb = np.array([self._imspace_to_real_space.transform_rev(*m.bounding_box()) for m in self._mazes])
+        x = bb[:,0,:].flatten()
+        y = bb[:,1,:].flatten()
+        x1 = np.min(x)
+        y1 = np.min(y)
+        x2 = np.max(x)
+        y2 = np.max(y)
         cx = 0.5 * (x2 + x1)
         cy = 0.5 * (y2 + y1)
         w = x2 - x1
@@ -92,12 +92,16 @@ class YMazeGeometry:
         return x, y, w, h
 
     def pixel_axes(self):
-        x, y = np.meshgrid(np.arange(self.im_size_px[1]) + self.origin[0],
-                           np.arange(self.im_size_px[0]) + self.origin[1])
+        xa = np.arange(self.im_size_px[1]) + self.origin[0]
+        ya = np.arange(self.im_size_px[0]) + self.origin[1]
+        return xa, ya
+
+    def pixel_grid(self):
+        x, y = np.meshgrid(*self.pixel_axes())
         return x,y
 
     def generate_coordinates(self):
-        x,y = self.pixel_axes()
+        x,y = self.pixel_grid()
         # c = np.cos(self.rotation)
         # s = np.sin(self.rotation)
         self.x_mm, self.y_mm = self._imspace_to_real_space.transform_fwd(x,y)
@@ -214,13 +218,7 @@ class YMazeGeometry:
 #         self.two_point_rotation_and_scaling(centerPoint, rightMazePoint)
         print ("start multi point")
         self.multi_point_rotation_and_scaling(points)
-        print ("make diagnostic image")
-        return self.diagnostic_image(frame)
 
-        # plt.imshow(frame)
-        # plt.contour(mm)
-        # print("Calibration complete.")
-        # plt.show()
     def multi_point_rotation_and_scaling(self, points):
         centerPoint = points[0]
         rightMazePoint = points[1]
@@ -348,19 +346,19 @@ class YMazeFootprint:
         self.ymg : YMazeGeometry = ymg
         self.shapes = []
         self.ID = ID
-        self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID])
+        self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID]).astype(np.float32)
         self.populate_shapes()
 
     def populate_shapes(self):
         dy = self.ymg.channel_width/2
         dx = self.ymg.channel_length
-        vertices = np.array(((0, -dy), (dx, -dy), (dx, dy), (0,dy)))
-        circle_center = np.array((self.ymg.circle_offset,0))
+        vertices = np.array(((0, -dy), (dx, -dy), (dx, dy), (0,dy))).astype(np.float32)
+        circle_center = np.array((self.ymg.circle_offset,0)).astype(np.float32)
         self.shapes = []
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
             s = np.sin(-2 * np.pi / 3 * j)
-            r = np.array(((c, s), (-s, c)))
+            r = np.array(((c, s), (-s, c))).astype(np.float32)
             self.shapes.append(Polygon(j+2,vertices@r + self.center))
             self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))
         self.shapes.append(Circle(1, self.center, self.ymg.central_circle_dia/2))
@@ -404,8 +402,6 @@ class Shape:
         miny = np.min(yc)
         maxy = np.max(yc)
         xa,ya = ymg.pixel_axes()
-        xa = xa[0]
-        ya = ya[:,0]
         xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
         yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
         inds = np.ix_(yi,xi)
@@ -432,7 +428,7 @@ class Polygon(Shape):
         return interior.reshape(x.shape)
 
     def bounding_box(self):
-        v = np.asarray(self.vertices)
+        v = np.asarray(self.vertices).astype(np.float32)
         minx = np.min(v[:,0])
         maxx = np.max(v[:,0])
         miny = np.min(v[:,1])
@@ -482,7 +478,7 @@ class Circle(Shape):
         return interior.reshape(x.shape)
 
     def bounding_box(self):
-        return self.center[0] + self.radius*np.array((-1,1,1,-1)), self.center[1] + self.radius*np.array((-1,-1,1,1)),
+        return (self.center[0] + self.radius*np.array((-1,1,1,-1))).astype(np.float32), (self.center[1] + self.radius*np.array((-1,-1,1,1))).astype(np.float32)
 # from documentation
 # • Intersection: state 1
 # • Channel 1: state 2

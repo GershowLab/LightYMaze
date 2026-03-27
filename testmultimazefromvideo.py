@@ -23,10 +23,10 @@ if not ret:
 print("calibrating geometry")
 ymg = YMazeGeometry()
 ymg.set_image_size(frame.shape)
-testim = ymg.calibrate_geometry_from_image(frame)
+ymg.calibrate_geometry_from_image(frame)
 #ymg.two_point_rotation_and_scaling(np.array((1046, 614)),np.array((909, 1033)))
 #ymg.generate_coordinates()
-#testim = ymg.diagnostic_image(frame)
+testim = ymg.diagnostic_image(frame)
 
 cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 cv2.imshow('mazes', testim)

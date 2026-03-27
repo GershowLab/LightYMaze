@@ -12,6 +12,7 @@ class CameraCapture:
         self._cam : Picamera2 = Picamera2()
         self.started = False
         paa = self._cam.camera_properties["PixelArrayActiveAreas"][0]
+        self.default_bounding_box = paa
         #print(paa)
         self.w = paa[2]
         self.h = paa[3]
@@ -36,6 +37,9 @@ class CameraCapture:
         timestamp = self._cam.capture_metadata()['SensorTimestamp'] / 1e9
         #print(f"image captured - size = {im.shape}, timestamp = {timestamp}")
         return im, timestamp
+
+    def reset_bounding_box(self):
+        self.set_bounding_box(*self.default_bounding_box)
 
     def set_bounding_box(self, x0, y0, w, h):
         was_started = self.started

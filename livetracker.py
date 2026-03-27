@@ -4,6 +4,7 @@
 #parameters saved in file
 #window sizes
 
+default_win_size = (640, 480)
 
 import time
 tstart = time.monotonic()
@@ -65,6 +66,7 @@ else:
 		#try:
 		im,ts = cap.capture_frame()
 		cv2.imshow('focus - c to continue', im)
+		cv2.resizeWindow('focus - c to continue', default_win_size)
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord('c'):
 			break
@@ -73,20 +75,24 @@ else:
 	cv2.destroyAllWindows()
 
 
-	ymg = YMazeGeometry()
-	ymg.set_image_size((cap.h, cap.w))
+
 	while True:
-		cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
+		ymg = YMazeGeometry()
+		ymg.set_image_size((cap.h, cap.w))
 		im,_ = cap.capture_frame()
-		img = ymg.calibrate_geometry_from_image(im)
-		cv2.imshow('mazes', img)
-		cv2.waitKey(1)
+		ymg.calibrate_geometry_from_image(im)
+		# cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
+		# cv2.imshow('mazes', img)
+		# cv2.resizeWindow('mazes', default_win_size)
+		# cv2.waitKey(1)
 		x,y,w,h = ymg.clip_to_mazes(10)
 		cap.set_bounding_box(x,y,w,h)
 		im,_ = cap.capture_frame()
 		cv2.namedWindow('clipped mazes', cv2.WINDOW_NORMAL)
 		img = ymg.diagnostic_image(im)
 		cv2.imshow('clipped mazes', img)
+		cv2.resizeWindow('clipped widow', default_win_size)
+
 
 
 		key = cv2.waitKey(1) & 0xFF
@@ -95,6 +101,7 @@ else:
 		response = input("Are you satisfied with the maze locations? (yes/no)")
 		if response == "yes":
 			break
+		cap.reset_bounding_box()
 
 light_controller = LightController()
 #
@@ -126,6 +133,7 @@ frame_time = 0
 tt = None
 print(f"captured first frame - {time.monotonic() - tstart}")
 display_maze = 0
+old_maze = -1
 experiment_duration = 3600 #seconds
 try:
 	while frame_time < experiment_duration:
@@ -143,6 +151,9 @@ try:
 		#	break
 		if display_maze >= 0:
 			win = md._maze_minions[display_maze].debug_display()
+			if display_maze != old_maze:
+				cv2.resizeWindow(win, default_win_size)
+				old_maze = display_maze
 		else:
 			win = None
 		k = cv2.waitKey(1) & 0xFF
