@@ -99,8 +99,6 @@ class CameraCapture:
         #self.cam.stop()
         self.w = w
         self.h = h
-        if self.hflip:
-            self.x0 =
         self.x0 = x0
         self.y0 = y0
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
