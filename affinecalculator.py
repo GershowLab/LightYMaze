@@ -53,6 +53,8 @@ class AffineCalculator:
 
     @staticmethod
     def transform(mat, x, y, z = None):
+        x = np.asarray(x, np.float32)
+        y = np.asarray(y, np.float32)
         xx = np.asarray(x, np.float32).flatten().reshape(-1,1)
         yy = np.asarray(y, np.float32).flatten().reshape(-1,1)
         o = np.ones_like(xx)

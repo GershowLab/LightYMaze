@@ -6,6 +6,7 @@ import os
 import cv2
 import glob
 from enum import IntEnum
+from collections import Iterable
 
 from affinecalculator import AffineCalculator
 
@@ -30,8 +31,14 @@ class YMazeGeometry:
         self._region_mask = None
         self._imspace_to_real_space = AffineCalculator()
         self.generate_coordinates()
+        self._mazes : Iterable[YMazeFootprint] = []
+        self._setup_mazes()
 
         # TODO more general affine transformation
+    def _setup_mazes(self):
+        self._mazes = []
+        for j in range(len(self.maze_centers)):
+            self._mazes.append(YMazeFootprint(self, j))
 
     def calculate_affine(self, imspacepts, realpts):
         print ("calc affine: create calculator")
@@ -167,13 +174,17 @@ class YMazeGeometry:
 
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
-        regionmask = np.zeros_like(maze_mask)
-        for j in range(len(self.maze_centers)):
-            rm = self.generate_region_mask(j)
-            maze_mask[rm > 0] = j + 1
-            regionmask[rm > 0] = rm[rm > 0]
+        region_mask = np.zeros_like(maze_mask)
+
+        for m in self._mazes:
+            m.label_mask(region_mask, maze_mask)
+        #
+        # for j in range(len(self.maze_centers)):
+        #     rm = self.generate_region_mask(j)
+        #     maze_mask[rm > 0] = j + 1
+        #     region_mask[rm > 0] = rm[rm > 0]
         self._maze_mask = maze_mask
-        self._region_mask = regionmask
+        self._region_mask = region_mask
 
     def calibrate_geometry_from_image(self, frame):
 
@@ -333,6 +344,48 @@ def main(folder_path):
     split_tiff_folder_into_9(folder_path, ymg)
 
 
+class YMazeFootprint:
+    def __init__(self, ymg, ID):
+        self.ymg : YMazeGeometry = ymg
+        self.shapes = []
+        self.ID = ID
+        self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID])
+        self.populate_shapes()
+
+    def populate_shapes(self):
+        dy = self.ymg.channel_width/2
+        dx = self.ymg.channel_length
+        vertices = np.array(((0, -dy), (dx, -dy), (dx, dy), (0,dy)))
+        circle_center = np.array((self.ymg.circle_offset,0))
+        self.shapes = []
+        for j in range(3):
+            c = np.cos(2 * np.pi / 3 * j)
+            s = np.sin(-2 * np.pi / 3 * j)
+            r = np.array(((c, s), (-s, c)))
+            self.shapes.append(Polygon(j+2,vertices@r + self.center))
+            self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))
+        self.shapes.append(Circle(1, self.center, self.ymg.central_circle_dia/2))
+
+    def label_mask(self, region_mask, maze_mask, label = None):
+       if label is None:
+           label = self.ID
+       for s in self.shapes:
+           inds = s.label_mask(region_mask, self.ymg)
+           maze_mask[inds] = label
+
+    def bounding_box(self):
+        bb = np.array([s.bounding_box() for s in self.shapes])
+        x = bb[:,0,:].flatten()
+        y = bb[:,1,:].flatten()
+        minx = np.min(x)
+        miny = np.min(y)
+        maxx = np.max(x)
+        maxy = np.max(y)
+        return (minx,maxx,maxx,minx),(miny, miny, maxy, maxy)
+
+
+
+
 class Shape:
     def __init__(self, ID):
         self.ID = ID
@@ -352,11 +405,14 @@ class Shape:
         miny = np.min(yc)
         maxy = np.max(yc)
         xa,ya = ymg.pixel_axes()
-        xi = minx <= xa <= maxx
-        yi = miny <= ya <= maxy
+        xa = xa[0]
+        ya = ya[:,0]
+        xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
+        yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
         inds = np.ix_(yi,xi)
         valid = self.interior(ymg.x_mm[inds], ymg.y_mm[inds])
-        return inds[valid]
+        j,i = np.meshgrid(xi,yi)
+        return (i[valid], j[valid])
 
     def label_mask(self, mask, ymg, label = None):
         if label is None:
@@ -375,6 +431,7 @@ class Polygon(Shape):
         yy = np.asarray(y).flatten()
         interior = np.array([self.interior_point(pt) for pt in zip(xx, yy)])
         return interior.reshape(x.shape)
+
     def bounding_box(self):
         v = np.asarray(self.vertices)
         minx = np.min(v[:,0])
@@ -382,7 +439,6 @@ class Polygon(Shape):
         miny = np.min(v[:,1])
         maxy = np.max(v[:,1])
         return (minx,maxx,maxx,minx),(miny, miny, maxy, maxy)
-
 
     def interior_point(self, point):
         """
@@ -417,7 +473,7 @@ class Polygon(Shape):
 class Circle(Shape):
     def __init__(self, ID, center, radius):
         super().__init__(ID)
-        self.center = center
+        self.center = np.asarray(center).flatten()
         self.radius = radius
 
     def interior(self,x,y):
