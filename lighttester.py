@@ -63,9 +63,13 @@ cv2.destroyAllWindows()
 
 
 while True:
+	print ("ymaze geometry")
 	ymg = YMazeGeometry()
+	print ("set image size")
 	ymg.set_image_size((cap.h, cap.w))
+	print ("capture frame")
 	im,_ = cap.capture_frame()
+	print ("calibrate geometry from image")
 	ymg.calibrate_geometry_from_image(im)
 	# cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
 	# cv2.imshow('mazes', img)

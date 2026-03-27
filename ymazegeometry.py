@@ -358,7 +358,7 @@ class YMazeFootprint:
         self.shapes = []
         for j in range(3):
             c = np.cos(2 * np.pi / 3 * j)
-            s = np.sin(2 * np.pi / 3 * j)
+            s = np.sin(-2 * np.pi / 3 * j)
             r = np.array(((c, s), (-s, c))).astype(np.float32)
             self.shapes.append(Polygon(j+2,vertices@r + self.center))
             self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))
