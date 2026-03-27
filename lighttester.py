@@ -116,7 +116,7 @@ for led in range(27):
 	cv2.imwrite(datadir / f"LED {led}.jpg", img)
 	if cv2.waitKey(2000) & 0xFF == ord('q'):
 		break
-for c in range(3):
+for c in range(1,4):
 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
 	for m in range(1,10):
 		print(f"setting maze {m}")
