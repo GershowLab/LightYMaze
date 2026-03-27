@@ -202,6 +202,7 @@ class YMazeGeometry:
         winname = "Click Center Maze, then Right Maze, then other mazes"
         cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
         cv2.imshow(winname, frame)
+        cv2.resizeWindow(winname, (960,720))
         cv2.setMouseCallback(winname, click_event)
 
         while len(points) < 9:

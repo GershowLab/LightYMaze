@@ -92,7 +92,7 @@ else:
 		x,y,w,h = ymg.clip_to_mazes(10)
 		cap.set_bounding_box(x,y,w,h)
 		im,_ = cap.capture_frame()
-		cv2.namedWindow('clipped mazes', cv2.WINDOW_NORMAL)
+		cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
 		img = ymg.diagnostic_image(im)
 		cv2.imshow('clipped mazes', img)
 		cv2.resizeWindow('clipped widow', default_win_size)

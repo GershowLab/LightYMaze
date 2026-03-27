@@ -80,7 +80,7 @@ class MazeController:
             threshold = 5
         if threshold > 200:
             threshold = 200
-        print(f"{self._maze_ID}: changing threshold to {threshold}}")
+        print(f"{self._maze_ID}: changing threshold to {threshold}")
         self._threshold = threshold
 
     def increase_threshold(self):
