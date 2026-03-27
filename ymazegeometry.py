@@ -37,7 +37,7 @@ class YMazeGeometry:
     def _setup_mazes(self):
         self._mazes = []
         for j in range(len(self.maze_centers)):
-            self._mazes.append(YMazeFootprint(self, j))
+            self._mazes.append(YMazeFootprint(self, j+1))
 
     def calculate_affine(self, imspacepts, realpts):
         print ("calc affine: create calculator")

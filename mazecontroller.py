@@ -35,7 +35,7 @@ class MazeController:
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 10
         self._bak_initialized = False
-        self._threshold = 10
+        self._threshold = 30
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
@@ -74,6 +74,19 @@ class MazeController:
         self._last_msg = "no message"
         self._set_regions()
         self._led_update = False
+
+    def set_threshold(self, threshold):
+        if (threshold < 5):
+            threshold = 5
+        if threshold > 200:
+            threshold = 200
+        self._threshold = threshold
+
+    def increase_threshold(self):
+        self.set_threshold(self._threshold + 5)
+
+    def decrease_threshold(self):
+        self.set_threshold(self._threshold - 5)
 
     def get_dataframe(self):
         df = self._df.copy()
