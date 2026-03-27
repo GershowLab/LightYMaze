@@ -6,7 +6,6 @@ import os
 import cv2
 import glob
 from enum import IntEnum
-from collections import Iterable
 
 from affinecalculator import AffineCalculator
 
@@ -31,7 +30,7 @@ class YMazeGeometry:
         self._region_mask = None
         self._imspace_to_real_space = AffineCalculator()
         self.generate_coordinates()
-        self._mazes : Iterable[YMazeFootprint] = []
+        self._mazes = []
         self._setup_mazes()
 
         # TODO more general affine transformation
