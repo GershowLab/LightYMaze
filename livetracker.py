@@ -170,9 +170,9 @@ try:
 				if win is not None:
 					cv2.destroyWindow(win)
 		if k == ord('t') and display_maze > 0:
-			md._maze_minions[display_maze-1]._maze_controller.decrease_threshold()
+			md._maze_minions[display_maze]._maze_controller.decrease_threshold()
 		if k == ord('T') and display_maze > 0:
-			md._maze_minions[display_maze - 1]._maze_controller.increase_threshold()
+			md._maze_minions[display_maze]._maze_controller.increase_threshold()
 
 		im,ts = cap.capture_frame()
 		frame_num += 1
