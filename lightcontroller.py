@@ -12,10 +12,10 @@ try:
             self.strip.set_global_brightness(global_brightness)
 
 
-        def set_led_direct(self, led_number, r, g, bright_pct = 100):
+        def set_led_direct(self, led_number, r, g,b, bright_pct = 100):
             with self.lock:
                 self.strip.set_pixel(led_number, r, g, b, bright_percent=bright_pct)
-                print(f"setting led {led_number} to {red},{green},{blue}")
+                print(f"setting led {led_number} to {r},{g},{b}")
         #maze num is 1 to 9; not 0 to 8
         #channel num is 1 to 3 not 0 to 2
         def set_led(self, maze_num, channel_num, red, green, blue, bright_pct = 100):
