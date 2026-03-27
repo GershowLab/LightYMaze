@@ -78,12 +78,13 @@ while True:
 
 
 	key = cv2.waitKey(1) & 0xFF
-	if key == ord('q'):
-		quit()
-	response = input("Are you satisfied with the maze locations? (yes/no)")
-	if response == "yes":
-		break
-	cap.reset_bounding_box()
+	break
+	# if key == ord('q'):
+	# 	quit()
+	# response = input("Are you satisfied with the maze locations? (yes/no)")
+	# if response == "yes":
+	# 	break
+	# cap.reset_bounding_box()
 
 light_controller = LightController()
 #
