@@ -252,7 +252,7 @@ class YMazeGeometry:
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
         for i in range(len(mc)):
             loc = (np.array(self._imspace_to_real_space.transform_rev(*mc[i])) - self.origin).astype(int)
-            cv2.putText(img, f"{i+1}", loc, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(img, f"{i+1}", loc, cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 0), 4)
         return img
 def calibrate_geometry_from_image(frame, ymg):
     ymg.calibrate_geometry_from_image(frame)
