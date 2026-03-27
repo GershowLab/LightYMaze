@@ -52,6 +52,10 @@ while True: #should be True, changed to speed up testing
 		cap.dimmer()
 	if key == ord('+') or key == ord('='):
 		cap.brighter()
+	if key == ord('h'):
+		cap.hflip = not cap.hflip
+	if key == ord('v'):
+		cap.vflip = not cap.vflip
 #except:
 	#	print("error")
 cv2.destroyAllWindows()

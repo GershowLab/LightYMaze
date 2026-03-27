@@ -25,6 +25,7 @@ class CameraCapture:
         self.set_exposure()
         self.hflip = True
         self.vflip = False
+        self.set_exposure()
         #self.cam.start()
 
     def set_exposure(self, exposure = None, gain = None):
