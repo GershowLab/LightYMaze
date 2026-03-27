@@ -70,6 +70,10 @@ else:
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord('c'):
 			break
+		if key == ord('-'):
+			cap.dimmer()
+		if key == ord('+') or key == ord('='):
+			cap.brighter()
 	#except:
 		#	print("error")
 	cv2.destroyAllWindows()

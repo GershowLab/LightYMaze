@@ -20,7 +20,31 @@ class CameraCapture:
         self.y0 = paa[1]
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
+        self.exposure = 10000
+        self.gain = 1
+        self.set_exposure()
         #self.cam.start()
+
+    def set_exposure(self, exposure = None, gain = None):
+        if exposure is not None:
+            self.exposure = exposure
+        if gain is not None:
+            self.gain = gain
+        if self.gain < 0:
+            self.gain = 0
+        if self.exposure < 100:
+            self.exposure = 100
+        if self.exposure > 1e6:
+            self.exposure = 1e6
+
+        self._cam.set_controls({"AeEnable": False, "ExposureTime": self.exposure, "AnalogueGain": self.gain})
+
+    def brighter(self):
+        self.set_exposure(self.exposure*1.2, self.gain + 0.1)
+
+    def dimmer(self):
+        self.set_exposure(self.exposure/1.2, self.gain - 0.1)
+
 
     def start(self):
         if not self.started:
