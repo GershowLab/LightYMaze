@@ -11,9 +11,10 @@ try:
         def set_global_brightness(self, global_brightness):
             self.strip.set_global_brightness(global_brightness)
 
+        #maze num is 1 to 9; not 0 to 8
         def set_led(self, maze_num, channel_num, red, green, blue, bright_pct = 100):
             with self.lock:
-                self.strip.set_pixel(3*maze_num+channel_num,red, green, blue, bright_percent=bright_pct)
+                self.strip.set_pixel(3*(maze_num-1)+channel_num,red, green, blue, bright_percent=bright_pct)
                 print(f"{maze_num}, {channel_num}: {red},{green},{blue}")
 
         def update_leds(self):

@@ -113,7 +113,7 @@ light_controller = LightController()
 # cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 # for c in range(3):
 # 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
-# 	for m in range(9):
+# 	for m in range(1,10):
 # 		print(f"setting maze {m}")
 # 		light_controller.set_led(m,c,255,255,255)
 # 		light_controller.update_leds()
