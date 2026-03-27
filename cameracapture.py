@@ -83,11 +83,24 @@ class CameraCapture:
     def reset_bounding_box(self):
         self.set_bounding_box(*self.default_bounding_box)
 
+    def set_bounding_box_from_im_coordinates(self, x0, y0, w, h):
+        if self.hflip:
+            x0 = self.x0 + w - x0
+        else:
+            x0 = self.x0 + x0
+        if self.vflip:
+            y0 = self.y0 + h - y0
+        else:
+            y0 = self.y0 + y0
+        self.set_bounding_box(x0, y0, w, h)
+
     def set_bounding_box(self, x0, y0, w, h):
         was_started = self.started
         #self.cam.stop()
         self.w = w
         self.h = h
+        if self.hflip:
+            self.x0 =
         self.x0 = x0
         self.y0 = y0
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})

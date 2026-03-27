@@ -76,7 +76,7 @@ while True:
 	# cv2.resizeWindow('mazes', default_win_size)
 	# cv2.waitKey(1)
 	x,y,w,h = ymg.clip_to_mazes(10)
-	cap.set_bounding_box(x,y,w,h)
+	cap.set_bounding_box_from_im_coordinates(x,y,w,h)
 	im,_ = cap.capture_frame()
 	cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
 	img = ymg.diagnostic_image(im)
