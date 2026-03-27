@@ -36,6 +36,7 @@ class CameraCapture:
             self.exposure = 100
         if self.exposure > 1e6:
             self.exposure = 1e6
+        self.exposure = int(self.exposure)
 
         self._cam.set_controls({"AeEnable": False, "ExposureTime": self.exposure, "AnalogueGain": self.gain})
 
