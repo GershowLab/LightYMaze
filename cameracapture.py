@@ -85,11 +85,14 @@ class CameraCapture:
 
     def set_bounding_box_from_im_coordinates(self, x0, y0, w, h):
         if self.hflip:
-            x0 = self.x0 + self.w - x0
+            #image ran from x0 to x0+w
+            #reversed to x0+w to x0
+            #subset runs from (x0+w-x') to (x0 + w - x' - w')
+            x0 = self.x0 + self.w - x0 - w
         else:
             x0 = self.x0 + x0
         if self.vflip:
-            y0 = self.y0 + self.h - y0
+            y0 = self.y0 + self.h - y0 - h
         else:
             y0 = self.y0 + y0
         self.set_bounding_box(x0, y0, w, h)
