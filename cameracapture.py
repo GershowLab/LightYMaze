@@ -23,6 +23,8 @@ class CameraCapture:
         self.exposure = 100000
         self.gain = 8
         self.set_exposure()
+        self.hflip = True
+        self.vflip = False
         #self.cam.start()
 
     def set_exposure(self, exposure = None, gain = None):
@@ -59,7 +61,17 @@ class CameraCapture:
     def capture_frame(self):
         self.start()
         with self._cam.captured_request(flush=True) as request:
-            im = request.make_array("main")[:self.h, :self.w]
+            if self.hflip and self.vflip:
+                im = request.make_array("main")[self.h-1::-1, self.w-1::-1]
+            else:
+                if self.hflip:
+                    im = request.make_array("main")[:self.h, self.w - 1::-1]
+                else:
+                    if self.vflip:
+                        im = request.make_array("main")[self.h - 1::-1, :self.w]
+                    else:
+                        im = request.make_array("main")[:self.h, :self.w]
+
             metadata = request.get_metadata()
             timestamp = metadata['SensorTimestamp'] / 1e9
         #im = self._cam.capture_array()[:self.h, :self.w]
