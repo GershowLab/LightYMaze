@@ -59,7 +59,7 @@ class CameraCapture:
     def capture_frame(self):
         self.start()
         with self._cam.captured_request(flush=True) as request:
-            im = request.make_array("main")  # image from the "main" stream
+            im = request.make_array("main")[:self.h, :self.w]
             metadata = request.get_metadata()
             timestamp = metadata['SensorTimestamp'] / 1e9
         #im = self._cam.capture_array()[:self.h, :self.w]
