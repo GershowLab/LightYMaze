@@ -346,7 +346,7 @@ class YMazeFootprint:
         self.ymg : YMazeGeometry = ymg
         self.shapes = []
         self.ID = ID
-        self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID]).astype(np.float32)
+        self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID-1]).astype(np.float32)
         self.populate_shapes()
 
     def populate_shapes(self):
