@@ -96,6 +96,7 @@ winname = 'led correspondence test - remove filter'
 cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 cv2.resizeWindow(winname, (960,720))
 bright = 10
+light_controller.set_global_brightness(2)
 for led in range(27):
 	print(f"setting led {led}")
 	light_controller.set_led_direct(led, bright, bright, bright)

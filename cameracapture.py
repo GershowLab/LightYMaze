@@ -20,8 +20,8 @@ class CameraCapture:
         self.y0 = paa[1]
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size":paa})
         self.set_bounding_box(*paa)
-        self.exposure = 100000
-        self.gain = 8
+        self.exposure = 50000
+        self.gain = 4
         self.set_exposure()
         self.hflip = True
         self.vflip = False
