@@ -60,13 +60,13 @@ if express:
 else:
 	print("cam cap")
 	cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('focus - c to continue', default_win_size)
 
 	print("focus")
 	while True: #should be True, changed to speed up testing
 		#try:
 		im,ts = cap.capture_frame()
 		cv2.imshow('focus - c to continue', im)
-		cv2.resizeWindow('focus - c to continue', default_win_size)
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord('c'):
 			break
@@ -74,6 +74,11 @@ else:
 			cap.dimmer()
 		if key == ord('+') or key == ord('='):
 			cap.brighter()
+
+		if key == ord('h'):
+			cap.hflip = not cap.hflip
+		if key == ord('v'):
+			cap.vflip = not cap.vflip
 	#except:
 		#	print("error")
 	cv2.destroyAllWindows()
@@ -85,19 +90,13 @@ else:
 		ymg.set_image_size((cap.h, cap.w))
 		im,_ = cap.capture_frame()
 		ymg.calibrate_geometry_from_image(im)
-		# cv2.namedWindow('mazes', cv2.WINDOW_KEEPRATIO)
-		# cv2.imshow('mazes', img)
-		# cv2.resizeWindow('mazes', default_win_size)
-		# cv2.waitKey(1)
 		x,y,w,h = ymg.clip_to_mazes(10)
-		cap.set_bounding_box(x,y,w,h)
+		cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 		im,_ = cap.capture_frame()
 		cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
 		img = ymg.diagnostic_image(im)
 		cv2.imshow('clipped mazes', img)
 		cv2.resizeWindow('clipped widow', default_win_size)
-
-
 
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord('q'):
