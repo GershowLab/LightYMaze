@@ -118,9 +118,9 @@ class CameraCapture:
         self.y0 = y0
         self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
         self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
-        self.main_configuration["controls"]["Brightness"] = 1
+        self.main_configuration["controls"]["Brightness"] = 0.5
         self.main_configuration["controls"]["AwbEnable"] = False
-        self.main_configuration["controls"]["Contrast"] = 4
+        self.main_configuration["controls"]["Contrast"] = 3
         self.main_configuration["controls"]["Saturation"] = 0
         self.stop()
         self._cam.configure(self.main_configuration)
