@@ -206,8 +206,11 @@ class YMazeGeometry:
         cv2.setMouseCallback(winname, click_event)
 
         while len(points) < 9:
-            if (cv2.waitKey(1) & 0xFF == ord('q')):
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):
                 break
+            if key == ord('q'):
+                quit()
 
 
         cv2.destroyWindow(winname)

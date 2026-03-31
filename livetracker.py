@@ -193,9 +193,10 @@ try:
 finally:
 	filepath = datadir / f"{nowstr} results.csv"
 	md.get_data_frame().to_csv(f"{filepath}")
-	for m in range(9):
-		for c in range(3):
-			light_controller.set_led(m,c,0,0,0)
-	light_controller.update_leds()
+	if light_controller is not None:
+		for m in range(9):
+			for c in range(3):
+				light_controller.set_led(m,c,0,0,0)
+		light_controller.update_leds()
 
 
