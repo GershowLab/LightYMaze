@@ -51,7 +51,7 @@ class CameraCapture:
         self.ae_on = enable
         self._cam.set_controls({"AeEnable": enable})
         if not enable:
-            metadata = self._cam.get_metadata()
+            metadata = self._cam.capture_metadata()
             self.exposure = metadata["ExposureTime"]
         print(f"auto_exposure is {self.ae_on}")
 
