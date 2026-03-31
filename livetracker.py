@@ -68,6 +68,8 @@ else:
 		im,ts = cap.capture_frame()
 		cv2.imshow('focus - c to continue', im)
 		key = cv2.waitKey(1) & 0xFF
+		if key == ord('q'):
+			quit()
 		if key == ord('c'):
 			break
 		if key == ord('-'):
@@ -98,11 +100,19 @@ else:
 		cv2.imshow('clipped mazes', img)
 		cv2.resizeWindow('clipped widow', default_win_size)
 
-		key = cv2.waitKey(1) & 0xFF
-		if key == ord('q'):
-			quit()
-		response = input("Are you satisfied with the maze locations? (yes/no)")
-		if response == "yes":
+
+		print("Are you satisfied with the maze locations? y/n q to quit")
+		while True:
+			key = cv2.waitKey(1) & 0xFF
+			if key == ord('q'):
+				quit()
+			if key == ord('n'):
+				redo = True
+				break
+			if key == ord('y'):
+				redo = False
+				break
+		if not redo:
 			break
 		cap.reset_bounding_box()
 
