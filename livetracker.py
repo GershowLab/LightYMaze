@@ -76,11 +76,12 @@ else:
 			cap.dimmer()
 		if key == ord('+') or key == ord('='):
 			cap.brighter()
-
 		if key == ord('h'):
 			cap.hflip = not cap.hflip
 		if key == ord('v'):
 			cap.vflip = not cap.vflip
+		if key == ord('a'):
+			cap.auto_exposure() #no arguments = toggle
 	#except:
 		#	print("error")
 	cv2.destroyAllWindows()
