@@ -18,10 +18,10 @@ class CameraCapture:
         self.h = paa[3]
         self.x0 = paa[0]
         self.y0 = paa[1]
-        self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size":paa})
+        self.main_configuration = self._cam.create_still_configuration({"format": "BGR888", "size":paa})
         self.set_bounding_box(*paa)
-        self.exposure = 5000
-        self.gain = 1
+        self.exposure = 6000
+        self.gain = 2
         self.set_exposure()
         self.hflip = False
         self.vflip = True
@@ -73,17 +73,18 @@ class CameraCapture:
             self._cam.stop()
     def capture_frame(self):
         self.start()
+        ch = 2
         with self._cam.captured_request(flush=True) as request:
             if self.hflip and self.vflip:
-                im = request.make_array("main")[self.h-1::-1, self.w-1::-1]
+                im = request.make_array("main")[self.h-1::-1, self.w-1::-1,ch]
             else:
                 if self.hflip:
-                    im = request.make_array("main")[:self.h, self.w - 1::-1]
+                    im = request.make_array("main")[:self.h, self.w - 1::-1,ch]
                 else:
                     if self.vflip:
-                        im = request.make_array("main")[self.h - 1::-1, :self.w]
+                        im = request.make_array("main")[self.h - 1::-1, :self.w,ch]
                     else:
-                        im = request.make_array("main")[:self.h, :self.w]
+                        im = request.make_array("main")[:self.h, :self.w,ch]
 
             metadata = request.get_metadata()
             timestamp = metadata['SensorTimestamp'] / 1e9
@@ -116,12 +117,13 @@ class CameraCapture:
         self.h = h
         self.x0 = x0
         self.y0 = y0
-        self.main_configuration = self._cam.create_still_configuration({"format": 'YUV420', "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
+        self.main_configuration = self._cam.create_still_configuration({"format": "BGR888", "size": (self.w, self.h)}) #,"Transform": Transform(hflip=True)})
         self.main_configuration["controls"]["ScalerCrop"] = (x0,y0,w,h)
-        self.main_configuration["controls"]["Brightness"] = 0.5
+        self.main_configuration["controls"]["Brightness"] = -0.6
         self.main_configuration["controls"]["AwbEnable"] = False
-        self.main_configuration["controls"]["Contrast"] = 3
-        self.main_configuration["controls"]["Saturation"] = 0
+        self.main_configuration["controls"]["Contrast"] = 2
+        self.main_configuration["controls"]["Saturation"] = 1
+        self.main_configuration["controls"]["Sharpness"] = 20
         self.stop()
         self._cam.configure(self.main_configuration)
         if was_started:
