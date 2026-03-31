@@ -47,7 +47,7 @@ class CameraCapture:
 
     def auto_exposure(self, enable = None):
         if enable is None:
-            enable = self.ae_on
+            enable = not self.ae_on
         self.ae_on = enable
         self._cam.set_controls({"AeEnable": enable})
         print(f"auto_exposure is {self.ae_on}")
