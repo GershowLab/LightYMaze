@@ -56,6 +56,8 @@ while True: #should be True, changed to speed up testing
 		cap.hflip = not cap.hflip
 	if key == ord('v'):
 		cap.vflip = not cap.vflip
+	if key == ord('a'):
+		cap.auto_exposure()
 #except:
 	#	print("error")
 cv2.destroyAllWindows()

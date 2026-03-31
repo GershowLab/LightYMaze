@@ -367,9 +367,29 @@ class YMazeFootprint:
     def label_mask(self, region_mask, maze_mask, label = None):
        if label is None:
            label = self.ID
+       xa,ya = self.ymg.pixel_axes()
+       xc, yc = self.bounding_box()
+       xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
+       minx = np.min(xc)
+       maxx = np.max(xc)
+       miny = np.min(yc)
+       maxy = np.max(yc)
+       xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
+       yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
+       inds = np.ix_(yi, xi)
+       xaxis = xa[xi]
+       yaxis = ya[yi]
+       x_mm = self.ymg.x_mm[inds]
+       y_mm = self.ymg.y_mm[inds]
+
+       rm = np.zeros_like(x_mm)
+       mm = np.zeros_like(x_mm)
+
        for s in self.shapes:
-           inds = s.label_mask(region_mask, self.ymg)
-           maze_mask[inds] = label
+           ii = s.label_mask(rm, xaxis, yaxis, x_mm, y_mm,self.ymg._imspace_to_real_space)
+           mm[ii] = label
+       region_mask[inds] = rm
+       maze_mask[inds] = mm
 
     def bounding_box(self):
         bb = np.array([s.bounding_box() for s in self.shapes])
@@ -394,26 +414,25 @@ class Shape:
     def bounding_box(self):
         pass #xlist, ylist
 
-    def find_interior(self, ymg: YMazeGeometry):
+    def find_interior(self, xaxis, yaxis, x_mm, y_mm, imspace_to_real_space : AffineCalculator):
         #finds points in x_mm, y_mm that are internal to the shape
         xc,yc = self.bounding_box()
-        xc,yc = ymg._imspace_to_real_space.transform_rev(xc,yc)
+        xc,yc = imspace_to_real_space.transform_rev(xc,yc)
         minx = np.min(xc)
         maxx = np.max(xc)
         miny = np.min(yc)
         maxy = np.max(yc)
-        xa,ya = ymg.pixel_axes()
-        xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
-        yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
+        xi = np.nonzero(np.logical_and(minx <= xaxis, xaxis <= maxx))[0]
+        yi = np.nonzero(np.logical_and(miny <= yaxis, yaxis <= maxy))[0]
         inds = np.ix_(yi,xi)
-        valid = self.interior(ymg.x_mm[inds], ymg.y_mm[inds])
+        valid = self.interior(x_mm[inds], y_mm[inds])
         j,i = np.meshgrid(xi,yi)
         return (i[valid], j[valid])
 
-    def label_mask(self, mask, ymg, label = None):
+    def label_mask(self, mask, xaxis, yaxis, x_mm, y_mm, imspace_to_real_space : AffineCalculator, label = None):
         if label is None:
             label = self.ID
-        inds = self.find_interior(ymg)
+        inds = self.find_interior(xaxis, yaxis, x_mm, y_mm, imspace_to_real_space)
         mask[inds] = label
         return inds
 
