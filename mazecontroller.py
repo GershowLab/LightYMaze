@@ -21,12 +21,12 @@ class MazeController:
     _vid_writer: cv2.VideoWriter
 
     def __init__(self, light_controller: LightController, region_map: np.ndarray, transition_probabilities: np.ndarray,
-                 maze_ID: int):
+                 maze_ID: int, padding : int):
         self._maze_ID = maze_ID
         self._bak: BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map.astype(np.uint8)
-        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((3,3), np.uint8), iterations=9)
+        self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((3,3), np.uint8), iterations=padding)
         # 255*cv2.morphologyEx((self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
         self._h, self._w = self._region_map.shape  # row x col
         [self._x, self._y] = np.meshgrid(np.arange(self._w), np.arange(self._h))

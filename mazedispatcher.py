@@ -70,9 +70,14 @@ class MazeDispatcher:
 
 class MazeMinion:
     def __init__(self, maze_id, maze_mask, region_mask, transition_probs, light_controller = None):
-        self._x, self._y, self._w, self._h = cv2.boundingRect(((maze_mask == maze_id) * 255).astype(np.uint8))
+        self._pad = 12
+        x,y,w,h = cv2.boundingRect(((maze_mask == maze_id) * 255).astype(np.uint8))
+        self._x = np.clip(x-self._pad,0,None)
+        self._y = np.clip(y-self._pad,0,None)
+        self._w = np.clip(w+2*self._pad,None,maze_mask.shape[1]-self._x)
+        self._h = np.clip(h+2*self._pad,None,maze_mask.shape[0]-self._y)
         self._maze_id = maze_id
-        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id)
+        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad)
 
     def get_subim(self, img):
         return img[self._y:(self._y+self._h), self._x:(self._x + self._w)]
