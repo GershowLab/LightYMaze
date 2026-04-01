@@ -149,6 +149,10 @@ print(f"captured first frame - {time.monotonic() - tstart}")
 display_maze = 0
 old_maze = -1
 experiment_duration = 3600 #seconds
+print(f"opening video")
+fstub = datadir / f"{nowstr} maze"
+md.open_video(fstub)
+
 try:
 	while frame_time < experiment_duration:
 		print(f"frame: {frame_num}, elapsed time: {frame_time}, imsize: {im.shape}")
