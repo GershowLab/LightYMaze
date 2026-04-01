@@ -35,7 +35,7 @@ class MazeController:
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 10
         self._bak_initialized = False
-        self._threshold = 30
+        self._threshold = 45
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
@@ -179,6 +179,7 @@ class MazeController:
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         thresh = self._bak.get_thresholded_image(self._img, self._threshold)
+        #thresh = self._bak.get_zscore_image(self._img)
         g = thresh.copy()
         g[self._maze_mask == 0] = 255
         thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))

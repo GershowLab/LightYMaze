@@ -70,7 +70,7 @@ for j in range(3600):
             t.join()
     tt = md.new_frame(frame, multi_thread=True)
     img = md.make_composite_image()
-   # md._maze_minions[2].debug_display()
+    md._maze_minions[2].debug_display()
     cv2.imshow('montage', img)
     cv2.waitKey(1)
     [ret, frame] = vc.read()
