@@ -17,6 +17,29 @@ class MazeDispatcher:
         self._light_controller = light_controller
         self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
+        self._composite = None
+        self._vid_writer = None
+
+    def get_composite_image(self):
+        return self._composite
+
+    def make_composite_image(self):
+        dims = np.array([mm.get_dimensions() for mm in self._maze_minions], np.uint8)
+        w,h = np.max(dims, axis=0)
+        ncol = np.uint16(3)
+        nrow = np.uint16(np.ceil(len(self._maze_minions) / ncol))
+        print(f"all ims {w},{h}")
+        if self._composite is None:
+            self._composite = np.zeros((nrow*h,ncol*w,3), np.uint8)
+        for j in range(len(self._maze_minions)):
+            x0 = np.uint16((j%ncol)*w)
+            y0 = np.uint16(np.floor(j/ncol)*h)
+            img = self._maze_minions[j].get_debug_im()
+            imh,imw = img.shape[:2]
+            print(f"im{j+1} {imw},{imh}")
+            self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
+        return self._composite
+
 
     # def open_csv(self, fstub):
     #     for mm in self._maze_minions:
@@ -25,15 +48,26 @@ class MazeDispatcher:
     def open_video(self, fstub):
         for mm in self._maze_minions:
             mm.open_video(fstub)
+        vidfilename = f"{fstub} all mazes.mp4"
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), True)
+        if self._vid_writer is not None:
+            print(
+                f"{vidfilename} writer open: {self._vid_writer.isOpened()}")  # , backend = {self._vid_writer.getBackendName()}")
+        else:
+            print(f"failed to open {vidfilename}")
 
-    # def close_csv(self):
-    #     for mm in self._maze_minions:
-    #         mm.close_csv()
+    def write_video(self):
+        img = self.make_composite_image()
+        if self._vid_writer is not None:
+            self._vid_writer.write(img)
 
     def close_video(self):
         for mm in self._maze_minions:
             mm.close_video()
-
+        if self._vid_writer is not None:
+            self._vid_writer.release()
+            self._vid_writer = None
     # def save_regions(self,fstub):
     #     for mm in self._maze_minions:
     #         mm.save_region_sums(fstub)
@@ -79,8 +113,26 @@ class MazeMinion:
         self._maze_id = maze_id
         self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad)
 
+
+    def get_dimensions(self):
+        return (self._w, self._h)
+
     def get_subim(self, img):
         return img[self._y:(self._y+self._h), self._x:(self._x + self._w)]
+
+    def get_debug_im(self):
+        img = self._maze_controller.debug_image()
+        text = f"M{self._maze_id}"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1
+        thickness = 1
+        (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+        h,w = img.shape[:2]
+        x = w - text_w - 2
+        y = text_h + 2
+        # Draw text
+        cv2.putText(img, text, (x, y), font, font_scale, (255, 255, 255), thickness)
+        return img
 
     def new_frame_nothread(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()

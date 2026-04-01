@@ -52,10 +52,11 @@ cv2.waitKey(0)
 
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\python test\\tesfstub = fstub.parents[0] / 'python test' / 'test'
 md = MazeDispatcher(ymg)
-md.open_video(fstub)
+#md.open_video(fstub)
 tt = None
 #written assuming you've already got a frame from above
 #try:
+cv2.namedWindow('montage', cv2.WINDOW_KEEPRATIO)
 for j in range(3600):
     print(f"processing frame {j}")
     if frame.ndim == 3:
@@ -68,7 +69,9 @@ for j in range(3600):
         for t in tt:
             t.join()
     tt = md.new_frame(frame, multi_thread=True)
-    md._maze_minions[2].debug_display()
+    img = md.make_composite_image()
+   # md._maze_minions[2].debug_display()
+    cv2.imshow('montage', img)
     cv2.waitKey(1)
     [ret, frame] = vc.read()
     if not ret:

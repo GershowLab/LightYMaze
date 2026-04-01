@@ -254,4 +254,4 @@ class MazeController:
 
     def _write_video(self):
         if self._vid_writer is not None:
-            self._vid_writer.write(self.debug_image())
+            self._vid_writer.write(self._img)

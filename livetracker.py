@@ -153,6 +153,8 @@ print(f"opening video")
 fstub = datadir / f"{nowstr} maze"
 md.open_video(fstub)
 
+cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
+cv2.resizeWindow('all mazes', default_win_size)
 try:
 	while frame_time < experiment_duration:
 		print(f"frame: {frame_num}, elapsed time: {frame_time}, imsize: {im.shape}")
@@ -160,6 +162,9 @@ try:
 		if tt is not None:
 			for t in tt:
 				t.join()
+			md.write_video()
+			cv2.imshow('all mazes', md.get_composite_image())
+			cv2.waitKey(1)
 
 
 		tt = md.new_frame(im, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False, multi_thread=True)
@@ -187,20 +192,17 @@ try:
 			md._maze_minions[display_maze]._maze_controller.decrease_threshold()
 		if k == ord('u') and display_maze >= 0:
 			md._maze_minions[display_maze]._maze_controller.increase_threshold()
-
 		im,ts = cap.capture_frame()
 		frame_num += 1
 		frame_time = ts - t0
 	if tt is not None:
 		for t in tt:
 			t.join()
+	light_controller.turn_off_leds()
 finally:
 	filepath = datadir / f"{nowstr} results.csv"
 	md.get_data_frame().to_csv(f"{filepath}")
 	if light_controller is not None:
-		for m in range(9):
-			for c in range(3):
-				light_controller.set_led(m,c,0,0,0)
-		light_controller.update_leds()
+		light_controller.turn_off_leds()
 
 
