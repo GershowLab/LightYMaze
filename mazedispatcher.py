@@ -20,15 +20,18 @@ class MazeDispatcher:
         self._composite = None
         self._composite_w = -1
         self._composite_h = -1
+        self._panel_w = -1
+        self._panel_h = -1
         self._composite_ncol = np.uint16(3)
         self._composite_nrow = np.uint16(3)
         self._vid_writer = None
 
     def set_composite_dimensions(self):
         dims = np.array([mm.get_dimensions() for mm in self._maze_minions], np.uint8)
-        self._composite_w,self._composite_h = np.max(dims, axis=0)
-        self._composite.nrow = np.uint16(np.ceil(len(self._maze_minions) / self._composite_ncol))
-
+        self._panel_w,self._panel_h = np.max(dims, axis=0)
+        self._composite_nrow = np.uint16(np.ceil(len(self._maze_minions) / self._composite_ncol))
+        self._composite_w = self._panel_w*self._composite_ncol
+        self._composite_h = self._panel_h*self._composite_nrow
 
     def get_composite_image(self):
         return self._composite
@@ -41,11 +44,11 @@ class MazeDispatcher:
         if self._composite is None:
             self._composite = np.zeros((self._composite_h, self._composite_w,3), np.uint8)
         for j in range(len(self._maze_minions)):
-            x0 = np.uint16((j%ncol)*w)
-            y0 = np.uint16(np.floor(j/ncol)*h)
+            x0 = np.uint16((j%self._composite_ncol)*self._panel_w)
+            y0 = np.uint16(np.floor(j/self._composite_ncol)*self._panel_h)
             img = self._maze_minions[j].get_debug_im()
             imh,imw = img.shape[:2]
-            print(f"im{j+1} {imw},{imh}")
+            #print(f"im{j+1} {imw},{imh}")
             self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
         return self._composite
 
