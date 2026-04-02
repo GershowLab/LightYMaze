@@ -123,7 +123,7 @@ class CameraCapture:
         self.main_configuration["controls"]["AwbEnable"] = False
         self.main_configuration["controls"]["Contrast"] = 2
         self.main_configuration["controls"]["Saturation"] = 1
-        self.main_configuration["controls"]["Sharpness"] = 10
+        self.main_configuration["controls"]["Sharpness"] = 1
         self.stop()
         self._cam.configure(self.main_configuration)
         if was_started:
