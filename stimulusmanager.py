@@ -85,7 +85,7 @@ class Action:
 
 class ActionSetLedPostDecision(Action):
     def __init__(self, stimulus_manager: StimulusManager,
-                 state: State, offrgb=(0, 0, 0), choice1rgb=(0, 0, 0), choice2rgb=(0, 0, 255)):
+                 state: State, offrgb=(0, 0, 0), choice1rgb=(0, 0, 0), choice2rgb=(0, 255, 255)):
         super().__init__(stimulus_manager, from_states=(state,))
         self.offrgb = offrgb
         self.choice1rgb = choice1rgb
