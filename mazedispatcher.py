@@ -18,19 +18,28 @@ class MazeDispatcher:
         self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
         self._composite = None
+        self._composite_w = -1
+        self._composite_h = -1
+        self._composite_ncol = np.uint16(3)
+        self._composite_nrow = np.uint16(3)
         self._vid_writer = None
+
+    def set_composite_dimensions(self):
+        dims = np.array([mm.get_dimensions() for mm in self._maze_minions], np.uint8)
+        self._composite_w,self._composite_h = np.max(dims, axis=0)
+        self._composite.nrow = np.uint16(np.ceil(len(self._maze_minions) / self._composite_ncol))
+
 
     def get_composite_image(self):
         return self._composite
 
     def make_composite_image(self):
-        dims = np.array([mm.get_dimensions() for mm in self._maze_minions], np.uint8)
-        w,h = np.max(dims, axis=0)
-        ncol = np.uint16(3)
-        nrow = np.uint16(np.ceil(len(self._maze_minions) / ncol))
-        print(f"all ims {w},{h}")
+
+        if self._composite_w <= 0:
+            self.set_composite_dimensions()
+
         if self._composite is None:
-            self._composite = np.zeros((nrow*h,ncol*w,3), np.uint8)
+            self._composite = np.zeros((self._composite_h, self._composite_w,3), np.uint8)
         for j in range(len(self._maze_minions)):
             x0 = np.uint16((j%ncol)*w)
             y0 = np.uint16(np.floor(j/ncol)*h)
@@ -50,7 +59,9 @@ class MazeDispatcher:
             mm.open_video(fstub)
         vidfilename = f"{fstub} all mazes.mp4"
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._w, self._h), True)
+        if self._composite_w <= 0:
+            self.set_composite_dimensions()
+        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._composite_w, self._composite_h), True)
         if self._vid_writer is not None:
             print(
                 f"{vidfilename} writer open: {self._vid_writer.isOpened()}")  # , backend = {self._vid_writer.getBackendName()}")
