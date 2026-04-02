@@ -255,4 +255,4 @@ class MazeController:
 
     def _write_video(self):
         if self._vid_writer is not None:
-            self._vid_writer.write(self._img)
+            self._vid_writer.write(cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR))
