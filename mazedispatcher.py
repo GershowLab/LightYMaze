@@ -27,8 +27,9 @@ class MazeDispatcher:
         self._vid_writer = None
 
     def set_composite_dimensions(self):
+        #we will reduce the number of pixels in the image to make it go faster
         dims = np.array([mm.get_dimensions() for mm in self._maze_minions], np.uint16)
-        self._panel_w,self._panel_h = np.max(dims, axis=0)
+        self._panel_w,self._panel_h = np.ceil(np.max(dims, axis=0)/2)
         self._composite_nrow = np.uint16(np.ceil(len(self._maze_minions) / self._composite_ncol))
         self._composite_w = np.uint16(self._panel_w*self._composite_ncol)
         self._composite_h = np.uint16(self._panel_h*self._composite_nrow)
@@ -43,13 +44,13 @@ class MazeDispatcher:
 
         if self._composite is None:
             self._composite = np.zeros((self._composite_h, self._composite_w,3), np.uint8)
-            print(f"{self._composite_w}x{self._composite_h} composite image")
+            #print(f"{self._composite_w}x{self._composite_h} composite image")
         for j in range(len(self._maze_minions)):
             x0 = np.uint16((j%self._composite_ncol)*self._panel_w)
             y0 = np.uint16(np.floor(j/self._composite_ncol)*self._panel_h)
-            img = self._maze_minions[j].get_debug_im()
+            img = self._maze_minions[j].get_debug_im(decimate=2,show_frame=False)
             imh,imw = img.shape[:2]
-            print(f"im{j+1},x0 = {x0}, y0 = {y0}, {imw},{imh}")
+           # print(f"im{j+1},x0 = {x0}, y0 = {y0}, {imw},{imh}")
             self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
         return self._composite
 
@@ -135,11 +136,11 @@ class MazeMinion:
     def get_subim(self, img):
         return img[self._y:(self._y+self._h), self._x:(self._x + self._w)]
 
-    def get_debug_im(self):
-        img = self._maze_controller.debug_image()
+    def get_debug_im(self, decimate = 1, show_frame = True):
+        img = self._maze_controller.debug_image(decimate, show_frame)
         text = f"M{self._maze_id}"
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1
+        font_scale = 1/decimate
         thickness = 1
         (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
         h,w = img.shape[:2]
