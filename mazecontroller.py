@@ -35,7 +35,7 @@ class MazeController:
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 10
         self._bak_initialized = False
-        self._threshold = 30
+        self._threshold = 45
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
@@ -179,6 +179,7 @@ class MazeController:
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         thresh = self._bak.get_thresholded_image(self._img, self._threshold)
+        #thresh = self._bak.get_zscore_image(self._img)
         g = thresh.copy()
         g[self._maze_mask == 0] = 255
         thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))
@@ -186,13 +187,12 @@ class MazeController:
         montage = np.vstack((np.hstack((img, bak)), np.hstack((thresh, img_annotate))))
         return montage
 
-    def debug_image(self):
+    def debug_image(self, decimate = 1, show_frame = True):
         r = self._img.copy().astype(np.uint16)
         r[self._larva_mask > 0] = 255
         b = self._img.copy().astype(np.uint16)
         g = self._img.copy().astype(np.uint16)
 
-        h,w = self._img.shape
         for reg,led in zip((MazePart.CIRCLE1, MazePart.CIRCLE2, MazePart.CIRCLE3),
                   (1,2,3)):
             for im, suf in zip((r,g,b),("R","G","B")):
@@ -201,17 +201,21 @@ class MazeController:
 
         #b[self._region_map == self._stats["Region"]] = 255
 
-        img_annotate = cv2.merge((b.astype(np.uint8), g.astype(np.uint8), r.astype(np.uint8)))
+        img_annotate = cv2.merge((b[::decimate,::decimate].astype(np.uint8), g[::decimate,::decimate].astype(np.uint8), r[::decimate,::decimate].astype(np.uint8)))
+        h,w = img_annotate.shape[:2]
+
         current_region = self._stats["Region"]
-        cv2.putText(img_annotate, f"{current_region}", self._larva_loc.astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1,
+        cv2.putText(img_annotate, f"{current_region}", (self._larva_loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1/decimate,
                     (255, 255, 0), 2)
+
         if self._frame_number < self._last_msg_frame + 30:
-            cv2.putText(img_annotate, self._last_msg, (5, h-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
+            cv2.putText(img_annotate, self._last_msg, (5, h-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255),
                         1, bottomLeftOrigin=False)
 
         for r in self._regions:
-            cv2.putText(img_annotate, f"{int(r.part)}", r.loc.astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(img_annotate, f"{self._frame_number}", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            cv2.putText(img_annotate, f"{int(r.part)}", (r.loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
+        if show_frame:
+            cv2.putText(img_annotate, f"{self._frame_number}", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
         return img_annotate
 
 
@@ -254,4 +258,4 @@ class MazeController:
 
     def _write_video(self):
         if self._vid_writer is not None:
-            self._vid_writer.write(self.debug_image())
+            self._vid_writer.write(cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR))

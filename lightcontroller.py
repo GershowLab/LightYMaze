@@ -11,6 +11,10 @@ try:
         def set_global_brightness(self, global_brightness):
             self.strip.set_global_brightness(global_brightness)
 
+        def turn_off_leds(self):
+            with self.lock:
+                self.strip.clear_strip()
+
 
         def set_led_direct(self, led_number, r, g,b, bright_pct = 100):
             with self.lock:

@@ -20,7 +20,7 @@ class CameraCapture:
         self.y0 = paa[1]
         self.main_configuration = self._cam.create_still_configuration({"format": "BGR888", "size":paa})
         self.set_bounding_box(*paa)
-        self.exposure = 10000
+        self.exposure = 20000
         self.gain = 2
         self.set_exposure()
         self.hflip = False
@@ -123,7 +123,7 @@ class CameraCapture:
         self.main_configuration["controls"]["AwbEnable"] = False
         self.main_configuration["controls"]["Contrast"] = 2
         self.main_configuration["controls"]["Saturation"] = 1
-        self.main_configuration["controls"]["Sharpness"] = 10
+        self.main_configuration["controls"]["Sharpness"] = 1
         self.stop()
         self._cam.configure(self.main_configuration)
         if was_started:
