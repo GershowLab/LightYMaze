@@ -57,6 +57,8 @@ tt = None
 #written assuming you've already got a frame from above
 #try:
 cv2.namedWindow('montage', cv2.WINDOW_KEEPRATIO)
+for mm in md._maze_minions:
+    mm._maze_controller._led_on_max_time = 5
 for j in range(3600):
     print(f"processing frame {j}")
     if frame.ndim == 3:

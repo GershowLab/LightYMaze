@@ -74,7 +74,8 @@ class MazeController:
         self._last_msg = "no message"
         self._set_regions()
         self._led_update = False
-
+        self._led_on_max_time = 300 #seconds
+        self._last_led_update = time.monotonic()
     def set_threshold(self, threshold):
         if (threshold < 5):
             threshold = 5
@@ -147,6 +148,8 @@ class MazeController:
                         self._stats["Message"] = ""
                 self._write_video()
                 self._df.loc[len(self._df)] = self._stats
+                if (time.monotonic() - self._last_led_update) > self._led_on_max_time:
+                    self.set_leds((0,0,0),(0,0,0),(0,0,0))
                 if self._led_update and self._light_controller is not None:
                     self._light_controller.update_leds()
                     self._led_update = False
@@ -233,6 +236,7 @@ class MazeController:
         if self._light_controller is not None:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
             self._led_update = True
+        self._last_led_update = time.monotonic()
 
     def set_ledrgbpct(self, led_ind, rgbpct):
         if rgbpct is None:
