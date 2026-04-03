@@ -2,6 +2,7 @@ from ymazegeometry import MazePart
 from enum import Enum
 import mazecontroller
 import numpy as np
+import time
 
 class State(Enum):
     OFF = 0
@@ -23,6 +24,8 @@ class StimulusManager:
         self.current_location = MazePart.INTERSECTION
         self._message = ''
         self._has_message = False
+        self._last_action_time = time.monotonic()
+        self._watchdog_interval = 120
         self.actions = [
             ActionChooseCircle(self, State.CHOOSE1),
             ActionChooseCircle(self, State.CHOOSE2),
@@ -68,7 +71,16 @@ class StimulusManager:
         self.current_location = new_location
         for a in self.actions:
             a.poll(old_location, new_location)
+        self.watchdog()
 
+    def reset_watchdog(self):
+        self._last_action_time = time.monotonic()
+
+    def watchdog(self):
+        if (time.monotonic() - self._last_action_time) > self._watchdog_interval:
+            self.current_state = State.PREDECISION_ANY
+            self.maze_controller.set_leds((0,0,0),(0,0,0),(0,0,0))
+            self.set_message('RESET')
 
 
 class Action:
@@ -88,6 +100,7 @@ class Action:
 
     def poll(self, prev_loc, new_loc):
         if self.condition_satisfied(prev_loc, new_loc):
+            self.stimulus_manager.reset_watchdog()
             self.action()
 
 #enter circle after making a choice
@@ -123,22 +136,22 @@ class ActionLeaveCircle(Action):
         self.choice1rgb = choice1rgb
         self.choice2rgb = choice2rgb
         self.from_parts = (from_part,)
-        self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
+       # self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
         if from_part == MazePart.CIRCLE1:
             self.next_state = State.PREDECISION1
-            self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
+        #    self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
             self.ledOff = 1
             self.ledChoices = (2, 3)
             self.msg = "FROM1"
         if from_part == MazePart.CIRCLE2:
             self.next_state = State.PREDECISION2
-            self.to_parts = (MazePart.CHANNEL2, MazePart.INTERSECTION)
+       #     self.to_parts = (MazePart.CHANNEL2, MazePart.INTERSECTION)
             self.ledOff = 2
             self.ledChoices = (1, 3)
             self.msg = "FROM2"
         if from_part == MazePart.CIRCLE3:
             self.next_state = State.PREDECISION3
-            self.to_parts = (MazePart.CHANNEL3, MazePart.INTERSECTION)
+      #      self.to_parts = (MazePart.CHANNEL3, MazePart.INTERSECTION)
             self.ledOff = 3
             self.ledChoices = (2, 1)
             self.msg = "FROM3"

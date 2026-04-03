@@ -32,7 +32,7 @@ print(f"datadir = {datadir}")
 if not os.path.exists(datadir):
 	print ("did not create data directory")
 	quit()
-	
+
 print("boot")
 cap = CameraCapture()
 print(f"camera setup - {time.monotonic() - tstart}")
@@ -108,8 +108,9 @@ else:
 
 
 		print("Are you satisfied with the maze locations? y/n q to quit")
-		while True:
-			key = cv2.waitKey(1) & 0xFF
+		redo = False
+		for i in range(200):
+			key = cv2.waitKey(100) & 0xFF
 			if key == ord('q'):
 				quit()
 			if key == ord('n'):
