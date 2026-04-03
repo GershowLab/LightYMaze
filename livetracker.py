@@ -23,7 +23,7 @@ print(f"import CameraCapture - {time.monotonic() - tstart}")
 
 
 print("creating data directory")
-basedir = Path('~/ymaze_data')
+basedir = Path('/home/pi/ymaze_data')
 nowstr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 datadir = basedir / nowstr
 datadir.mkdir(parents=True, exist_ok=True)
