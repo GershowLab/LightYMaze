@@ -3,6 +3,7 @@
 #faster region map creation
 #parameters saved in file
 #window sizes
+import os
 
 default_win_size = (640, 480)
 
@@ -27,7 +28,11 @@ nowstr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 datadir = basedir / nowstr
 datadir.mkdir(parents=True, exist_ok=True)
 
-
+print(f"datadir = {datadir}")
+if not os.path.exists(datadir):
+	print ("did not create data directory")
+	quit()
+	
 print("boot")
 cap = CameraCapture()
 print(f"camera setup - {time.monotonic() - tstart}")
