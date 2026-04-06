@@ -46,6 +46,7 @@ expt.results = results;
 expt.decision = decision;
 expt.maze = maze;
 expt.frac_to_light = nnz([decision.to_light])/(nnz([decision.to_light] | [decision.to_dark]));
+expt.frac_to_light_eb = sqrt(expt.frac_to_light.*(1-expt.frac_to_light))./sqrt(nnz([decision.to_light] | [decision.to_dark]));
 nbin = 10;
 txe = linspace(expt.results.FrameTime(1), expt.results.FrameTime(end), nbin+1);
 bin = discretize([decision.time], txe);
@@ -56,7 +57,6 @@ for j = 1:nbin
     expt.n_to_dark_vs_time(j) = nnz([d.to_dark]);
 end
 expt.frac_to_light_vs_time = expt.n_to_light_vs_time./(expt.n_to_light_vs_time + expt.n_to_dark_vs_time);
-
-
+expt.frac_to_light_vs_time_eb = sqrt(expt.n_to_dark_vs_time.*expt.n_to_light_vs_time./(expt.n_to_light_vs_time + expt.n_to_dark_vs_time).^3);
 
 end
