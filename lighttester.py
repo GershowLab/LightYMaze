@@ -38,13 +38,13 @@ m4 = (1053, 2101)
 
 print("cam cap")
 cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
+cv2.resizeWindow('focus - c to continue', default_win_size)
 
 print("focus")
 while True: #should be True, changed to speed up testing
 	#try:
 	im,ts = cap.capture_frame()
 	cv2.imshow('focus - c to continue', im)
-	cv2.resizeWindow('focus - c to continue', default_win_size)
 	key = cv2.waitKey(1) & 0xFF
 	if key == ord('c'):
 		break
@@ -81,16 +81,21 @@ while True:
 	cv2.imshow('clipped mazes', img)
 	cv2.resizeWindow('clipped widow', default_win_size)
 
-
-
-	key = cv2.waitKey(1) & 0xFF
-	break
-	# if key == ord('q'):
-	# 	quit()
-	# response = input("Are you satisfied with the maze locations? (yes/no)")
-	# if response == "yes":
-	# 	break
-	# cap.reset_bounding_box()
+	print("Are you satisfied with the maze locations? y/n q to quit")
+	redo = False
+	for i in range(200):
+		key = cv2.waitKey(100) & 0xFF
+		if key == ord('q'):
+			quit()
+		if key == ord('n'):
+			redo = True
+			break
+		if key == ord('y'):
+			redo = False
+			break
+	if not redo:
+		break
+	cap.reset_bounding_box()
 
 light_controller = LightController()
 #
@@ -111,7 +116,7 @@ for led in range(27):
 	cv2.putText(img, f"LED {led}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 	cv2.imshow(winname, img)
 	cv2.waitKey(1)
-	cv2.imwrite(datadir / f"LED {led}.jpg", img)
+	cv2.imwrite(datadir / f"LED {led}.jpg", cv2.cvtColor(im, cv2.COLOR_GRAY2BGR))
 	if cv2.waitKey(2000) & 0xFF == ord('q'):
 		break
 for c in range(1,4):

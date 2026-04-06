@@ -71,27 +71,26 @@ class CameraCapture:
         if self.started:
             self.started = False
             self._cam.stop()
-    def capture_frame(self):
+    def capture_frame(self, channels = (2,)):
         self.start()
-        ch = 2
+        ret = []
         with self._cam.captured_request(flush=True) as request:
-            if self.hflip and self.vflip:
-                im = request.make_array("main")[self.h-1::-1, self.w-1::-1,ch]
-            else:
-                if self.hflip:
-                    im = request.make_array("main")[:self.h, self.w - 1::-1,ch]
+            for ch in channels:
+                if self.hflip and self.vflip:
+                    im = request.make_array("main")[self.h-1::-1, self.w-1::-1,ch]
                 else:
-                    if self.vflip:
-                        im = request.make_array("main")[self.h - 1::-1, :self.w,ch]
+                    if self.hflip:
+                        im = request.make_array("main")[:self.h, self.w - 1::-1,ch]
                     else:
-                        im = request.make_array("main")[:self.h, :self.w,ch]
-
+                        if self.vflip:
+                            im = request.make_array("main")[self.h - 1::-1, :self.w,ch]
+                        else:
+                            im = request.make_array("main")[:self.h, :self.w,ch]
+                ret.append(im)
             metadata = request.get_metadata()
             timestamp = metadata['SensorTimestamp'] / 1e9
-        #im = self._cam.capture_array()[:self.h, :self.w]
-        #timestamp = self._cam.capture_metadata()['SensorTimestamp'] / 1e9
-        #print(f"image captured - size = {im.shape}, timestamp = {timestamp}")
-        return im, timestamp
+            ret.append(timestamp)
+        return ret
 
     def reset_bounding_box(self):
         self.set_bounding_box(*self.default_bounding_box)
