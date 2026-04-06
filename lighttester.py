@@ -1,8 +1,3 @@
-#TODO: make sure csv outputs no matter what, viterbi path exceptions
-#affine transformation
-#faster region map creation
-#parameters saved in file
-#window sizes
 import numpy as np
 
 default_win_size = (640, 480)
@@ -102,8 +97,8 @@ light_controller = LightController()
 winname = 'led correspondence test - remove filter'
 cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 cv2.resizeWindow(winname, (960,720))
-bright = 10
-light_controller.set_global_brightness(2)
+bright = 100
+light_controller.set_global_brightness(9)
 for led in range(27):
 	print(f"setting led {led}")
 	light_controller.set_led_direct(led, bright, bright, bright)
@@ -112,13 +107,14 @@ for led in range(27):
 	im, ts = cap.capture_frame()
 	light_controller.set_led_direct(led, 0, 0, 0)
 	light_controller.update_leds()
-	img = ymg.diagnostic_image(im)
+	img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+	#img = ymg.diagnostic_image(im)
 	cv2.putText(img, f"LED {led}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 	cv2.imshow(winname, img)
 	cv2.waitKey(1)
-	cv2.imwrite(datadir / f"LED {led}.jpg", cv2.cvtColor(im, cv2.COLOR_GRAY2BGR))
+	cv2.imwrite(datadir / f"LED {led}.jpg", img)
 	if cv2.waitKey(2000) & 0xFF == ord('q'):
-		break
+		quit()
 for c in range(1,4):
 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
 	for m in range(1,10):
@@ -134,4 +130,4 @@ for c in range(1,4):
 		cv2.imshow(winname, img)
 		cv2.imwrite(datadir / f"maze {m} channel {c}.jpg", img)
 		if cv2.waitKey(2000) & 0xFF == ord('q'):
-			break
+			quit()
