@@ -106,9 +106,9 @@ class CameraCapture:
             if key == ord('+') or key == ord('='):
                 self.brighter()
             if key == ord('h'):
-                self.hflip = not cap.hflip
+                self.hflip = not self.hflip
             if key == ord('v'):
-                self.vflip = not cap.vflip
+                self.vflip = not self.vflip
             if key == ord('a'):
                 self.auto_exposure()
         cv2.destroyWindow(winname)

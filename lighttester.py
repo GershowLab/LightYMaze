@@ -22,7 +22,7 @@ basedir = Path.home() / 'ymaze_calibration'
 nowstr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 datadir = basedir / nowstr
 datadir.mkdir(parents=True, exist_ok=True)
-
+print (f"data dir = {datadir}")
 
 print("boot")
 cap = CameraCapture()
@@ -93,7 +93,8 @@ for led in range(27):
 	cv2.putText(img, f"LED {led}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 	cv2.imshow(winname, img)
 	cv2.waitKey(1)
-	cv2.imwrite(datadir / f"LED {led}.jpg", img)
+	print (str(datadir / f"led {led}.jpg"))
+	cv2.imwrite(str(datadir / f"LED {led}.jpg"), img)
 	if cv2.waitKey(2000) & 0xFF == ord('q'):
 		quit()
 for c in range(1,4):
@@ -109,6 +110,6 @@ for c in range(1,4):
 		img = ymg.diagnostic_image(im)
 		cv2.putText(img, f"maze {m}, channel {c}", np.array((0,20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 		cv2.imshow(winname, img)
-		cv2.imwrite(datadir / f"maze {m} channel {c}.jpg", img)
+		cv2.imwrite(str(datadir / f"maze {m} channel {c}.jpg"), img)
 		if cv2.waitKey(2000) & 0xFF == ord('q'):
 			quit()
