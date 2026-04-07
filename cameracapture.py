@@ -5,6 +5,7 @@
 
 from picamera2 import Picamera2, Metadata
 from libcamera import Transform
+import cv2
 
 class CameraCapture:
     def __init__(self):
@@ -91,6 +92,26 @@ class CameraCapture:
             timestamp = metadata['SensorTimestamp'] / 1e9
             ret.append(timestamp)
         return ret
+
+    def focus_window(self):
+        winname = 'focus - c to continue'
+        while True:
+            im, ts = self.capture_frame()
+            cv2.imshow(winname, im)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):
+                break
+            if key == ord('-'):
+                self.dimmer()
+            if key == ord('+') or key == ord('='):
+                self.brighter()
+            if key == ord('h'):
+                self.hflip = not cap.hflip
+            if key == ord('v'):
+                self.vflip = not cap.vflip
+            if key == ord('a'):
+                self.auto_exposure()
+        cv2.destroyWindow(winname)
 
     def reset_bounding_box(self):
         self.set_bounding_box(*self.default_bounding_box)

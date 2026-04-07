@@ -32,20 +32,23 @@ try:
                 self.strip.show()
 
         def test_leds(self, timeout = 0.1):
-            for m in range(self.num_mazes):
-                for c in range(3):
-                    self.set_led(m, c, 0, 0, 255)
-                    self.update_leds()
-                    sleep(timeout)
-                    self.set_led(m, c, 255, 0, 0)
-                    self.update_leds()
-                    sleep(timeout)
-                    self.update_leds()
-                    self.set_led(m, c, 0, 255, 0)
-                    self.update_leds()
-                    sleep(timeout)
-                    self.set_led(m, c, 0, 0, 0)
-            self.update_leds()
+            try:
+                for m in range(1,self.num_mazes+1):
+                    for c in range(1,4):
+                        self.set_led(m, c, 0, 0, 255)
+                        self.update_leds()
+                        sleep(timeout)
+                        self.set_led(m, c, 255, 0, 0)
+                        self.update_leds()
+                        sleep(timeout)
+                        self.update_leds()
+                        self.set_led(m, c, 0, 255, 0)
+                        self.update_leds()
+                        sleep(timeout)
+                        self.set_led(m, c, 0, 0, 0)
+                self.update_leds()
+            finally:
+                self.turn_off_leds()
 
 except:
     class LightController:
@@ -59,26 +62,6 @@ except:
         def update_leds(self):
             return #no op
 
-
-def ledtest():
-    lc = LightController()
-    to = 1
-    for m in range(lc.num_mazes):
-        for c in range(3):
-            lc.set_led(m,c,0,0,255)
-            lc.update_leds()
-            sleep(to)
-            lc.set_led(m,c,255,0,0)
-            lc.update_leds()
-            sleep(to)
-            lc.update_leds()
-            lc.set_led(m,c,0,255,0)
-            lc.update_leds()
-            sleep(to)
-            lc.set_led(m,c,0,0,0)
-    lc.update_leds()
-
-           
-
 if __name__ == "__main__":
-    ledtest()
+    lc = LightController()
+    lc.test_leds(0.25)

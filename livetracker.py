@@ -23,7 +23,8 @@ print(f"import CameraCapture - {time.monotonic() - tstart}")
 
 
 print("creating data directory")
-basedir = Path('/home/pi/ymaze_data')
+basedir = Path.home() / 'ymaze-data'
+#basedir = Path('/home/pi/ymaze_data')
 nowstr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 datadir = basedir / nowstr
 datadir.mkdir(parents=True, exist_ok=True)
@@ -68,28 +69,29 @@ else:
 	cv2.resizeWindow('focus - c to continue', default_win_size)
 
 	print("focus")
-	while True: #should be True, changed to speed up testing
-		#try:
-		im,ts = cap.capture_frame()
-		cv2.imshow('focus - c to continue', im)
-		key = cv2.waitKey(1) & 0xFF
-		if key == ord('q'):
-			quit()
-		if key == ord('c'):
-			break
-		if key == ord('-'):
-			cap.dimmer()
-		if key == ord('+') or key == ord('='):
-			cap.brighter()
-		if key == ord('h'):
-			cap.hflip = not cap.hflip
-		if key == ord('v'):
-			cap.vflip = not cap.vflip
-		if key == ord('a'):
-			cap.auto_exposure() #no arguments = toggle
-	#except:
-		#	print("error")
-	cv2.destroyAllWindows()
+	cap.focus_window()
+	# while True: #should be True, changed to speed up testing
+	# 	#try:
+	# 	im,ts = cap.capture_frame()
+	# 	cv2.imshow('focus - c to continue', im)
+	# 	key = cv2.waitKey(1) & 0xFF
+	# 	if key == ord('q'):
+	# 		quit()
+	# 	if key == ord('c'):
+	# 		break
+	# 	if key == ord('-'):
+	# 		cap.dimmer()
+	# 	if key == ord('+') or key == ord('='):
+	# 		cap.brighter()
+	# 	if key == ord('h'):
+	# 		cap.hflip = not cap.hflip
+	# 	if key == ord('v'):
+	# 		cap.vflip = not cap.vflip
+	# 	if key == ord('a'):
+	# 		cap.auto_exposure() #no arguments = toggle
+	# #except:
+	# 	#	print("error")
+	# cv2.destroyAllWindows()
 
 
 
@@ -122,6 +124,8 @@ else:
 		if not redo:
 			break
 		cap.reset_bounding_box()
+
+cap.focus_window()
 
 light_controller = LightController()
 #
