@@ -17,15 +17,12 @@ class YMazeGeometry:
         self.origin = np.array([0, 0]) #x,y
         self.maze_spacing = 9  # mm
         self.maze_centers = np.array([[0, -2], [-1, -1], [1, -1], [2, 0], [0, 0], [-2, 0], [-1, 1], [1, 1], [0, 2]])
-        self.channel_length = 1.818  # mm
         self.channel_width = 0.7 # mm
         self.circle_dia = 2.5  # mm
-        self.circle_offset = 3.052  # mm - circle center?
+        self.circle_offset = 3.138  # mm - circle center, from PCB design - propagates to y-maze
+        self.channel_length = self.circle_offset - np.sqrt(self.circle_dia**2 - self.channel_width**2)/2  # mm - extended so it overlaps circle completely
         self.central_circle_dia = self.channel_width*1.55  # mm -- exclude overlapping channel regions
         self.im_size_px = np.array([1000, 1000]) #h,w
-       # self.center_px = self.im_size_px[::-1] / 2.0 #x,y
-        # self.rotation = 0  # radians
-        # self.mm_per_px = 0.05
         self._maze_mask = None
         self._region_mask = None
         self._imspace_to_real_space = AffineCalculator()
