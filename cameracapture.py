@@ -95,6 +95,7 @@ class CameraCapture:
 
     def focus_window(self):
         winname = 'focus - c to continue'
+        cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
         while True:
             im, ts = self.capture_frame()
             cv2.imshow(winname, im)
@@ -111,6 +112,8 @@ class CameraCapture:
                 self.vflip = not self.vflip
             if key == ord('a'):
                 self.auto_exposure()
+            if key == ord('q'):
+                quit()
         cv2.destroyWindow(winname)
 
     def reset_bounding_box(self):
