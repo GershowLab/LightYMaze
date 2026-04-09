@@ -17,6 +17,7 @@ class YMazeGeometry:
         self.origin = np.array([0, 0]) #x,y
         self.maze_spacing = 9  # mm
         self.maze_centers = np.array([[0, -2], [-1, -1], [1, -1], [2, 0], [0, 0], [-2, 0], [-1, 1], [1, 1], [0, 2]])
+        self.fiducial_centers = np.array([[0,-13], [-9,0], [0,12]])
         self.channel_width = 0.7 # mm
         self.circle_dia = 2.5  # mm
         self.circle_offset = 3.138  # mm - circle center, from PCB design - propagates to y-maze
@@ -185,6 +186,30 @@ class YMazeGeometry:
         #     region_mask[rm > 0] = rm[rm > 0]
         self._maze_mask = maze_mask
         self._region_mask = region_mask
+
+    def calibrate_geometry_from_image_fiducials(self, frame):
+        points = []
+        self.set_image_size(frame.shape)
+
+        def click_event(event, x, y, flags, param):
+            if event == cv2.EVENT_LBUTTONDOWN:
+                print(f"Selected: ({x}, {y})")
+                points.append(np.array([x, y]))
+
+        winname = "Click Fiducial 1, then 2, then 3"
+        cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
+        cv2.imshow(winname, frame)
+        cv2.resizeWindow(winname, (960, 720))
+        cv2.setMouseCallback(winname, click_event)
+
+        while len(points) < 3:
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                quit()
+
+        cv2.destroyWindow(winname)
+        print("calculate affine")
+        self.calculate_affine(points, self.fiducial_centers)
 
     def calibrate_geometry_from_image(self, frame):
 

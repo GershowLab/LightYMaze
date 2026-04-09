@@ -37,93 +37,37 @@ if not os.path.exists(datadir):
 print("boot")
 cap = CameraCapture()
 print(f"camera setup - {time.monotonic() - tstart}")
-express = False
-c = (1764,1345)
-m4 = (1053, 2101)
 
-if express:
-	print("express setup")
-	print(f"capture w = {cap.w}, capture h = {cap.h}")
+
+while True:
 	ymg = YMazeGeometry()
 	ymg.set_image_size((cap.h, cap.w))
-	ymg.two_point_rotation_and_scaling(c, m4)
-	ymg.generate_coordinates()
-	print(f"ymaze geometry created - {time.monotonic() - tstart}")
-	x, y, w, h = ymg.clip_to_mazes(10)
-	print(f"ymaze geometry clipped - {time.monotonic() - tstart}")
-
-	cap.set_bounding_box(x, y, w, h)
-	print(f"bounding box set - {time.monotonic() - tstart}")
-
-	print(w,y,w,h)
-	im, ts = cap.capture_frame()
+	im,_ = cap.capture_frame()
+	ymg.calibrate_geometry_from_image_fiducials(im)
+	x,y,w,h = ymg.clip_to_mazes(10)
+	cap.set_bounding_box_from_im_coordinates(x, y, w, h)
+	im,_ = cap.capture_frame()
 	cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
 	img = ymg.diagnostic_image(im)
 	cv2.imshow('clipped mazes', img)
-	print(f"debug image captured created - {time.monotonic() - tstart}")
-	cv2.waitKey(0)
-
-else:
-	print("cam cap")
-	cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
-	cv2.resizeWindow('focus - c to continue', default_win_size)
-
-	print("focus")
-	cap.focus_window()
-	# while True: #should be True, changed to speed up testing
-	# 	#try:
-	# 	im,ts = cap.capture_frame()
-	# 	cv2.imshow('focus - c to continue', im)
-	# 	key = cv2.waitKey(1) & 0xFF
-	# 	if key == ord('q'):
-	# 		quit()
-	# 	if key == ord('c'):
-	# 		break
-	# 	if key == ord('-'):
-	# 		cap.dimmer()
-	# 	if key == ord('+') or key == ord('='):
-	# 		cap.brighter()
-	# 	if key == ord('h'):
-	# 		cap.hflip = not cap.hflip
-	# 	if key == ord('v'):
-	# 		cap.vflip = not cap.vflip
-	# 	if key == ord('a'):
-	# 		cap.auto_exposure() #no arguments = toggle
-	# #except:
-	# 	#	print("error")
-	# cv2.destroyAllWindows()
+	cv2.resizeWindow('clipped widow', default_win_size)
 
 
-
-	while True:
-		ymg = YMazeGeometry()
-		ymg.set_image_size((cap.h, cap.w))
-		im,_ = cap.capture_frame()
-		ymg.calibrate_geometry_from_image(im)
-		x,y,w,h = ymg.clip_to_mazes(10)
-		cap.set_bounding_box_from_im_coordinates(x, y, w, h)
-		im,_ = cap.capture_frame()
-		cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
-		img = ymg.diagnostic_image(im)
-		cv2.imshow('clipped mazes', img)
-		cv2.resizeWindow('clipped widow', default_win_size)
-
-
-		print("Are you satisfied with the maze locations? y/n q to quit")
-		redo = False
-		for i in range(200):
-			key = cv2.waitKey(100) & 0xFF
-			if key == ord('q'):
-				quit()
-			if key == ord('n'):
-				redo = True
-				break
-			if key == ord('y'):
-				redo = False
-				break
-		if not redo:
+	print("Are you satisfied with the maze locations? y/n q to quit")
+	redo = False
+	for i in range(200):
+		key = cv2.waitKey(100) & 0xFF
+		if key == ord('q'):
+			quit()
+		if key == ord('n'):
+			redo = True
 			break
-		cap.reset_bounding_box()
+		if key == ord('y'):
+			redo = False
+			break
+	if not redo:
+		break
+	cap.reset_bounding_box()
 
 cap.focus_window()
 
