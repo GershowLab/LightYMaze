@@ -98,11 +98,11 @@ light_controller.set_global_brightness(8)
 # 		quit()
 for c in range(1,4):
 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
-	time.sleep(0.5)
 	for b,ch,col in zip(((0,0,bright), (0,bright,0), (bright,0,0)), (0,1,2), ('blue', 'green', 'red')):
 		for m in range(1, 10):
 			light_controller.set_led(m, c, b[0], b[1], b[2])
 		light_controller.update_leds()
+		time.sleep(0.5)
 		im, ts = cap.capture_frame((ch,))
 		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
 		light_controller.turn_off_leds()
