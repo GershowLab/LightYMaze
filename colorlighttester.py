@@ -36,7 +36,7 @@ cap.focus_window()
 winname = 'Select ROI'
 im,_ = cap.capture_frame()
 cv2.imshow(winname, im)
-x, y, w, h = cv2.getWindowImageRect('winname')
+x, y, w, h = cv2.getWindowImageRect(winname)
 cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 
 light_controller = LightController()
