@@ -102,17 +102,16 @@ for c in range(1,4):
 		for m in range(1, 10):
 			light_controller.set_led(m, c, b[0], b[1], b[2])
 		light_controller.update_leds()
-		time.sleep(0.5)
+		time.sleep(1)
 		b,g,r, ts = cap.capture_frame((0,1,2))
 		img = cv2.merge((b,g,r))
 		light_controller.turn_off_leds()
 		#img = ymg.diagnostic_image(im)
-		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
 		cv2.putText(img, f"all LED {col} channel{c}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 		cv2.imshow(winname, img)
 		cv2.waitKey(1)
 		cv2.imwrite(str(datadir / f"all led channel {c} {col}.jpg"),img)
-		if cv2.waitKey(2000) & 0xFF == ord('q'):
+		if cv2.waitKey(3000) & 0xFF == ord('q'):
 			quit()
 	if cv2.waitKey(100) & 0xFF == ord('q'):
 		quit()
