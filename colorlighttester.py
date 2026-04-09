@@ -32,13 +32,46 @@ print(f"camera setup - {time.monotonic() - tstart}")
 print("focus")
 cap.focus_window()
 
+#
+# winname = 'Select ROI'
+# im,_ = cap.capture_frame()
+# cv2.imshow(winname, im)
+# x, y, w, h = cv2.getWindowImageRect(winname)
+# cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 
-winname = 'Select ROI'
-im,_ = cap.capture_frame()
-cv2.imshow(winname, im)
-x, y, w, h = cv2.getWindowImageRect(winname)
-cap.set_bounding_box_from_im_coordinates(x, y, w, h)
+while True:
+	print ("ymaze geometry")
+	ymg = YMazeGeometry()
+	print ("set image size")
+	ymg.set_image_size((cap.h, cap.w))
+	print ("capture frame")
+	im,_ = cap.capture_frame()
+	print ("calibrate geometry from image")
+	ymg.calibrate_geometry_from_image(im)
+	x,y,w,h = ymg.clip_to_mazes(10)
+	cap.set_bounding_box_from_im_coordinates(x,y,w,h)
+	im,_ = cap.capture_frame()
+	cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
+	img = ymg.diagnostic_image(im)
+	cv2.imshow('clipped mazes', img)
+	cv2.resizeWindow('clipped widow', default_win_size)
 
+	print("Are you satisfied with the maze locations? y/n q to quit")
+	redo = False
+	for i in range(200):
+		key = cv2.waitKey(100) & 0xFF
+		if key == ord('q'):
+			quit()
+		if key == ord('n'):
+			redo = True
+			break
+		if key == ord('y'):
+			redo = False
+			break
+	if not redo:
+		break
+	cap.reset_bounding_box()
+	
 light_controller = LightController()
 #
 winname = 'led correspondence test - remove filter'
