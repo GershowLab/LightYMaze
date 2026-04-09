@@ -78,7 +78,7 @@ winname = 'led correspondence test - remove filter'
 cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
 cv2.resizeWindow(winname, (960,720))
 bright = 100
-light_controller.set_global_brightness(9)
+light_controller.set_global_brightness(8)
 # for led in range(27):
 # 	print(f"setting led {led}")
 # 	light_controller.set_led_direct(led, bright, bright, bright)
@@ -111,7 +111,7 @@ for c in range(1,4):
 		cv2.imshow(winname, img)
 		cv2.waitKey(1)
 		cv2.imwrite(str(datadir / f"all led channel {c} {col}.jpg"),img)
-		if cv2.waitKey(100) & 0xFF == ord('q'):
+		if cv2.waitKey(2000) & 0xFF == ord('q'):
 			quit()
 	if cv2.waitKey(100) & 0xFF == ord('q'):
 		quit()
