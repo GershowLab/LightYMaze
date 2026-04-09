@@ -29,14 +29,9 @@ cap = CameraCapture()
 print(f"camera setup - {time.monotonic() - tstart}")
 
 
-print("cam cap")
-cv2.namedWindow('focus - c to continue', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('focus - c to continue', default_win_size)
-
 print("focus")
 cap.focus_window()
 
-cv2.destroyWindow('focus - c to continue')
 
 winname = 'Select ROI'
 im,_ = cap.capture_frame()
