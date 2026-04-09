@@ -102,10 +102,9 @@ for c in range(1,4):
 		for m in range(1, 10):
 			light_controller.set_led(m, c, b[0], b[1], b[2])
 		light_controller.update_leds()
-		time.sleep(1)
-		# b,g,r, ts = cap.capture_frame((0,1,2))
-		# img = cv2.merge((b,g,r))
-		img,ts = cap.capture_color_frame()
+		cv2.waitKey(1000)
+		b,g,r, ts = cap.capture_frame((0,1,2))
+		img = cv2.merge((r,g,b)) #there's a problem somewhere with channel ordering
 		light_controller.turn_off_leds()
 		#img = ymg.diagnostic_image(im)
 		cv2.putText(img, f"all LED {col} channel{c}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
