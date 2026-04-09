@@ -71,7 +71,7 @@ while True:
 	if not redo:
 		break
 	cap.reset_bounding_box()
-	
+
 light_controller = LightController()
 #
 winname = 'led correspondence test - remove filter'
@@ -84,7 +84,7 @@ for led in range(27):
 	light_controller.set_led_direct(led, bright, bright, bright)
 	light_controller.update_leds()
 	time.sleep(0.5)
-	b, g, r, ts = cap.capture_frame((1, 2, 3))
+	b, g, r, ts = cap.capture_frame((0, 1, 2))
 	light_controller.turn_off_leds()
 	for im,col in zip((b,g,r), ('blue', 'green', 'red')):
 		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
@@ -102,7 +102,7 @@ for c in range(1,4):
 		light_controller.set_led(m, c, bright, bright, bright)
 		light_controller.update_leds()
 	time.sleep(0.5)
-	b, g, r, ts = cap.capture_frame((1, 2, 3))
+	b, g, r, ts = cap.capture_frame((0, 1, 2))
 	light_controller.turn_off_leds()
 	for im,col in zip((b,g,r), ('blue', 'green', 'red')):
 		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
@@ -111,7 +111,7 @@ for c in range(1,4):
 		cv2.imshow(winname, img)
 		cv2.waitKey(1)
 		cv2.imwrite(str(datadir / f"all led channel {c} {col}.jpg"),img)
-		if cv2.waitKey(2000) & 0xFF == ord('q'):
+		if cv2.waitKey(100) & 0xFF == ord('q'):
 			quit()
 	if cv2.waitKey(100) & 0xFF == ord('q'):
 		quit()
