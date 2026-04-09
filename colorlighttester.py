@@ -98,15 +98,16 @@ light_controller.set_global_brightness(8)
 # 		quit()
 for c in range(1,4):
 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
-	for b,ch,col in zip(((0,0,bright), (0,bright,0), (bright,0,0)), (2,1,0), ('blue', 'green', 'red')):
+	for b,ch,col in zip(((0,0,bright), (0,bright,0), (bright,0,0)), (0,1,2), ('blue', 'green', 'red')):
 		for m in range(1, 10):
 			light_controller.set_led(m, c, b[0], b[1], b[2])
 		light_controller.update_leds()
 		time.sleep(0.5)
-		im, ts = cap.capture_frame((ch,))
-		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+		b,g,r, ts = cap.capture_frame((0,1,2))
+		img = cv2.merge((b,g,r))
 		light_controller.turn_off_leds()
 		#img = ymg.diagnostic_image(im)
+		img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
 		cv2.putText(img, f"all LED {col} channel{c}", np.array((0, 20)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 		cv2.imshow(winname, img)
 		cv2.waitKey(1)
