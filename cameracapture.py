@@ -92,6 +92,23 @@ class CameraCapture:
             timestamp = metadata['SensorTimestamp'] / 1e9
             ret.append(timestamp)
         return ret
+    def capture_color_frame(self):
+        self.start()
+        ret = []
+        with self._cam.captured_request(flush=True) as request:
+            if self.hflip and self.vflip:
+                im = request.make_array("main")[self.h-1::-1, self.w-1::-1,:]
+            else:
+                if self.hflip:
+                    im = request.make_array("main")[:self.h, self.w - 1::-1,:]
+                else:
+                    if self.vflip:
+                        im = request.make_array("main")[self.h - 1::-1, :self.w,:]
+                    else:
+                        im = request.make_array("main")[:self.h, :self.w,:]
+            metadata = request.get_metadata()
+            timestamp = metadata['SensorTimestamp'] / 1e9
+        return im,timestamp
 
     def focus_window(self):
         winname = 'focus - c to continue'
