@@ -177,9 +177,9 @@ class MazeController:
             v = self._sum_sq_larva_area/self._num_larva_area - u**2
             if la > u - 3*np.sqrt(v):
                 log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
-                log_p_obs = log_p_obs - np.log(np.sum(np.exp(log_p_obs)))
+                log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
             else:
-                log_p_obs = [-np.log(len(self._regions)) for r in self._regions]
+                log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
         except:
             self._larva_loc = np.array([-1, -1])
@@ -194,7 +194,7 @@ class MazeController:
     def debug_montage(self):
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
-        thresh = self._bak.get_thresholded_image(self._img, self._threshold)
+        thresh = self._bak.get_thresholded_image()
         #thresh = self._bak.get_zscore_image(self._img)
         g = thresh.copy()
         g[self._maze_mask == 0] = 255
