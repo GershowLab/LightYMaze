@@ -81,6 +81,7 @@ class StimulusManager:
             self.current_state = State.PREDECISION_ANY
             self.maze_controller.set_leds((0,0,0),(0,0,0),(0,0,0))
             self.set_message('RESET')
+            self.reset_watchdog()
 
 
 class Action:
