@@ -130,7 +130,7 @@ class ActionChooseCircle(Action):
 #leave circle - need to turn on a LED
 class ActionLeaveCircle(Action):
     def __init__(self, stimulus_manager: StimulusManager, from_part : MazePart,
-                 offrgb=(0, 0, 0), choice1rgb=(0, 0, 0), choice2rgb=(0, 255, 255)):
+                 offrgb=(0, 0, 0), choice1rgb=(0, 0, 0), choice2rgb=(0, 0, 255)):
         super().__init__(stimulus_manager, from_states=(State.PREDECISION_ANY,))
         self.offrgb = offrgb
         self.choice1rgb = choice1rgb

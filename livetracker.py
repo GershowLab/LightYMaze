@@ -71,7 +71,9 @@ while True:
 
 cap.focus_window()
 
+brightness = 9
 light_controller = LightController()
+light_controller.set_global_brightness(brightness)
 #
 # winname = 'led correspondence test - remove filter'
 # cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
