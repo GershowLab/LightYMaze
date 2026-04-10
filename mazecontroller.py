@@ -35,7 +35,7 @@ class MazeController:
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 30
         self._bak_initialized = False
-        self._threshold = 45
+        self._threshold = 30
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
@@ -87,6 +87,7 @@ class MazeController:
             threshold = 200
         print(f"{self._maze_ID}: changing threshold to {threshold}")
         self._threshold = threshold
+        self._bak.set_threshold(self._threshold)
 
     def increase_threshold(self):
         self.set_threshold(self._threshold + 5)
@@ -130,7 +131,8 @@ class MazeController:
                 else:
                     self._stats["FrameTime"] = capture_time
                 if self._bak is None:
-                    self._bak = BakCreator(self._stack_len, 0.1, img)
+                    self._bak = BakCreator(self._stack_len, img)
+                    self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
                 self._bak.update_background(img, frame_number, capture_time)

@@ -6,16 +6,19 @@ from threading import Lock
 class BakCreator:
     _lock: Lock
 
-    def __init__(self, stacklen, alpha, bgim):
+    def __init__(self, stacklen, bgim):
         self._stack_len = stacklen
-        self._bgim = bgim  # initialize bgim with initial background image
         self._last_update_time = -1000
         self._last_update_frame = -1000
         self._update_frame_interval = -1
         self._update_time_interval = -1
         self._lock = Lock()
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
+        self._bsub.apply(bgim,1) #reset to bgim
         self._nupdates = 0
+
+    def set_threshold(self, thresh):
+        self._bsub.setVarThreshold(thresh)
 
     def set_update_intervals(self, update_frame_interval=None, update_time_interval=None):
         if update_frame_interval is not None:

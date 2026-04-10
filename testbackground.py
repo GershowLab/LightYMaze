@@ -7,8 +7,12 @@ import skimage as ski
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
 basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
 #basedir = Path('G:\\')
-fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / '2026-04-08_15-25-27' / '2026-04-08_15-25-27 maze1.mp4'
-
+fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5'
+# datecode =  '2026-04-08_15-25-27'
+# mazenum = 1
+datecode = '2026-04-10_10-32-30'
+mazenum = 8
+fstub = fstub / datecode / f"{datecode} maze{mazenum}.mp4"
 print(f"{fstub} exists? {fstub.exists()}")
 vc = cv2.VideoCapture(str(fstub))
 
@@ -16,7 +20,7 @@ vc = cv2.VideoCapture(str(fstub))
 mog2 = cv2.createBackgroundSubtractorMOG2(history=60, detectShadows=False, varThreshold=60)
 cap = cv2.VideoCapture(str(fstub))
 
-for f in range(10000):
+for f in range(20000):
     ret, frame = vc.read()
     if not ret:
         print("did not open video")
@@ -31,9 +35,11 @@ for f in range(10000):
     print(f)
   #  fg2 = ski.segmentation.morphological_chan_vese(fgmask, num_iter=100, smoothing=1)
     cv2.imshow('mog2', fgmask)
-
+    fgmask = cv2.morphologyEx(cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)),
+                              cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
   #  cv2.imshow('knn',fgmaskknn)
-    cv2.imshow('mog2-erode-dilate',cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)))
+    cv2.imshow('im', frame)
+    cv2.imshow('mog2-open',fgmask)
 
 
     k = cv2.waitKey(1) & 0xFF
