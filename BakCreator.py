@@ -13,6 +13,8 @@ class BakCreator:
         self._update_frame_interval = -1
         self._update_time_interval = -1
         self._lock = Lock()
+        self._bgim = bgim
+        self._fgim = bgim
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
         self._bsub.apply(bgim,1) #reset to bgim
         self._nupdates = 0
