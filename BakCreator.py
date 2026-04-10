@@ -41,13 +41,14 @@ class BakCreator:
         if updatebg:
             self._fgim = self._bsub.apply(new_im)
             self._nupdates += 1
+            if frame_num is not None:
+                self._last_update_frame = frame_num
+            if frame_time is not None:
+                self._last_update_time = frame_time
         else:
             self._fgim = self._bsub.apply(new_im, learningRate=0)
 
-        if frame_num is not None:
-            self._last_update_frame = frame_num
-        if frame_time is not None:
-            self._last_update_time = frame_time
+
 
     # returns true if full complement of background images
     def update_background(self, new_im, frame_num=None, frame_time=None):
