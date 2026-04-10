@@ -5,7 +5,7 @@ try:
     class LightController:
         def __init__(self):
             self.num_mazes = 9
-            self.strip = apa102.APA102(num_led=3*self.num_mazes, global_brightness=3)
+            self.strip = apa102.APA102(num_led=3*self.num_mazes, global_brightness=9)
             self.lock = threading.Lock()
 
         def set_global_brightness(self, global_brightness):
