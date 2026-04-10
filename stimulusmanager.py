@@ -140,19 +140,19 @@ class ActionLeaveCircle(Action):
        # self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
         if from_part == MazePart.CIRCLE1:
             self.next_state = State.PREDECISION1
-        #    self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
+            self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
             self.ledOff = 1
             self.ledChoices = (2, 3)
             self.msg = "FROM1"
         if from_part == MazePart.CIRCLE2:
             self.next_state = State.PREDECISION2
-       #     self.to_parts = (MazePart.CHANNEL2, MazePart.INTERSECTION)
+            self.to_parts = (MazePart.CHANNEL2, MazePart.INTERSECTION)
             self.ledOff = 2
             self.ledChoices = (1, 3)
             self.msg = "FROM2"
         if from_part == MazePart.CIRCLE3:
             self.next_state = State.PREDECISION3
-      #      self.to_parts = (MazePart.CHANNEL3, MazePart.INTERSECTION)
+            self.to_parts = (MazePart.CHANNEL3, MazePart.INTERSECTION)
             self.ledOff = 3
             self.ledChoices = (2, 1)
             self.msg = "FROM3"
@@ -165,6 +165,25 @@ class ActionLeaveCircle(Action):
         self.stimulus_manager.origin_location = self.to_parts[0]
         self.stimulus_manager.current_state = self.next_state
 
+class ActionBadJump(Action):
+
+    def __init__(self):
+        def __init__(self, stimulus_manager: StimulusManager, from_part: MazePart):
+            super().__init__(stimulus_manager, from_states=(State.PREDECISION_ANY,))
+            self.from_parts = (from_part,)
+            # self.to_parts = (MazePart.CHANNEL1, MazePart.INTERSECTION)
+            if from_part == MazePart.CIRCLE1:
+                self.from_state = (State.PREDECISION_ANY, State.PREDECISION1)
+                self.to_parts = (MazePart.CHANNEL2, MazePart.CHANNEL3, MazePart.CIRCLE2, MazePart.CIRCLE3)
+                self.msg = "BADJUMP1"
+            if from_part == MazePart.CIRCLE2:
+                self.from_state = (State.PREDECISION_ANY, State.PREDECISION2)
+                self.to_parts = (MazePart.CHANNEL1, MazePart.CHANNEL3, MazePart.CIRCLE1, MazePart.CIRCLE3)
+                self.msg = "BADJUMP2"
+            if from_part == MazePart.CIRCLE3:
+                self.from_state = (State.PREDECISION_ANY, State.PREDECISION1)
+                self.to_parts = (MazePart.CHANNEL2, MazePart.CHANNEL3, MazePart.CIRCLE2, MazePart.CIRCLE3)
+                self.msg = "BADJUMP1"
 
 class ActionFirstChannelChoice(Action):
     def __init__(self, stimulus_manager: StimulusManager, state: State):

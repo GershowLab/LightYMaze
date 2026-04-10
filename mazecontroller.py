@@ -33,7 +33,7 @@ class MazeController:
         self._num_regions = np.max(region_map).astype(np.uint8)
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
-        self._stack_len = 10
+        self._stack_len = 30
         self._bak_initialized = False
         self._threshold = 45
         self._larva_loc: np.ndarray = np.array([-1, -1])
@@ -76,6 +76,10 @@ class MazeController:
         self._led_update = False
         self._led_on_max_time = 300 #seconds
         self._last_led_update = time.monotonic()
+
+        self._sum_larva_area = 0
+        self._sum_sq_larva_area = 0
+        self._num_larva_area = 0
     def set_threshold(self, threshold):
         if (threshold < 5):
             threshold = 5
@@ -129,14 +133,13 @@ class MazeController:
                     self._bak = BakCreator(self._stack_len, 0.1, img)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
+                self._bak.update_background(img, frame_number, capture_time)
                 # during initialization period, just update background
-                if not self._bak_initialized:
-                    self._bak_initialized = self._bak.update_background(img)
-                else:
-                    tim = self._bak.get_thresholded_image(img, self._threshold)
-                    #print(f"debug thresholding - img.shape = {img.shape} thresholded image shape = {tim.shape} _maze_mask.shape = {self._maze_mask.shape}")
-                    thresh = cv2.bitwise_and(self._bak.get_thresholded_image(img, self._threshold), self._maze_mask)
-                    self._bak.update_background(img, thresh, self._larva_mask)
+
+                init = self._bak.update_background(img)
+                if init:
+                    thresh = self._bak.get_thresholded_image()
+                    thresh = cv2.bitwise_and(thresh, self._maze_mask)
                     self._update_larva(thresh)
                     self._stimulus_manager.update()
                     msg,hasmsg = self._stimulus_manager.get_message(mark_read=True)
@@ -165,8 +168,18 @@ class MazeController:
             larva_ind = np.argmax(area) + 1
             self._larva_loc = centroids[larva_ind]
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
-            self._stats["LarvaArea"] = float(area[larva_ind - 1])
-            log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
+            la = float(area[larva_ind - 1])
+            self._stats["LarvaArea"] = la
+            self._sum_larva_area += la
+            self._sum_sq_larva_area += la**2
+            self._num_larva_area += 1
+            u = self._sum_larva_area/self._num_larva_area
+            v = self._sum_sq_larva_area/self._num_larva_area - u**2
+            if la > u - 3*np.sqrt(v):
+                log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
+                log_p_obs = log_p_obs - np.log(np.sum(np.exp(log_p_obs)))
+            else:
+                log_p_obs = [-np.log(len(self._regions)) for r in self._regions]
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
         except:
             self._larva_loc = np.array([-1, -1])
