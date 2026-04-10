@@ -81,6 +81,7 @@ class StimulusManager:
             self.current_state = State.PREDECISION_ANY
             self.maze_controller.set_leds((0,0,0),(0,0,0),(0,0,0))
             self.set_message('RESET')
+            self.reset_watchdog()
 
 
 class Action:
@@ -164,38 +165,6 @@ class ActionLeaveCircle(Action):
         self.stimulus_manager.origin_location = self.to_parts[0]
         self.stimulus_manager.current_state = self.next_state
 
-#
-# class ActionSetLedPostDecision(Action):
-#     def __init__(self, stimulus_manager: StimulusManager,
-#                  state: State, offrgb=(0, 0, 0), choice1rgb=(0, 0, 0), choice2rgb=(0, 255, 255)):
-#         super().__init__(stimulus_manager, from_states=(state,))
-#         self.offrgb = offrgb
-#         self.choice1rgb = choice1rgb
-#         self.choice2rgb = choice2rgb
-#         if state == State.CHOOSE1:
-#             self.to_parts = (MazePart.CIRCLE1,)
-#             self.ledOff = 1
-#             self.ledChoices = (2, 3)
-#             self.msg = "CONF1"
-#         if state == State.CHOOSE2:
-#             self.to_parts = (MazePart.CIRCLE2,)
-#             self.ledOff = 2
-#             self.ledChoices = (1, 3)
-#             self.msg = "CONF2"
-#         if state == State.CHOOSE3:
-#             self.to_parts = (MazePart.CIRCLE3,)
-#             self.ledOff = 3
-#             self.ledChoices = (2, 1)
-#             self.msg = "CONF3"
-#
-#
-#     def action(self):
-#         self.stimulus_manager.maze_controller.set_ledrgbpct(self.ledOff, self.offrgb)
-#         for ind, val in zip(np.random.permutation(self.ledChoices), (self.choice1rgb, self.choice2rgb)):
-#             self.stimulus_manager.maze_controller.set_ledrgbpct(ind, val)
-#         self.stimulus_manager.current_state = State.PREDECISION
-#         self.stimulus_manager.set_message(self.msg)
-#         self.stimulus_manager.origin_location = self.to_parts[0]
 
 class ActionFirstChannelChoice(Action):
     def __init__(self, stimulus_manager: StimulusManager, state: State):
@@ -220,24 +189,6 @@ class ActionFirstChannelChoice(Action):
                 self.stimulus_manager.current_state = ns
                 self.stimulus_manager.set_message(msg)
 
-# class ActionDecisionMade(Action):
-#     def __init__(self, stimulus_manager: StimulusManager):
-#         super().__init__(stimulus_manager)
-#         self.from_states = (State.PREDECISION,)
-#         self.from_parts = (MazePart.CHANNEL1, MazePart.CHANNEL2, MazePart.CHANNEL3, MazePart.INTERSECTION)
-#         self.to_parts = (MazePart.CHANNEL1, MazePart.CHANNEL2, MazePart.CHANNEL3)
-#
-#     #if in a new channel that is not connected to the origin circle, register as a choice
-#     def action(self):
-#         for cl, ol, ns, msg in zip(
-#                 (MazePart.CHANNEL1, MazePart.CHANNEL2, MazePart.CHANNEL3),
-#                 (MazePart.CIRCLE1, MazePart.CIRCLE2, MazePart.CIRCLE3),
-#                 (State.CHOOSE1, State.CHOOSE2, State.CHOOSE3),
-#                 ("CHOOSE1","CHOOSE2","CHOOSE3")):
-#             if self.stimulus_manager.current_location == cl and self.stimulus_manager.origin_location != ol:
-#                 self.stimulus_manager.current_state = ns
-#                 self.stimulus_manager.set_message(msg)
-
 class ActionChangedMind(Action):
     def __init__(self, stimulus_manager: StimulusManager, from_state: State):
         super().__init__(stimulus_manager, (from_state, ))
@@ -258,6 +209,7 @@ class ActionChangedMind(Action):
             if self.stimulus_manager.current_location == cl:
                 self.stimulus_manager.current_state = ns
                 self.stimulus_manager.set_message(msg)
+                self.stimulus_manager.origin_location = cl
 
 
 
