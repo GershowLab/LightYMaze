@@ -37,6 +37,21 @@ class YMazeGeometry:
         for j in range(len(self.maze_centers)):
             self._mazes.append(YMazeFootprint(self, j+1))
 
+    def align_mazes_to_im(self, im):
+        sucess = [m.align_to_im(im) for m in self._mazes]
+        pxcenter = np.asarray([m.get_im_center() for m in self._mazes])
+        mmcenter = self.maze_spacing*np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
+        self.calculate_affine(pxcenter[sucess], mmcenter[sucess])
+        self._setup_mazes()
+       # [m.align_to_im(im, maxshift=5) for m in self._mazes]
+
+        #pxcenter = np.asarray([m.get_im_center() for m in self._mazes])
+        #mmcenter = self.maze_spacing * np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
+        #self.calculate_affine(pxcenter[sucess], mmcenter[sucess])
+        #self._setup_mazes()
+
+
+
     def calculate_affine(self, imspacepts, realpts):
         print ("calc affine: create calculator")
         self._imspace_to_real_space = AffineCalculator(imspacepts, realpts)
@@ -45,6 +60,7 @@ class YMazeGeometry:
 
     def bounding_box(self):
         return(self.origin, self.origin + self.im_size_px)#self.center_px - self.im_size_px / 2, self.center_px + self.im_size_px / 2)
+
 
     def two_point_rotation_and_scaling(self, centerPoint, maze4Center):
         centerPoint = np.asarray(centerPoint)
@@ -375,6 +391,19 @@ class YMazeFootprint:
         self.center = ymg.maze_spacing*np.asarray(ymg.maze_centers[ID-1]).astype(np.float32)
         self.populate_shapes()
 
+    def get_im_center(self):
+        return np.asarray(self.ymg._imspace_to_real_space.transform_rev(self.center[0], self.center[1]))
+
+    def shift_center(self, shift_mm):
+        shift_mm = np.asarray(shift_mm)
+        self.center = np.asarray(self.center) + shift_mm
+        [s.shift(shift_mm) for s in self.shapes]
+
+    def shift_center_px(self, shift_px):
+        pxctr = self.get_im_center() + shift_px
+        shift_mm = np.asarray(self.ymg._imspace_to_real_space.transform_fwd(pxctr[0], pxctr[1])) - self.center
+        self.shift_center(shift_mm)
+
     def populate_shapes(self):
         dy = self.ymg.channel_width/2
         dx = self.ymg.channel_length
@@ -389,30 +418,105 @@ class YMazeFootprint:
             self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))
         self.shapes.append(Circle(1, self.center, self.ymg.central_circle_dia/2))
 
+    def imspace_bounding_box(self, padding = 0):
+        xc, yc = self.bounding_box()
+        xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
+        x1 = np.min(xc) - padding
+        x2 = np.max(xc) + padding
+        y1 = np.min(yc) - padding
+        y2 = np.max(yc) + padding
+        #
+        # x1 = np.argmin(np.abs(xa-minx))
+        # x2 = np.argmin(np.abs(xa-maxx))
+        # y1 = np.argmin(np.abs(ya - miny))
+        # y2 = np.argmin(np.abs(ya - maxy))
+        return (x1,x2,x2,x1),(y1, y1, y2, y2)
+
+    def align_to_im(self, im, padding = 0, maxshift = 40):
+        xi,yi= self.inds_in_imspace_box(*self.imspace_bounding_box(padding))
+        rm,mm,inds = self.label_mask_pixel_inds(xi,yi)
+        targetim = im[inds]
+        targetim = cv2.Canny(targetim, 50, 100)
+        #targetim = cv2.morphologyEx(targetim, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8))
+        shift,_ = cv2.phaseCorrelate(np.float32(targetim), np.float32(mm))
+
+        if np.linalg.norm(shift)>maxshift:
+            print (f"{self.ID} - shift {shift} is too big")
+            shift = np.zeros_like(shift)
+            sucess = False
+        else:
+            sucess = True
+        shift = np.asarray(shift)
+        self.shift_center_px(-shift)
+        #
+        # r = targetim
+        # g = cv2.threshold(mm,0,255,cv2.THRESH_BINARY)[1].astype(np.uint8)
+        # b = self.label_mask_pixel_inds(xi,yi)[1]
+        # b = cv2.threshold(b, 0, 255, cv2.THRESH_BINARY)[1].astype(np.uint8)
+        # cv2.imshow(f"aligned - {self.ID}", cv2.merge((b,g,r)))
+        # cv2.waitKey(1)
+        return sucess
+
+
+
+    def inds_in_imspace_box(self, xc = None, yc = None): #xc,yc are corners of box
+        if xc is None or yc is None:
+            xc, yc = self.imspace_bounding_box()
+        xa, ya = self.ymg.pixel_axes()
+        minx = np.min(xc)
+        maxx = np.max(xc)
+        miny = np.min(yc)
+        maxy = np.max(yc)
+        xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
+        yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
+        return xi,yi
+
+    def label_mask_pixel_inds(self, xi, yi, label = None):
+        if label is None:
+            label = self.ID
+        xa, ya = self.ymg.pixel_axes()
+        inds = np.ix_(yi, xi)
+        xaxis = xa[xi]
+        yaxis = ya[yi]
+        x_mm = self.ymg.x_mm[inds]
+        y_mm = self.ymg.y_mm[inds]
+
+        rm = np.zeros_like(x_mm)
+        mm = np.zeros_like(x_mm)
+
+        for s in self.shapes:
+            ii = s.label_mask(rm, xaxis, yaxis, x_mm, y_mm, self.ymg._imspace_to_real_space)
+            mm[ii] = label
+
+        return rm, mm, inds
+
     def label_mask(self, region_mask, maze_mask, label = None):
        if label is None:
            label = self.ID
-       xa,ya = self.ymg.pixel_axes()
-       xc, yc = self.bounding_box()
-       xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
-       minx = np.min(xc)
-       maxx = np.max(xc)
-       miny = np.min(yc)
-       maxy = np.max(yc)
-       xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
-       yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
-       inds = np.ix_(yi, xi)
-       xaxis = xa[xi]
-       yaxis = ya[yi]
-       x_mm = self.ymg.x_mm[inds]
-       y_mm = self.ymg.y_mm[inds]
+       # xa,ya = self.ymg.pixel_axes()
+       # xc, yc = self.imspace_bounding_box()
+       # # xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
+       # minx = np.min(xc)
+       # maxx = np.max(xc)
+       # miny = np.min(yc)
+       # maxy = np.max(yc)
+       # xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
+       # yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
 
-       rm = np.zeros_like(x_mm)
-       mm = np.zeros_like(x_mm)
-
-       for s in self.shapes:
-           ii = s.label_mask(rm, xaxis, yaxis, x_mm, y_mm,self.ymg._imspace_to_real_space)
-           mm[ii] = label
+       xi,yi = self.inds_in_imspace_box()
+       rm, mm, inds = self.label_mask_pixel_inds(xi, yi, label)
+       #inds = np.ix_(yi, xi)
+       # xaxis = xa[xi]
+       # yaxis = ya[yi]
+       # x_mm = self.ymg.x_mm[inds]
+       # y_mm = self.ymg.y_mm[inds]
+       #
+       # rm = np.zeros_like(x_mm)
+       # mm = np.zeros_like(x_mm)
+       #
+       # for s in self.shapes:
+       #     ii = s.label_mask(rm, xaxis, yaxis, x_mm, y_mm,self.ymg._imspace_to_real_space)
+       #     mm[ii] = label
        region_mask[inds] = rm
        maze_mask[inds] = mm
 
@@ -429,6 +533,8 @@ class YMazeFootprint:
 
 
 
+
+
 class Shape:
     def __init__(self, ID):
         self.ID = ID
@@ -438,6 +544,9 @@ class Shape:
     @abstractmethod
     def bounding_box(self):
         pass #xlist, ylist
+
+    def shift(self, shift_mm):
+        pass
 
     def find_interior(self, xaxis, yaxis, x_mm, y_mm, imspace_to_real_space : AffineCalculator):
         #finds points in x_mm, y_mm that are internal to the shape
@@ -471,6 +580,9 @@ class Polygon(Shape):
         yy = np.asarray(y).flatten()
         interior = np.array([self.interior_point(pt) for pt in zip(xx, yy)])
         return interior.reshape(x.shape)
+
+    def shift(self, shift_mm):
+        self.vertices = np.array([np.asarray(v) + shift_mm for v in self.vertices])
 
     def bounding_box(self):
         v = np.asarray(self.vertices).astype(np.float32)
@@ -515,6 +627,9 @@ class Circle(Shape):
         super().__init__(ID)
         self.center = np.asarray(center).flatten()
         self.radius = radius
+
+    def shift(self, shift_mm):
+        self.center = self.center + shift_mm
 
     def interior(self,x,y):
         xx = np.asarray(x).flatten()

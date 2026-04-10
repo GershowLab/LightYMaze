@@ -43,7 +43,9 @@ while True:
 	ymg = YMazeGeometry()
 	ymg.set_image_size((cap.h, cap.w))
 	im,_ = cap.capture_frame()
-	ymg.calibrate_geometry_from_image(im)
+	ymg.calibrate_geometry_from_image_fiducials(im)
+	ymg.align_mazes_to_im(im)
+
 	x,y,w,h = ymg.clip_to_mazes(10)
 	cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 	im,_ = cap.capture_frame()
