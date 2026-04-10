@@ -18,12 +18,12 @@ print(f"{fstub} exists? {fstub.exists()}")
 vc = cv2.VideoCapture(str(fstub))
 
 
-mog2 = cv2.createBackgroundSubtractorMOG2(history=60, detectShadows=False, varThreshold=60)
+mog2 = cv2.createBackgroundSubtractorMOG2(history=60, detectShadows=False, varThreshold=30)
 cap = cv2.VideoCapture(str(fstub))
 
 ret, frame = vc.read()
 bak = BakCreator(30,frame)
-bak.set_threshold(60)
+bak.set_threshold(30)
 bak.set_update_intervals(update_frame_interval=10)
 for f in range(20000):
     if not ret:
