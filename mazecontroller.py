@@ -87,7 +87,15 @@ class MazeController:
             threshold = 200
         print(f"{self._maze_ID}: changing threshold to {threshold}")
         self._threshold = threshold
-        self._bak.set_threshold(self._threshold)
+        if self._bak is not None:
+            self._bak.set_threshold(self._threshold)
+    def set_update_intervals(self, update_frame_interval=None, update_time_interval=None):
+        if update_frame_interval is not None:
+            self._update_frame_interval = update_frame_interval
+        if update_time_interval is not None:
+            self._update_time_interval = update_time_interval
+        if self._bak is not None:
+            self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
     def increase_threshold(self):
         self.set_threshold(self._threshold + 5)
@@ -135,10 +143,8 @@ class MazeController:
                     self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
-                self._bak.update_background(img, frame_number, capture_time)
+                init = self._bak.update_background(img, frame_num=frame_number, frame_time=capture_time)
                 # during initialization period, just update background
-
-                init = self._bak.update_background(img)
                 if init:
                     thresh = self._bak.get_thresholded_image()
                     thresh = cv2.bitwise_and(thresh, self._maze_mask)

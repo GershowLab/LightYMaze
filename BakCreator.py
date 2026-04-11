@@ -27,6 +27,9 @@ class BakCreator:
             self._update_frame_interval = update_frame_interval
         if update_time_interval is not None:
             self._update_time_interval = update_time_interval
+        # if update_frame_interval is None and update_time_interval is None:
+        #     self._update_time_interval = None
+        #     self._update_frame_interval = None
 
     #
 
@@ -57,7 +60,7 @@ class BakCreator:
             return self._nupdates >= self._stack_len
 
     def get_background(self):
-        return self._bgim
+        return self._bsub.getBackgroundImage()
 
     def get_foreground(self):
         return self._fgim

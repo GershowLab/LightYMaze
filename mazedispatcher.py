@@ -101,13 +101,13 @@ class MazeDispatcher:
             frame_time = time.monotonic()
         #print(f"maze dispatcher img shape = {img.shape}")
         if multi_thread:
-            tt = [mm.new_frame(img, frame_number,frame_time) for mm in self._maze_minions]
+            tt = [mm.new_frame(img, frame_number=frame_number,frame_time=frame_time) for mm in self._maze_minions]
             if wait_for_completion:
                 for t in tt:
                     t.join()
         else:
             for mm in self._maze_minions:
-                mm.new_frame_nothread(img, frame_number, frame_time)
+                mm.new_frame_nothread(img, frame_number=frame_number, frame_time=frame_time)
             tt = None
         if  self._light_controller is not None:
             self._light_controller.update_leds()

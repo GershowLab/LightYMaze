@@ -12,7 +12,7 @@ fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5'
 # datecode =  '2026-04-08_15-25-27'
 # mazenum = 1
 datecode = '2026-04-10_10-32-30'
-mazenum = 8
+mazenum = 3
 fstub = fstub / datecode / f"{datecode} maze{mazenum}.mp4"
 print(f"{fstub} exists? {fstub.exists()}")
 vc = cv2.VideoCapture(str(fstub))
@@ -24,7 +24,7 @@ cap = cv2.VideoCapture(str(fstub))
 ret, frame = vc.read()
 bak = BakCreator(30,frame)
 bak.set_threshold(30)
-bak.set_update_intervals(update_frame_interval=10)
+bak.set_update_intervals(update_time_interval=-1, update_frame_interval=10)
 for f in range(20000):
     if not ret:
         print("did not open video")
