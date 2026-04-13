@@ -20,6 +20,7 @@ class BakCreator:
         self._bsub.setNMixtures(5)
         self._bsub.apply(bgim,1) #reset to bgim
         self._nupdates = 0
+       # self._tims = CircularBuffer(5,np.zeros_like(bgim))
 
     def set_threshold(self, thresh):
         self._bsub.setVarThreshold(thresh)
@@ -36,6 +37,7 @@ class BakCreator:
     #
 
     def _update(self, new_im, frame_num=None, frame_time=None):
+        new_im = cv2.blur(new_im, (3,3))
         updatebg = True
         if (frame_num is not None) and (self._update_frame_interval > 0) and (
                 frame_num - self._last_update_frame < self._update_frame_interval):
@@ -52,7 +54,6 @@ class BakCreator:
                 self._last_update_time = frame_time
         else:
             self._fgim = self._bsub.apply(new_im, learningRate=0)
-
 
 
     # returns true if full complement of background images
@@ -74,3 +75,32 @@ class BakCreator:
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
         return fgthresh
+
+class CircularBuffer:
+    def __init__(self, length, init_data):
+        imsize = init_data.shape
+        dtype = init_data.dtype
+        self.storage = np.zeros((length, *imsize), dtype=dtype)
+        for j in range(length):
+            self.storage[j] = init_data
+        self._length = length
+        self._current_ind = 0
+        self._num_ims = 0
+
+    def full(self):
+        return self._num_ims >= self._length
+
+
+    def add(self, im):
+        self._num_ims = np.max((self._num_ims, self._current_ind+1))
+        self.storage[self._current_ind] = im
+        self._current_ind = (self._current_ind + 1)%self._length
+
+    def get_element(self, ind):
+        return self.storage[(ind + self._current_ind)%self._length]
+
+    def get_nth_most_recent_element(self, n):
+        return self.storage[(self._current_ind - 1 -n)%self._length]
+
+    def get_stack(self):
+        return self.storage[:self._num_ims]

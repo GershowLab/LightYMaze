@@ -172,15 +172,15 @@ class MazeController:
             thresh, connectivity=8
         )
         area = [stats[i, cv2.CC_STAT_AREA] for i in range(1, num_labels)]
-        print(area)
+        #print(area)
         try:
             larva_ind = np.argmax(area) + 1
-            print (larva_ind)
+            #print (larva_ind)
             self._larva_loc = centroids[larva_ind]
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
             la = float(area[larva_ind - 1])
             self._stats["LarvaArea"] = la
-            print(la)
+           # print(la)
             log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
             if la > self._min_larva_area:
                 self._sum_larva_area += la
