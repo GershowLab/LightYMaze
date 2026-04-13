@@ -34,7 +34,6 @@ class MazeController:
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 30
-        self._bak_initialized = False
         self._threshold = 45
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
@@ -77,6 +76,7 @@ class MazeController:
         self._led_on_max_time = 300 #seconds
         self._last_led_update = time.monotonic()
 
+        self._min_larva_area = 10
         self._sum_larva_area = 0
         self._sum_sq_larva_area = 0
         self._num_larva_area = 0
@@ -87,7 +87,15 @@ class MazeController:
             threshold = 200
         print(f"{self._maze_ID}: changing threshold to {threshold}")
         self._threshold = threshold
-        self._bak.set_threshold(self._threshold)
+        if self._bak is not None:
+            self._bak.set_threshold(self._threshold)
+    def set_update_intervals(self, update_frame_interval=None, update_time_interval=None):
+        if update_frame_interval is not None:
+            self._update_frame_interval = update_frame_interval
+        if update_time_interval is not None:
+            self._update_time_interval = update_time_interval
+        if self._bak is not None:
+            self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
     def increase_threshold(self):
         self.set_threshold(self._threshold + 5)
@@ -135,10 +143,8 @@ class MazeController:
                     self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
-                self._bak.update_background(img, frame_number, capture_time)
+                init = self._bak.update_background(img, frame_num=frame_number, frame_time=capture_time)
                 # during initialization period, just update background
-
-                init = self._bak.update_background(img)
                 if init:
                     thresh = self._bak.get_thresholded_image()
                     thresh = cv2.bitwise_and(thresh, self._maze_mask)
@@ -172,16 +178,16 @@ class MazeController:
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
             la = float(area[larva_ind - 1])
             self._stats["LarvaArea"] = la
-            self._sum_larva_area += la
-            self._sum_sq_larva_area += la**2
-            self._num_larva_area += 1
-            u = self._sum_larva_area/self._num_larva_area
-            v = self._sum_sq_larva_area/self._num_larva_area - u**2
-            if la > u - 3*np.sqrt(v):
-                log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
-                log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
-            else:
-                log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
+            log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
+            if la > self._min_larva_area:
+                self._sum_larva_area += la
+                self._sum_sq_larva_area += la ** 2
+                self._num_larva_area += 1
+                u = self._sum_larva_area/self._num_larva_area
+                v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
+                if la > u - 3*np.sqrt(v):
+                    log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
+                    log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
         except:
             self._larva_loc = np.array([-1, -1])

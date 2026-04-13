@@ -15,7 +15,7 @@ print(fstub)
 #fstub = '/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/Shared drives/ugns-larval-behavior/y-maze pictures/y-maze feb 26/Basler_acA1920-150um__21902780__20260226_125212812_%4d.tiff'
 
 #fstub = 'G:\\Shared drives\\ugns-larval-behavior\\y-maze pictures\\y-maze feb 26\\Basler_acA1920-150um__21902780__20260226_125212812_%4d.tiff'
-vc = cv2.VideoCapture(fstub, cv2.CAP_IMAGES)
+vc = cv2.VideoCapture(str(fstub), cv2.CAP_IMAGES)
 ret, frame = vc.read()
 if not ret:
     print("did not open video")
@@ -43,7 +43,7 @@ clip_inds = np.ix_(y + range(h), x + range(w))
 clipim = ymg.diagnostic_image(frame[clip_inds])
 cv2.imshow('clipped mazes', clipim)
 
-cv2.waitKey(0)
+cv2.waitKey(1)
 
 # for j in range(1000):
 #     testim = ymg.calibrate_geometry_from_image(frame)
@@ -64,6 +64,8 @@ tt = None
 cv2.namedWindow('montage', cv2.WINDOW_KEEPRATIO)
 for mm in md._maze_minions:
     mm._maze_controller._led_on_max_time = 5
+    mm._maze_controller.set_update_intervals(update_frame_interval=10, update_time_interval=-1)
+    mm._maze_controller.set_threshold(10)
 for j in range(3600):
     print(f"processing frame {j}")
     if frame.ndim == 3:
@@ -75,9 +77,11 @@ for j in range(3600):
     if tt is not None:
         for t in tt:
             t.join()
-    tt = md.new_frame(frame, multi_thread=True)
+    tt = md.new_frame(frame, multi_thread=False, frame_number=j)
     img = md.make_composite_image()
     md._maze_minions[2].debug_display()
+    bak = md._maze_minions[2]._maze_controller._bak
+    print(f"{j}: {bak._nupdates}, {bak._last_update_frame}")
     cv2.imshow('montage', img)
     cv2.waitKey(1)
     [ret, frame] = vc.read()
