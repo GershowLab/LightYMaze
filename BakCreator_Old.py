@@ -19,6 +19,7 @@ class BakCreator:
         self._lock = Lock()
         self._mean_im = np.zeros_like(bgim)
         self._std_im = np.zeros_like(bgim)
+        self._threshold = 30
 
     def set_update_intervals(self, update_frame_interval = None, update_time_interval = None):
         if update_frame_interval is not None:
@@ -67,11 +68,18 @@ class BakCreator:
         num_new = np.count_nonzero(np.bitwise_and(np.bitwise_not(t_mask), fgthresh))
         return num_new >= self._alpha*nnz
 
+    def set_threshold(self, threshold):
+        self._threshold = threshold
     #returns true if full complement of background images
-    def update_background(self, new_im, fg_thresh = None, larva_thresh = None):
+    def update_background(self, new_im, fg_thresh = None, larva_thresh = None, frame_num = None, frame_time = None):
         with self._lock:
-            if self._check_thresh_movement(fg_thresh):
-                self._update(new_im, fg_thresh, larva_thresh)
+            if self._Ims.full():
+                fg_thresh = self.get_thresholded_image(fg_thresh)
+                mc = self._check_thresh_movement(fg_thresh)
+            else:
+                mc = True
+            if mc:
+                self._update(new_im, fg_thresh, larva_thresh, frame_num, frame_time)
             return self._Ims.full()
 
     def get_background(self):
@@ -80,8 +88,8 @@ class BakCreator:
     def get_foreground(self, im):
         return cv2.subtract(im, self.get_background())
 
-    def get_thresholded_image(self, im, thresh):
-        _, fgthresh = cv2.threshold(self.get_foreground(im), thresh, 255, cv2.THRESH_BINARY)
+    def get_thresholded_image(self, im):
+        _, fgthresh = cv2.threshold(self.get_foreground(im), self._threshold, 255, cv2.THRESH_BINARY)
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         return fgthresh

@@ -139,7 +139,7 @@ class MazeController:
                 else:
                     self._stats["FrameTime"] = capture_time
                 if self._bak is None:
-                    self._bak = BakCreator(self._stack_len, img)
+                    self._bak = BakCreator(self._stack_len, bgim = img)
                     self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
 
@@ -176,7 +176,7 @@ class MazeController:
         try:
             larva_ind = np.argmax(area) + 1
             print (larva_ind)
-            self._larva_loc = centroids[larva_ind-1]
+            self._larva_loc = centroids[larva_ind]
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
             la = float(area[larva_ind - 1])
             self._stats["LarvaArea"] = la
@@ -206,7 +206,7 @@ class MazeController:
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         thresh = self._bak.get_thresholded_image()
-        #thresh = self._bak.get_zscore_image(self._img)
+#        thresh = self._bak.get_zscore_image(self._img)
         g = thresh.copy()
         g[self._maze_mask == 0] = 255
         thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))

@@ -81,7 +81,7 @@ for j in range(3600):
     img = md.make_composite_image()
     md._maze_minions[2].debug_display()
     bak = md._maze_minions[2]._maze_controller._bak
-    print(f"{j}: {bak._nupdates}, {bak._last_update_frame}")
+#    print(f"{j}: {bak._nupdates}, {bak._last_update_frame}")
     cv2.imshow('montage', img)
     cv2.waitKey(1)
     [ret, frame] = vc.read()

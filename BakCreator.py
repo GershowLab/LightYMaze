@@ -16,6 +16,8 @@ class BakCreator:
         self._bgim = bgim
         self._fgim = bgim
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
+        self._bsub.setBackgroundRatio(0.1)
+        self._bsub.setNMixtures(5)
         self._bsub.apply(bgim,1) #reset to bgim
         self._nupdates = 0
 
@@ -67,7 +69,8 @@ class BakCreator:
 
     def get_thresholded_image(self):
         # _, fgthresh = cv2.threshold(self.get_foreground(im), thresh, 255, cv2.THRESH_BINARY)
-        fgthresh = cv2.morphologyEx(self.get_foreground(), cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+        fgthresh = self.get_foreground()
+       # fgthresh = cv2.morphologyEx(, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
         return fgthresh
