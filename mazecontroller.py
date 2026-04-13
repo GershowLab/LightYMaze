@@ -34,7 +34,6 @@ class MazeController:
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 30
-        self._bak_initialized = False
         self._threshold = 45
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
@@ -77,6 +76,7 @@ class MazeController:
         self._led_on_max_time = 300 #seconds
         self._last_led_update = time.monotonic()
 
+        self._min_larva_area = 10
         self._sum_larva_area = 0
         self._sum_sq_larva_area = 0
         self._num_larva_area = 0
@@ -178,16 +178,16 @@ class MazeController:
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
             la = float(area[larva_ind - 1])
             self._stats["LarvaArea"] = la
-            self._sum_larva_area += la
-            self._sum_sq_larva_area += la**2
-            self._num_larva_area += 1
-            u = self._sum_larva_area/self._num_larva_area
-            v = self._sum_sq_larva_area/self._num_larva_area - u**2
-            if la > u - 3*np.sqrt(v):
-                log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
-                log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
-            else:
-                log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
+            log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
+            if la > self._min_larva_area:
+                self._sum_larva_area += la
+                self._sum_sq_larva_area += la ** 2
+                self._num_larva_area += 1
+                u = self._sum_larva_area/self._num_larva_area
+                v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
+                if la > u - 3*np.sqrt(v):
+                    log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
+                    log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
         except:
             self._larva_loc = np.array([-1, -1])
