@@ -34,7 +34,7 @@ class MazeController:
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
         self._stack_len = 30
-        self._threshold = 45
+        self._threshold = 15
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None
@@ -172,12 +172,15 @@ class MazeController:
             thresh, connectivity=8
         )
         area = [stats[i, cv2.CC_STAT_AREA] for i in range(1, num_labels)]
+        print(area)
         try:
             larva_ind = np.argmax(area) + 1
-            self._larva_loc = centroids[larva_ind]
+            print (larva_ind)
+            self._larva_loc = centroids[larva_ind-1]
             self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
             la = float(area[larva_ind - 1])
             self._stats["LarvaArea"] = la
+            print(la)
             log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
             if la > self._min_larva_area:
                 self._sum_larva_area += la
@@ -185,7 +188,7 @@ class MazeController:
                 self._num_larva_area += 1
                 u = self._sum_larva_area/self._num_larva_area
                 v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
-                if la > u - 3*np.sqrt(v):
+                if True or la > u - 3*np.sqrt(v):
                     log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
                     log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
             self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
