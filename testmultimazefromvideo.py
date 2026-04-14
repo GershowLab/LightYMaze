@@ -64,8 +64,8 @@ tt = None
 cv2.namedWindow('montage', cv2.WINDOW_KEEPRATIO)
 for mm in md._maze_minions:
     mm._maze_controller._led_on_max_time = 5
-    mm._maze_controller.set_update_intervals(update_frame_interval=10, update_time_interval=-1)
-    mm._maze_controller.set_threshold(10)
+    mm._maze_controller.set_update_intervals(update_frame_interval=20, update_time_interval=-1)
+    mm._maze_controller.set_threshold(20)
 for j in range(3600):
     print(f"processing frame {j}")
     if frame.ndim == 3:
@@ -79,9 +79,10 @@ for j in range(3600):
             t.join()
     tt = md.new_frame(frame, multi_thread=False, frame_number=j)
     img = md.make_composite_image()
-    md._maze_minions[2].debug_display()
-    bak = md._maze_minions[2]._maze_controller._bak
-#    print(f"{j}: {bak._nupdates}, {bak._last_update_frame}")
+    #md._maze_minions[2].debug_display()
+    #bak = md._maze_minions[2]._maze_controller._bak
+    #bak._debug = True
+    #print(f"{j}: {bak._nupdates}, {bak._last_update_frame}")
     cv2.imshow('montage', img)
     cv2.waitKey(1)
     [ret, frame] = vc.read()

@@ -22,6 +22,10 @@ mog2 = cv2.createBackgroundSubtractorMOG2(history=60, detectShadows=False, varTh
 cap = cv2.VideoCapture(str(fstub))
 
 ret, frame = vc.read()
+
+if np.ndim(frame) == 3:
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
 bak = BakCreator(30,frame)
 bak.set_threshold(30)
 bak.set_update_intervals(update_time_interval=-1, update_frame_interval=10)
@@ -29,6 +33,9 @@ for f in range(20000):
     if not ret:
         print("did not open video")
         break
+
+    if np.ndim(frame) == 3:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
     if f%10 == 0:
         fgmask = mog2.apply(frame)

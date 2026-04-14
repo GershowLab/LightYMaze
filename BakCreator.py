@@ -14,13 +14,18 @@ class BakCreator:
         self._update_time_interval = -1
         self._lock = Lock()
         self._bgim = bgim
-        self._fgim = bgim
+        self._fgim = np.zeros_like(bgim)
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
         self._bsub.setBackgroundRatio(0.1)
-        self._bsub.setNMixtures(5)
+      #  self._bsub.setNMixtures(5)
         self._bsub.apply(bgim,1) #reset to bgim
+        self._learning_rate = -1
         self._nupdates = 0
-       # self._tims = CircularBuffer(5,np.zeros_like(bgim))
+        self._tims = CircularBuffer(4,np.zeros_like(bgim))
+        self._alpha = 0.1
+        self._exclude_larva_from_update = True
+        self._bg_was_updated = False
+        self._debug = False
 
     def set_threshold(self, thresh):
         self._bsub.setVarThreshold(thresh)
@@ -30,11 +35,16 @@ class BakCreator:
             self._update_frame_interval = update_frame_interval
         if update_time_interval is not None:
             self._update_time_interval = update_time_interval
-        # if update_frame_interval is None and update_time_interval is None:
-        #     self._update_time_interval = None
-        #     self._update_frame_interval = None
 
-    #
+    def largest_contour(self):
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+            self._fgim, connectivity=8
+        )
+        if num_labels < 2:
+            return self._fgim
+        area = [stats[i, cv2.CC_STAT_AREA] for i in range(1, num_labels)]
+        larva_ind = np.argmax(area) + 1
+        return cv2.morphologyEx((labels == larva_ind).astype(np.uint8) * 255, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=10)
 
     def _update(self, new_im, frame_num=None, frame_time=None):
         new_im = cv2.blur(new_im, (3,3))
@@ -45,22 +55,33 @@ class BakCreator:
         if (frame_time is not None) and (self._update_time_interval > 0) and (
                 frame_time - self._last_update_time < self._update_frame_interval):
             updatebg = False
+        updatebg = self._check_thresh_movement() and updatebg
         if updatebg:
-            self._fgim = self._bsub.apply(new_im)
+            lr = self._learning_rate
             self._nupdates += 1
             if frame_num is not None:
                 self._last_update_frame = frame_num
             if frame_time is not None:
                 self._last_update_time = frame_time
         else:
-            self._fgim = self._bsub.apply(new_im, learningRate=0)
+            lr = 0
+        if self._exclude_larva_from_update and self._nupdates > 1:
+            self._fgim = self._bsub.apply(new_im, learningRate=lr, fgmask=self.largest_contour())
+        else:
+            self._fgim = self._bsub.apply(new_im, learningRate=lr)
+
+        fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
+        self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
+        self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+        self._bg_was_updated = updatebg
 
 
-    # returns true if full complement of background images
+    # returns true if minimum number of threshold images have been collected
     def update_background(self, new_im, frame_num=None, frame_time=None):
         with self._lock:
             self._update(new_im, frame_num, frame_time)
-            return self._nupdates >= self._stack_len
+            return self._tims.full()
 
     def get_background(self):
         return self._bsub.getBackgroundImage()
@@ -72,9 +93,29 @@ class BakCreator:
         # _, fgthresh = cv2.threshold(self.get_foreground(im), thresh, 255, cv2.THRESH_BINARY)
         fgthresh = self.get_foreground()
        # fgthresh = cv2.morphologyEx(, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-        fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
         return fgthresh
+
+    def _check_thresh_movement(self):
+        if self._fgim is None:
+            return True #do update
+        if not self._tims.full():
+            self._tims.add(self._fgim)
+            return True
+        t_mask = np.asarray(255*np.any(self._tims.get_stack(), axis=0), np.uint8)
+        nnz = np.count_nonzero(self._tims.get_stack())/self._tims.get_stack().shape[0]
+        num_new = np.count_nonzero(cv2.bitwise_and(cv2.bitwise_not(t_mask), self._fgim))
+        new_t = num_new >= self._alpha*nnz
+        if self._debug:
+
+            cv2.imshow("fgoverlay", cv2.merge((np.asarray(t_mask, np.uint8), self._fgim, self._fgim)))
+            st = self._tims.get_stack()
+            for j in range(st.shape[0]):
+                cv2.imshow(f"threshim {j}", st[j,:, :])
+            print(f"nnz: {nnz}, num_fg: {cv2.countNonZero(self._fgim)} num_new: {num_new}, new_t: {new_t}, tims_full : {self._tims.full()}")
+        if new_t:
+            self._tims.add(self._fgim)
+        return new_t
 
 class CircularBuffer:
     def __init__(self, length, init_data):
