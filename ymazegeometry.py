@@ -43,7 +43,7 @@ class YMazeGeometry:
         mmcenter = self.maze_spacing*np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
         self.calculate_affine(pxcenter[sucess], mmcenter[sucess])
         self._setup_mazes()
-        [m.align_to_im(im, maxshift=10) for m in self._mazes]
+        [m.align_to_im(im, maxshift=20) for m in self._mazes]
 
         #pxcenter = np.asarray([m.get_im_center() for m in self._mazes])
         #mmcenter = self.maze_spacing * np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
