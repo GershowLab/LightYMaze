@@ -73,6 +73,7 @@ class BakCreator:
         fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
         self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
         self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=3)
 
         self._bg_was_updated = updatebg
 
@@ -90,11 +91,7 @@ class BakCreator:
         return self._fgim
 
     def get_thresholded_image(self):
-        # _, fgthresh = cv2.threshold(self.get_foreground(im), thresh, 255, cv2.THRESH_BINARY)
-        fgthresh = self.get_foreground()
-       # fgthresh = cv2.morphologyEx(, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-        fgthresh = cv2.morphologyEx(fgthresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
-        return fgthresh
+        return self.get_foreground()
 
     def _check_thresh_movement(self):
         if self._fgim is None:
