@@ -4,7 +4,7 @@
 #then pip install picamera2 --no-deps
 
 from picamera2 import Picamera2, Metadata
-from libcamera import Transform
+from libcamera import Transform, controls
 import cv2
 
 class CameraCapture:
@@ -28,7 +28,21 @@ class CameraCapture:
         self.vflip = True
         self.set_exposure()
         self.ae_on = False
+        self.lens_position = 0.0
         #self.cam.start()
+
+    def auto_focus_once(self):
+        self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto})
+        success = self._cam.auto_focus_cycle()
+        if success:
+            with self._cam.captured_request(flush=True) as request:
+                metadata = request.get_metadata()
+                self.lens_position = metadata['LensPosition']
+                self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto, "LensPosition": self.lens_position})
+
+    def move_focus(self, distance):
+        self.lens_position = 1/(1/self.lens_position + distance)
+        self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto, "LensPosition": self.lens_position})
 
     def set_exposure(self, exposure = None, gain = None):
         if exposure is not None:
@@ -129,6 +143,15 @@ class CameraCapture:
                 self.vflip = not self.vflip
             if key == ord('a'):
                 self.auto_exposure()
+                self.auto_focus_once()
+                self.auto_exposure()
+
+            if key == ord('t'):
+                self.move_focus(0.0005) #half mm towards
+
+            if key == ord('w'):
+                self.move_focus(-0.0005) #half mm away
+
             if key == ord('q'):
                 quit()
         cv2.destroyWindow(winname)
