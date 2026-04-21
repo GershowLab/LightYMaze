@@ -61,8 +61,11 @@ class CameraCapture:
         print(f"new focal power = {self.lens_position}, implied distance = {1 / self.lens_position}")
 
     def move_focus(self, distance):
-        self.set_focus( 1/(1/self.lens_position + distance))
-        
+        if self.lens_position  > 0:
+            self.set_focus( 1/(1/self.lens_position + distance))
+        else:
+            self.set_focus(10) #10 cm
+
     def set_exposure(self, exposure = None, gain = None):
         if exposure is not None:
             self.exposure = exposure

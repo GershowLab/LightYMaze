@@ -51,6 +51,7 @@ try:
                 self.turn_off_leds()
 
 except:
+    print ("light controller failed to load")
     class LightController:
         def __init__(self):
             self.num_mazes = 9
