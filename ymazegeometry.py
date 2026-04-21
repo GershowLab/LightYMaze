@@ -294,7 +294,7 @@ class YMazeGeometry:
             loc = (np.array(self._imspace_to_real_space.transform_rev(*fc)) - self.origin).astype(int)
             mc[loc[1], loc[0]] = 255
 
-        r = cv2.bitwise_or(r, cv2.morphologyEx(mc, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8)))
+        r = cv2.bitwise_or(r, cv2.morphologyEx(mc, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8),iterations=5))
 
         img = cv2.merge((b, g, r))
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
