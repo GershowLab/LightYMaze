@@ -21,6 +21,7 @@ class CameraCapture:
         self.x0 = paa[0]
         self.y0 = paa[1]
         self.main_configuration = self._cam.create_still_configuration({"format": "BGR888", "size":paa})
+        self.ae_on = False
         self.set_bounding_box(*paa)
         self.exposure = 20000
         self.gain = 2
@@ -28,7 +29,6 @@ class CameraCapture:
         self.hflip = False
         self.vflip = True
         self.set_exposure()
-        self.ae_on = False
       #  self.auto_exposure(False)
         self.lens_position = 0.0
         #self.cam.start()
