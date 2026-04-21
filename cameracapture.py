@@ -31,9 +31,9 @@ class CameraCapture:
         self.lens_position = 0.0
         #self.cam.start()
 
-    def auto_focus_once(self):
+    def autofocus_once(self):
         self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto})
-        success = self._cam.auto_focus_cycle()
+        success = self._cam.autofocus_cycle()
         if success:
             with self._cam.captured_request(flush=True) as request:
                 metadata = request.get_metadata()
@@ -143,7 +143,7 @@ class CameraCapture:
                 self.vflip = not self.vflip
             if key == ord('a'):
                 self.auto_exposure()
-                self.auto_focus_once()
+                self.autofocus_once()
                 self.auto_exposure()
 
             if key == ord('t'):
