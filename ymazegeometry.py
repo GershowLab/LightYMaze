@@ -261,6 +261,10 @@ class YMazeGeometry:
         print ("start multi point")
         self.multi_point_rotation_and_scaling(points)
 
+    def get_fiducial_centers_px(self):
+        fcpx = [(np.array(self._imspace_to_real_space.transform_rev(*fc)) - self.origin).astype(int) for fc in self.fiducial_centers]
+        return fcpx
+
     def multi_point_rotation_and_scaling(self, points):
         centerPoint = points[0]
         rightMazePoint = points[1]

@@ -217,7 +217,7 @@ class CameraCapture:
         self.main_configuration["controls"]["Sharpness"] = 0
         self.stop()
         self._cam.configure(self.main_configuration)
-        print(f"new bounding box = (x0,y0,w,h)")
+        print(f"new bounding box = {(x0,y0,w,h)}")
         if was_started:
             self.start()
 

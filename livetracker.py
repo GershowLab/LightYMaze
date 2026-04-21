@@ -47,15 +47,21 @@ while True:
 	ymg.set_image_size((cap.h, cap.w))
 	im,_ = cap.capture_frame()
 	ymg.calibrate_geometry_from_image_fiducials(im)
+	print (f"fiducial centers: {ymg.get_fiducial_centers_px()}")
 	# img = ymg.diagnostic_image(im)
 	# cv2.imshow('before maze alignment', img)
 	# cv2.waitKey(1)
 	ymg.align_mazes_to_im(im)
+	print (f"after alignment to im: fiducial centers: {ymg.get_fiducial_centers_px()}")
+
 	# img = ymg.diagnostic_image(im)
 	# cv2.imshow('after maze alignment', img)
 	# cv2.waitKey(1)
 
 	x,y,w,h = ymg.clip_to_mazes(10)
+	print(f"ymg clip instructions: {(x,y,w,h)}")
+	print (f"after clipping to maze: fiducial centers: {ymg.get_fiducial_centers_px()}")
+
 	cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 	im,_ = cap.capture_frame()
 	cv2.namedWindow('clipped mazes', cv2.WINDOW_KEEPRATIO)
