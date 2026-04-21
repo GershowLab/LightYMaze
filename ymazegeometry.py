@@ -289,11 +289,19 @@ class YMazeGeometry:
         r[np.logical_and(rm > 0, rm < 6)] = 255 #maze 1 = red
         g[rm == 6] = 255 #maze 2 = green
         b[rm == 7] = 255 #maze 3 = blue
+        mc = np.zeros_like(r) #marker centers
+        for fc in self.fiducial_centers:
+            loc = (np.array(self._imspace_to_real_space.transform_rev(*fc)) - self.origin).astype(int)
+            mc[loc[1], loc[0]] = 255
+
+        r = cv2.bitwise_or(r, cv2.morphologyEx(mc, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8)))
+
         img = cv2.merge((b, g, r))
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
         for i in range(len(mc)):
             loc = (np.array(self._imspace_to_real_space.transform_rev(*mc[i])) - self.origin).astype(int)
             cv2.putText(img, f"{i+1}", loc, cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 0), 4)
+
         return img
 def calibrate_geometry_from_image(frame, ymg):
     ymg.calibrate_geometry_from_image(frame)

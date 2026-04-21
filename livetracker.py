@@ -36,6 +36,8 @@ if not os.path.exists(datadir):
 
 print("boot")
 cap = CameraCapture()
+print ("autofocusing")
+cap.autofocus_once()
 print(f"camera setup - {time.monotonic() - tstart}")
 cap.focus_window()
 
