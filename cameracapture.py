@@ -147,20 +147,33 @@ class CameraCapture:
                 self.dimmer()
             if key == ord('+') or key == ord('='):
                 self.brighter()
+
             if key == ord('h'):
                 self.hflip = not self.hflip
+
             if key == ord('v'):
                 self.vflip = not self.vflip
+
             if key == ord('a'):
                 self.auto_exposure()
-                self.autofocus_once()
-                self.auto_exposure()
 
-            if key == ord('t'):
+
+            if key == ord('T'):
                 self.focus_towards()
 
+            if key == ord('t'):
+                self.move_focus(-0.0005) #move focus 0.5 mm closer
+
             if key == ord('w'):
+                self.move_focus(0.0005) #move focus 0.5 mm farther
+                print('w')
+
+            if key == ord('f'):
+                self.autofocus_once()
+
+            if key == ord('W'):
                 self.focus_away()
+                print('W')
 
             if key == ord('q'):
                 quit()
@@ -196,7 +209,7 @@ class CameraCapture:
         self.main_configuration["controls"]["AwbEnable"] = False
         self.main_configuration["controls"]["Contrast"] = 2
         self.main_configuration["controls"]["Saturation"] = 1
-        self.main_configuration["controls"]["Sharpness"] = 1
+        self.main_configuration["controls"]["Sharpness"] = 0
         self.stop()
         self._cam.configure(self.main_configuration)
         if was_started:
