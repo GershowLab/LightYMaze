@@ -13,8 +13,7 @@ class CameraCapture:
         self._cam : Picamera2 = Picamera2()
         self.started = False
         paa = self._cam.camera_properties["PixelArrayActiveAreas"][0]
-        paa[0] = 0
-        paa[1] = 0
+        paa = [0,0, paa[2], paa[3]]
         self.default_bounding_box = paa
         #print(paa)
         self.w = paa[2]
