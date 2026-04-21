@@ -32,6 +32,7 @@ class CameraCapture:
         #self.cam.start()
 
     def autofocus_once(self):
+        self.start()
         self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto})
         success = self._cam.autofocus_cycle()
         if success:
@@ -39,6 +40,7 @@ class CameraCapture:
                 metadata = request.get_metadata()
                 self.lens_position = metadata['LensPosition']
                 self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
+        return success
 
     def focus_towards(self):
         self.lens_position *= 1.05

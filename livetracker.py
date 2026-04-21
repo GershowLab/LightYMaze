@@ -21,6 +21,13 @@ print(f"import most libaries - {time.monotonic() - tstart}")
 from cameracapture import CameraCapture
 print(f"import CameraCapture - {time.monotonic() - tstart}")
 
+print("boot")
+cap = CameraCapture()
+print ("autofocusing")
+success =  cap.autofocus_once()
+print (f"autofocus succeded? {success} - new focal distance = {1/cap.lens_position}")
+print(f"camera setup - {time.monotonic() - tstart}")
+cap.focus_window()
 
 print("creating data directory")
 basedir = Path.home() / 'ymaze-data'
@@ -34,12 +41,6 @@ if not os.path.exists(datadir):
 	print ("did not create data directory")
 	quit()
 
-print("boot")
-cap = CameraCapture()
-print ("autofocusing")
-cap.autofocus_once()
-print(f"camera setup - {time.monotonic() - tstart}")
-cap.focus_window()
 
 while True:
 	ymg = YMazeGeometry()
