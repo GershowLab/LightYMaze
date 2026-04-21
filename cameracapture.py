@@ -185,6 +185,9 @@ class CameraCapture:
         self.set_bounding_box(*self.default_bounding_box)
 
     def set_bounding_box_from_im_coordinates(self, x0, y0, w, h):
+        print(f"old bounding box = {(self.x0, self.y0, self.w, self.h)}")
+        print(f"new bounding box im coordinates = {(x0, y0, w, h)}")
+
         if self.hflip:
             #image ran from x0 to x0+w
             #reversed to x0+w to x0
@@ -214,6 +217,7 @@ class CameraCapture:
         self.main_configuration["controls"]["Sharpness"] = 0
         self.stop()
         self._cam.configure(self.main_configuration)
+        print(f"new bounding box = (x0,y0,w,h)")
         if was_started:
             self.start()
 
