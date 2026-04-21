@@ -40,9 +40,19 @@ class CameraCapture:
                 self.lens_position = metadata['LensPosition']
                 self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
 
+    def focus_towards(self):
+        self.lens_position *= 1.05
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
+
+
+    def focus_away(self):
+        self.lens_position *= 0.95
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
+
+
     def move_focus(self, distance):
         self.lens_position = 1/(1/self.lens_position + distance)
-        self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
 
     def set_exposure(self, exposure = None, gain = None):
         if exposure is not None:
@@ -147,10 +157,10 @@ class CameraCapture:
                 self.auto_exposure()
 
             if key == ord('t'):
-                self.move_focus(0.0005) #half mm towards
+                self.focus_towards()
 
             if key == ord('w'):
-                self.move_focus(-0.0005) #half mm away
+                self.focus_away()
 
             if key == ord('q'):
                 quit()
