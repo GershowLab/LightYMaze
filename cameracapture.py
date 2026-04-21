@@ -32,17 +32,17 @@ class CameraCapture:
         #self.cam.start()
 
     def auto_focus_once(self):
-        self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto})
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto})
         success = self._cam.auto_focus_cycle()
         if success:
             with self._cam.captured_request(flush=True) as request:
                 metadata = request.get_metadata()
                 self.lens_position = metadata['LensPosition']
-                self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto, "LensPosition": self.lens_position})
+                self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
 
     def move_focus(self, distance):
         self.lens_position = 1/(1/self.lens_position + distance)
-        self._cam.set_controls({"AfMode": controls.AFModeEnum.Auto, "LensPosition": self.lens_position})
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
 
     def set_exposure(self, exposure = None, gain = None):
         if exposure is not None:
