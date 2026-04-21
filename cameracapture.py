@@ -42,22 +42,27 @@ class CameraCapture:
                 metadata = request.get_metadata()
                 self.lens_position = metadata['LensPosition']
                 self._cam.set_controls({"AfMode": controls.AfModeEnum.Auto, "LensPosition": self.lens_position})
+                print(f"autofocus succeded - new focal distance = {1 / self.lens_position}")
         return success
 
     def focus_towards(self):
-        self.lens_position *= 1.05
-        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
+        self.set_focus(self.lens_position*1.05)
+      #  self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
 
 
     def focus_away(self):
-        self.lens_position *= 0.95
-        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
+        self.set_focus(self.lens_position*0.95)
+        # self.lens_position *= 0.95
+        # self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
 
+    def set_focus(self, lens_position):
+        self.lens_position = lens_position
+        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
+        print(f"new focal power = {self.lens_position}, implied distance = {1 / self.lens_position}")
 
     def move_focus(self, distance):
-        self.lens_position = 1/(1/self.lens_position + distance)
-        self._cam.set_controls({"AfMode": controls.AfModeEnum.Manual, "LensPosition": self.lens_position})
-
+        self.set_focus( 1/(1/self.lens_position + distance))
+        
     def set_exposure(self, exposure = None, gain = None):
         if exposure is not None:
             self.exposure = exposure

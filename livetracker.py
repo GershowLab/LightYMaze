@@ -25,7 +25,6 @@ print("boot")
 cap = CameraCapture()
 print ("autofocusing")
 success =  cap.autofocus_once()
-print (f"autofocus succeded? {success} - new focal distance = {1/cap.lens_position}")
 print(f"camera setup - {time.monotonic() - tstart}")
 cap.focus_window()
 
