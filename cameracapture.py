@@ -13,6 +13,8 @@ class CameraCapture:
         self._cam : Picamera2 = Picamera2()
         self.started = False
         paa = self._cam.camera_properties["PixelArrayActiveAreas"][0]
+        paa[0] = 0
+        paa[1] = 0
         self.default_bounding_box = paa
         #print(paa)
         self.w = paa[2]
@@ -28,6 +30,7 @@ class CameraCapture:
         self.vflip = True
         self.set_exposure()
         self.ae_on = False
+        self.auto_exposure(False)
         self.lens_position = 0.0
         #self.cam.start()
 
