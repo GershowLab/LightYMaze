@@ -29,7 +29,7 @@ class CameraCapture:
         self.vflip = True
         self.set_exposure()
         self.ae_on = False
-        self.auto_exposure(False)
+      #  self.auto_exposure(False)
         self.lens_position = 0.0
         #self.cam.start()
 
@@ -217,6 +217,7 @@ class CameraCapture:
         self.main_configuration["controls"]["Contrast"] = 2
         self.main_configuration["controls"]["Saturation"] = 1
         self.main_configuration["controls"]["Sharpness"] = 0
+        self.main_configuration["controls"]["AeEnable"] = self.ae_on
         self.stop()
         self._cam.configure(self.main_configuration)
         print(f"new bounding box = {(x0,y0,w,h)}")
