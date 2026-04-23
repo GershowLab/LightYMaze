@@ -18,7 +18,7 @@ class StimulusManager:
     current_location: MazePart
     current_state: State
 
-    def __init__(self, maze_controller: mazecontroller.MazeController):
+    def __init__(self, maze_controller):
         self.current_state = State.PREDECISION_ANY
         self.origin_location = MazePart.INTERSECTION
         self.current_location = MazePart.INTERSECTION
