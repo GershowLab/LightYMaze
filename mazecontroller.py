@@ -258,7 +258,7 @@ class MazeController:
         return img_annotate
 
     def leds_on(self):
-        return [np.any(np.asarray(l)>0) and l[3]>0 for l in self._led_settings]
+        return [np.any(np.asarray(l[0:3])>0) and l[3]>0 for l in self._led_settings]
 
     def mark_choice(self, channel):
         led_on = self.leds_on()
