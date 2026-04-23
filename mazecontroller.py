@@ -64,7 +64,8 @@ class MazeController:
             "Led3G": 0,
             "Led3B": 0,
             "Led3PCT": 100,
-            "Message":""
+            "Message":"",
+            "Decision":""
         }
         self._df = pd.DataFrame(columns=self._stats.keys())
         self._lock = Lock()
@@ -76,11 +77,13 @@ class MazeController:
         self._led_on_max_time = 300 #seconds
         self._last_led_update = time.monotonic()
 
-        self._min_larva_area = 10
+        self._min_larva_area = 20
         self._sum_larva_area = 0
         self._sum_sq_larva_area = 0
         self._num_larva_area = 0
         self._initialized = False
+        self._decisions = {"dark":0,"light":0,"null":0}
+        self._led_settings = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
     def set_threshold(self, threshold):
         if (threshold < 5):
             threshold = 5
@@ -90,6 +93,7 @@ class MazeController:
         self._threshold = threshold
         if self._bak is not None:
             self._bak.set_threshold(self._threshold)
+
     def set_update_intervals(self, update_frame_interval=None, update_time_interval=None):
         if update_frame_interval is not None:
             self._update_frame_interval = update_frame_interval
@@ -241,8 +245,11 @@ class MazeController:
                     (255, 255, 0), 2)
 
         if self._frame_number < self._last_msg_frame + 30:
-            cv2.putText(img_annotate, self._last_msg, (5, h-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255),
-                        1, bottomLeftOrigin=False)
+            msg = self._last_msg
+        else:
+            msg = f"L{self._decisions['light']} / D{self._decisions['dark']} / N{self._decisions['null']}"
+        cv2.putText(img_annotate, self._last_msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
+                    1, bottomLeftOrigin=False)
 
         for r in self._regions:
             cv2.putText(img_annotate, f"{int(r.part)}", (r.loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
@@ -250,6 +257,21 @@ class MazeController:
             cv2.putText(img_annotate, f"{self._frame_number}", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
         return img_annotate
 
+    def leds_on(self):
+        return [np.any(np.asarray(l[0:3]>0)) and l[3]>0 for l in self._led_settings]
+
+    def mark_choice(self, channel):
+        led_on = self.leds_on()
+        if led_on[channel - 1]:
+            self._decisions["light"] += 1
+        else:
+            if np.any(np.asarray(led_on)):
+                self._decisions["dark"] += 1
+            else:
+                self._decisions["null"] += 1
+
+    def num_choices(self):
+        return self._decisions["light"], self._decisions["dark"], self._decisions["null"]
 
     def set_leds(self, led1rgb=None, led2rgb=None, led3rgb=None):
         self.set_ledrgbpct(1,led1rgb)
@@ -262,6 +284,8 @@ class MazeController:
         self._stats[f"Led{led_ind}G"] = green
         self._stats[f"Led{led_ind}B"] = blue
         self._stats[f"Led{led_ind}PCT"] = bright_pct
+        self._led_settings[led_ind-1] = [red, green, blue, bright_pct]
+
         if self._light_controller is not None:
             self._light_controller.set_led(self._maze_ID, led_ind, red, green, blue, bright_pct)
             self._led_update = True

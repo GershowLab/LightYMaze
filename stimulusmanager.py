@@ -113,16 +113,20 @@ class ActionChooseCircle(Action):
             self.to_parts = (MazePart.CIRCLE1,)
             self.msg = "CONF1"
             self.next_state = State.PREDECISION_ANY
+            self.channel = 1
         if state == State.CHOOSE2:
             self.to_parts = (MazePart.CIRCLE2,)
             self.msg = "CONF2"
             self.next_state = State.PREDECISION_ANY
+            self.channel = 2
         if state == State.CHOOSE3:
             self.to_parts = (MazePart.CIRCLE3,)
             self.msg = "CONF3"
             self.next_state = State.PREDECISION_ANY
+            self.channel = 3
 
     def action(self):
+        self.stimulus_manager.maze_controller.mark_choice(self.channel)
         self.stimulus_manager.maze_controller.set_leds((0,0,0),(0,0,0),(0,0,0))
         self.stimulus_manager.current_state = self.next_state
         self.stimulus_manager.set_message(self.msg)

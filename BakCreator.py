@@ -16,7 +16,7 @@ class BakCreator:
         self._bgim = bgim
         self._fgim = np.zeros_like(bgim)
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
-        self._bsub.setBackgroundRatio(0.1)
+        self._bsub.setBackgroundRatio(0.5) #changed from 0.1
       #  self._bsub.setNMixtures(5)
         self._bsub.apply(bgim,1) #reset to bgim
         self._learning_rate = -1

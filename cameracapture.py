@@ -104,6 +104,11 @@ class CameraCapture:
             self.started = True
             self._cam.start()
 
+    def print_metadata(self):
+        with self._cam.captured_request(flush=False) as request:
+            print(request.get_metadata())
+
+
     def stop(self):
         if self.started:
             self.started = False
