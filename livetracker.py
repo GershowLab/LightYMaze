@@ -5,6 +5,8 @@
 #window sizes
 import os
 
+import numpy as np
+
 default_win_size = (640, 480)
 
 import time
@@ -128,7 +130,8 @@ cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 cv2.resizeWindow('all mazes', default_win_size)
 try:
 	while frame_time < experiment_duration:
-		print(f"frame: {frame_num}, elapsed time: {frame_time}, imsize: {im.shape}")
+		num_choices = np.sum(np.asarray(md.num_choices()),axis=0)
+		print(f"frame: {frame_num}, elapsed time: {frame_time}, to light: {num_choices[0]}, to dark: {num_choices[1]}, null: {num_choices[2]}")
 		#wait for previous frame to finish processing
 		if tt is not None:
 			for t in tt:

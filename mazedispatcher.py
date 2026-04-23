@@ -44,13 +44,11 @@ class MazeDispatcher:
 
         if self._composite is None:
             self._composite = np.zeros((self._composite_h, self._composite_w,3), np.uint8)
-            #print(f"{self._composite_w}x{self._composite_h} composite image")
         for j in range(len(self._maze_minions)):
             x0 = np.uint16((j%self._composite_ncol)*self._panel_w)
             y0 = np.uint16(np.floor(j/self._composite_ncol)*self._panel_h)
             img = self._maze_minions[j].get_debug_im(decimate=2,show_frame=False)
             imh,imw = img.shape[:2]
-           # print(f"im{j+1},x0 = {x0}, y0 = {y0}, {imw},{imh}")
             self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
         return self._composite
 
@@ -92,6 +90,9 @@ class MazeDispatcher:
         df = [mm.get_dataframe() for mm in self._maze_minions]
         return pd.concat(df)
 
+    def num_choices(self):
+        return [mm.num_choices() for mm in self._maze_minions]
+
     def new_frame(self, img:np.ndarray,frame_number:int = None, frame_time:float = None, wait_for_completion = False, multi_thread = True):
         if frame_number is None:
             self._frame_number += 1
@@ -99,7 +100,6 @@ class MazeDispatcher:
             self._frame_number = frame_number
         if frame_time is None:
             frame_time = time.monotonic()
-        #print(f"maze dispatcher img shape = {img.shape}")
         if multi_thread:
             tt = [mm.new_frame(img, frame_number=frame_number,frame_time=frame_time) for mm in self._maze_minions]
             if wait_for_completion:
@@ -152,7 +152,6 @@ class MazeMinion:
 
     def new_frame_nothread(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
-        #print(f'maze minion {self._maze_id} roi.shape = {roi.shape}')
         self._maze_controller.new_image(roi, frame_number, frame_time)
     def new_frame(self, img, frame_number = None, frame_time = None):
         roi = self.get_subim(img).copy()
@@ -176,6 +175,9 @@ class MazeMinion:
 
     def close_video(self):
         self._maze_controller.close_video_out()
+
+    def num_choices(self):
+        return self._maze_controller.num_choices()
 
     def debug_display(self):
         if self._maze_controller.initialized():
