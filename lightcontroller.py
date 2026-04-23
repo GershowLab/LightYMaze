@@ -51,7 +51,9 @@ try:
                 self.turn_off_leds()
 
 except:
-    print ("light controller failed to load")
+    print ("light controller failed to load - make sure to activate virtual environment")
+    print ("source .ymz/bin/activate")
+    print ("pip install apa102-pi")
     class LightController:
         def __init__(self):
             self.num_mazes = 9
@@ -61,6 +63,8 @@ except:
         def set_led(self, maze_num, channel_num, red, green, blue, bright_pct=100):
             return #no op
         def update_leds(self):
+            return #no op
+        def turn_off_leds(self):
             return #no op
 
 if __name__ == "__main__":

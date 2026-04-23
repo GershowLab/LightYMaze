@@ -32,16 +32,12 @@ print(f"camera setup - {time.monotonic() - tstart}")
 cap.focus_window()
 
 print("creating data directory")
-basedir = Path.home() / 'ymaze-data'
+text_basedir = Path.home() / 'ymaze-text-data'
+video_basedir = Path.home() / 'ymaze-video-data'
 #basedir = Path('/home/pi/ymaze_data')
 nowstr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-datadir = basedir / nowstr
-datadir.mkdir(parents=True, exist_ok=True)
-
-print(f"datadir = {datadir}")
-if not os.path.exists(datadir):
-	print ("did not create data directory")
-	quit()
+text_datadir = text_basedir / nowstr
+video_datadir = video_basedir / nowstr
 
 
 while True:
@@ -91,25 +87,14 @@ cap.focus_window()
 brightness = 9
 light_controller = LightController()
 light_controller.set_global_brightness(brightness)
-#
-# winname = 'led correspondence test - remove filter'
-# cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
-# for c in range(3):
-# 	print(f"setting channel {c} (on diagnostic 1 = r, 2 = g, 3 = b)")
-# 	for m in range(1,10):
-# 		print(f"setting maze {m}")
-# 		light_controller.set_led(m,c,255,255,255)
-# 		light_controller.update_leds()
-# 		if cv2.waitKey(1000) & 0xFF == ord('q'):
-# 			break
-# 		im,ts = cap.capture_frame()
-# 		light_controller.set_led(m,c,0,0,0)
-# 		light_controller.update_leds()
-# 		img = ymg.diagnostic_image(im)
-# 		cv2.imshow(winname, img)
-# 		if cv2.waitKey(2000) & 0xFF == ord('q'):
-# 			break
-#
+
+text_datadir.mkdir(parents=True, exist_ok=True)
+video_datadir.mkdir(parents=True, exist_ok=True)
+
+print(f"text datadir = {text_datadir}")
+if not os.path.exists(text_datadir):
+	print ("did not create data directory")
+	quit()
 
 md = MazeDispatcher(ymg, light_controller=light_controller)
 print(f"created maze dispatcher - {time.monotonic() - tstart}")
@@ -123,7 +108,7 @@ display_maze = 0
 old_maze = -1
 experiment_duration = 3600 #seconds
 print(f"opening video")
-fstub = datadir / f"{nowstr} maze"
+fstub = video_datadir / f"{nowstr} maze"
 md.open_video(fstub)
 
 cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
@@ -142,10 +127,7 @@ try:
 
 
 		tt = md.new_frame(im, frame_number=frame_num, frame_time=frame_time, wait_for_completion=False, multi_thread=True)
-		#cv2.imshow('background', im)
-		#key= cv2.waitKey(1) & 0xFF
-		#if key == ord('q'):
-		#	break
+
 		if display_maze >= 0:
 			win = md._maze_minions[display_maze].debug_display()
 			if display_maze != old_maze:
@@ -174,8 +156,10 @@ try:
 			t.join()
 	light_controller.turn_off_leds()
 finally:
-	filepath = datadir / f"{nowstr} results.csv"
+	filepath = text_datadir / f"{nowstr} results.csv"
 	md.get_data_frame().to_csv(f"{filepath}")
+	print("experiment completed, make sure to run rclone")
+	print(f"rclone -copy {text_basedir} ugns:pi5 --verbose")
 	if light_controller is not None:
 		light_controller.turn_off_leds()
 
