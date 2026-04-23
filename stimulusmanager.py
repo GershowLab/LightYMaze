@@ -70,17 +70,20 @@ class StimulusManager:
             new_loc = p[-(j+1)]
             if old_loc != new_loc:
                 for a in self.actions:
-                    if a.poll(old_loc, new_loc):
+                    if a.condition_satisfied(old_loc, new_loc):
+                        self.current_location = new_loc
+                        a.poll(old_loc, new_loc)
                         break
 
     def update(self):
         new_location = self.maze_controller.get_larva_region()
         if new_location == self.current_location:
             return
-        old_location = self.current_location
-        self.current_location = new_location
-        for a in self.actions:
-            a.poll(old_location, new_location)
+        # old_location = self.current_location
+        # self.current_location = new_location
+        # for a in self.actions:
+        #     a.poll(old_location, new_location)
+        self.find_transition(max_history = 20)
         self.watchdog()
 
     def reset_watchdog(self):
