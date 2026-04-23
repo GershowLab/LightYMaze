@@ -248,7 +248,7 @@ class MazeController:
             msg = self._last_msg
         else:
             msg = f"L{self._decisions['light']} / D{self._decisions['dark']} / N{self._decisions['null']}"
-        cv2.putText(img_annotate, self._last_msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
+        cv2.putText(img_annotate, msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
                     1, bottomLeftOrigin=False)
 
         for r in self._regions:
