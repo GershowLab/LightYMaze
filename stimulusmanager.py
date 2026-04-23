@@ -215,7 +215,7 @@ class ActionFirstChannelChoice(Action):
             self.to_parts = (MazePart.CHANNEL1, MazePart.CHANNEL3)
         if state == State.PREDECISION3:
             self.from_parts = (MazePart.CHANNEL3, MazePart.INTERSECTION)
-            self.to_parts = (MazePart.CHANNEL2, MazePart.CHANNEL2)
+            self.to_parts = (MazePart.CHANNEL2, MazePart.CHANNEL1)
 
     def action(self):
         for cl, ol, ns, msg in zip(
