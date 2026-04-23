@@ -80,6 +80,7 @@ class MazeController:
         self._sum_larva_area = 0
         self._sum_sq_larva_area = 0
         self._num_larva_area = 0
+        self._initialized = False
     def set_threshold(self, threshold):
         if (threshold < 5):
             threshold = 5
@@ -142,6 +143,7 @@ class MazeController:
                     self._bak = BakCreator(self._stack_len, bgim = img)
                     self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
+                    self._initialized = True
 
                 init = self._bak.update_background(img, frame_num=frame_number, frame_time=capture_time)
                 # during initialization period, just update background
@@ -166,6 +168,9 @@ class MazeController:
                     self._led_update = False
             finally:
                 self._lock.release()
+
+    def initialized(self):
+        return self._initialized
 
     def _update_larva(self, thresh):
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
