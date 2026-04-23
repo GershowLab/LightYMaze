@@ -263,12 +263,15 @@ class MazeController:
     def mark_choice(self, channel):
         led_on = self.leds_on()
         if led_on[channel - 1]:
-            self._decisions["light"] += 1
+            choice = "light"
         else:
             if np.any(np.asarray(led_on)):
-                self._decisions["dark"] += 1
+                choice = "dark"
             else:
-                self._decisions["null"] += 1
+                choice = "null"
+        self._decisions[choice] += 1
+        print(f"{self._maze_ID}: led states = {self.leds_on()}, channel chosen = {channel}, choice = {choice}")
+
 
     def num_choices(self):
         return self._decisions["light"], self._decisions["dark"], self._decisions["null"]
