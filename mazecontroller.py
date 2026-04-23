@@ -108,6 +108,9 @@ class MazeController:
     def decrease_threshold(self):
         self.set_threshold(self._threshold - 5)
 
+    def get_viterbi_path(self):
+        return np.asarray(self._viterbi.most_likely_path())+1
+
     def get_dataframe(self):
         df = self._df.copy()
         try:
@@ -244,10 +247,7 @@ class MazeController:
         cv2.putText(img_annotate, f"{current_region}", (self._larva_loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1/decimate,
                     (255, 255, 0), 2)
 
-        if self._frame_number < self._last_msg_frame + 30:
-            msg = self._last_msg
-        else:
-            msg = f"L{self._decisions['light']} / D{self._decisions['dark']} / N{self._decisions['null']}"
+        msg = f"L{self._decisions['light']} / D{self._decisions['dark']} / N{self._decisions['null']} ({self._last_msg_frame}: {self._last_msg})"
         cv2.putText(img_annotate, msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
                     1, bottomLeftOrigin=False)
 

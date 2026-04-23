@@ -18,7 +18,7 @@ class StimulusManager:
     current_location: MazePart
     current_state: State
 
-    def __init__(self, maze_controller):
+    def __init__(self, maze_controller: mazecontroller.MazeController):
         self.current_state = State.PREDECISION_ANY
         self.origin_location = MazePart.INTERSECTION
         self.current_location = MazePart.INTERSECTION
@@ -63,6 +63,16 @@ class StimulusManager:
     def has_message(self):
         return self._has_message
 
+    def find_transition(self, max_history = 10):
+        p = self.maze_controller.get_viterbi_path()
+        for j in range(max_history):
+            old_loc = p[-(j+2)]
+            new_loc = p[-(j+1)]
+            if old_loc != new_loc:
+                for a in self.actions:
+                    if a.poll(old_loc, new_loc):
+                        break
+
     def update(self):
         new_location = self.maze_controller.get_larva_region()
         if new_location == self.current_location:
@@ -103,6 +113,8 @@ class Action:
         if self.condition_satisfied(prev_loc, new_loc):
             self.stimulus_manager.reset_watchdog()
             self.action()
+            return True
+        return False
 
 #enter circle after making a choice
 class ActionChooseCircle(Action):
