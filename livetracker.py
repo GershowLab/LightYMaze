@@ -113,7 +113,10 @@ class LiveTracker:
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 		cv2.resizeWindow('all mazes', self.default_win_size)
 		protocol.start()
-		self.md.toggle_stim_manager(False)
+		self.md.enable_stim_manager(False)
+		self.md.enable_background_update(False)
+		self.md.enable_tracking(False)
+
 		old_ledval = None
 		self.light_controller.set_global_brightness(9) #max allowed - could go higher and maybe fry board?
 		while not protocol.finished():
@@ -138,8 +141,8 @@ class LiveTracker:
 									   wait_for_completion=False, multi_thread=True)
 			im,_ = self.cap.capture_frame()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
-		self.light_controller.turn_off_leds()
-
+		self.md.set_all_leds((0,0,0))
+		
 	# noinspection PyDefaultArgument
 	def experiment_display_window(self, state={'display_maze': 0, 'old_maze': -1}):
 		display_maze = state['display_maze']
@@ -175,7 +178,9 @@ class LiveTracker:
 		im, t_start = self.cap.capture_frame()
 		tt = None
 		frame_num, frame_time = self.cap.last_frame_number_and_time()
-		self.md.toggle_stim_manager(True)
+		self.md.enable_stim_manager(True)
+		self.md.enable_background_update(True)
+		self.md.enable_tracking(True)
 		while elapsed_time < experiment_duration:
 			if self.experiment_display_window():
 				break

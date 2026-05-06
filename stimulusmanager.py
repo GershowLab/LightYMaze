@@ -91,6 +91,9 @@ class StimulusManager:
         self._last_action_time = time.monotonic()
 
     def watchdog(self):
+        if self.current_state == State.OFF:
+            self.reset_watchdog()
+            return
         if (time.monotonic() - self._last_action_time) > self._watchdog_interval:
             self.current_state = State.PREDECISION_ANY
             self.maze_controller.set_leds((0,0,0),(0,0,0),(0,0,0))

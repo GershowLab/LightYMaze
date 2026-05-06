@@ -84,12 +84,19 @@ class MazeController:
         self._initialized = False
         self._decisions = {"dark":0,"light":0,"null":0}
         self._led_settings = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        self._tracking_enabled = True
 
-    def toggle_stim_manager(self, turn_on):
-        if turn_on:
+    def enable_stim_manager (self, enable):
+        if enable:
             self._stimulus_manager.turn_on()
         else:
             self._stimulus_manager.turn_off()
+
+    def enable_background_update (self, enable):
+        self._bak.enable_bg_update(enable)
+
+    def enable_tracking(self, enable):
+        self._tracking_enabled = enable
 
     def set_threshold(self, threshold):
         if threshold < 5:
@@ -161,7 +168,7 @@ class MazeController:
 
                 init = self._bak.update_background(img, frame_num=frame_number, frame_time=capture_time)
                 # during initialization period, just update background
-                if init:
+                if self._tracking_enabled and init:
                     thresh = self._bak.get_thresholded_image()
                     thresh = cv2.bitwise_and(thresh, self._maze_mask)
                     self._update_larva(thresh)

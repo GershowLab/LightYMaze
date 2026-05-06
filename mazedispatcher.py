@@ -52,9 +52,14 @@ class MazeDispatcher:
             self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
         return self._composite
 
-    def toggle_stim_manager(self, turn_on):
-        [mm.toggle_stim_manager(turn_on) for mm in self._maze_minions]
+    def enable_stim_manager(self, enable):
+        [mm.enable_stim_manager(enable) for mm in self._maze_minions]
 
+    def enable_background_update(self, enable):
+        [mm.enable_background_update(enable) for mm in self._maze_minions]
+
+    def enable_tracking(self, enable):
+        [mm.enable_tracking(enable) for mm in self._maze_minions]
 
     def set_all_leds(self, rgbpct):
         self.set_leds_all_mazes(rgbpct,rgbpct,rgbpct)
@@ -143,8 +148,14 @@ class MazeMinion:
         self._maze_id = maze_id
         self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad)
 
-    def toggle_stim_manager(self, turn_on):
-        self._maze_controller.toggle_stim_manager(turn_on)
+    def enable_stim_manager(self, enable):
+        self._maze_controller.enable_stim_manager(enable)
+
+    def enable_background_update(self, enable):
+        self._maze_controller.enable_background_update(enable)
+
+    def enable_tracking(self, enable):
+        self._maze_controller.enable_tracking(enable)
 
     def get_dimensions(self):
         return (self._w, self._h)
