@@ -107,7 +107,7 @@ class LiveTracker:
 		self.md.open_video(self.video_dir / f"{self.time_stamp} maze")
 
 	def run_protocol(self, protocol : TrainingProtocol):
-		im,tstart = self.cap.capture_frame()[0]
+		im,tstart = self.cap.capture_frame()
 		frame_num, frame_time = self.cap.last_frame_number_and_time()
 		tt = None
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
@@ -135,7 +135,7 @@ class LiveTracker:
 			if ready_for_new_frame:
 				tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0,
 									   wait_for_completion=False, multi_thread=True)
-			im = self.cap.capture_frame()[0]
+			im,_ = self.cap.capture_frame()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.light_controller.turn_off_leds()
 

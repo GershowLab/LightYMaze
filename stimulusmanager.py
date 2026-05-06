@@ -65,6 +65,7 @@ class StimulusManager:
 
     def find_transition(self, max_history = 10):
         p = self.maze_controller.get_viterbi_path()
+        max_history = min(max_history, len(p)-2)
         for j in range(max_history):
             old_loc = p[-(j+2)]
             new_loc = p[-(j+1)]
