@@ -131,7 +131,8 @@ class LiveTracker:
 					self.md.write_video()
 					cv2.imshow('all mazes', self.md.get_composite_image())
 					cv2.waitKey(1)
-					self.experiment_display_window()
+					if self.experiment_display_window():
+						break
 			if ready_for_new_frame:
 				tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0,
 									   wait_for_completion=False, multi_thread=True)
@@ -176,7 +177,8 @@ class LiveTracker:
 		frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.md.toggle_stim_manager(True)
 		while elapsed_time < experiment_duration:
-			self.experiment_display_window()
+			if self.experiment_display_window():
+				break
 			#wait for previous frame to finish processing
 			if tt is not None:
 				for t in tt:
@@ -208,5 +210,5 @@ class LiveTracker:
 #TODO argparse
 if __name__ == "__main__":
 	lt = LiveTracker()
-	lt.experiment_duration = 5
+	lt.experiment_duration = 3600
 	lt.full_conditioning_experiment()

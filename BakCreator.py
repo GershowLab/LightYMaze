@@ -26,6 +26,12 @@ class BakCreator:
         self._exclude_larva_from_update = True
         self._bg_was_updated = False
         self._debug = False
+        self._updatebg = True
+
+    def enable_bg_update(self, enable):
+        self._updatebg = enable
+
+    def disable_bg_update(self):
 
     def set_threshold(self, thresh):
         self._bsub.setVarThreshold(thresh)
