@@ -208,4 +208,5 @@ class LiveTracker:
 #TODO argparse
 if __name__ == "__main__":
 	lt = LiveTracker()
+	lt.experiment_duration = 30
 	lt.full_conditioning_experiment()
