@@ -124,10 +124,9 @@ class LiveTracker:
 				self.md.set_all_leds(ledval)
 				old_ledval = ledval
 				print (f"{frame_time - tstart}: new ledval: {ledval}")
-
 			ready_for_new_frame = True
 			if tt is not None:
-				ready_for_new_frame = not any([t.is_alive for t in tt])
+				ready_for_new_frame = not any([t.is_alive() for t in tt])
 				if ready_for_new_frame:
 					self.md.write_video()
 					cv2.imshow('all mazes', self.md.get_composite_image())
