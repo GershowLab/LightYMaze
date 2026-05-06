@@ -57,7 +57,7 @@ class MazeDispatcher:
 
 
     def set_all_leds(self, rgbpct):
-        self.set_leds_all_mazes(self, rgbpct,rgbpct,rgbpct)
+        self.set_leds_all_mazes(rgbpct,rgbpct,rgbpct)
 
     def set_leds_all_mazes(self, led1rgbpct, led2rgbpct, led3rgbpct):
         [mm.set_leds(led1rgbpct,led2rgbpct,led3rgbpct) for mm in self._maze_minions]
