@@ -118,7 +118,8 @@ class LiveTracker:
 		self.light_controller.set_global_brightness(9) #max allowed - could go higher and maybe fry board?
 		while not protocol.finished():
 			ledval, update = protocol.led_value_and_update()
-			update = update and old_ledval is not None and any(np.asarray(old_ledval) != np.asarray(ledval))
+			if old_ledval is not None:
+				update = update and any(np.asarray(old_ledval) != np.asarray(ledval))
 			if update:
 				self.md.set_all_leds(ledval)
 				old_ledval = ledval
