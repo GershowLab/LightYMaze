@@ -27,7 +27,7 @@ class TimeRangeAndValue:
         self.value = value
 
     def in_range(self, t, period = None):
-        return TimeRangeAndValue.in_range(t, self.trange, period)
+        return TimeRangeAndValue.in_time_interval(t, self.trange, period)
         # if period is not None:
         #     t = t % period
         #     if self.trange[0] > self.trange[1]:
@@ -84,7 +84,7 @@ class TemporalTrainingProtocol(TrainingProtocol):
                 else:
                     val = (0,0,0)
             tre.append(TimeRangeAndValue((tedge[j], tedge[j+1]), val))
-            return TemporalTrainingProtocol(period, tre, duration)
+        return TemporalTrainingProtocol(period, tre, duration)
 
     @staticmethod
     def standard_paired_protocol(period = 30, n_reps = 20, cs_rgbpct = (0, 0, 25), us_rgbpct = (255, 0, 0), cs_tr = (0, 15), us_tr = (0, 15)):
@@ -94,4 +94,10 @@ class TemporalTrainingProtocol(TrainingProtocol):
     def standard_unpaired_protocol(period=30, n_reps=20, cs_rgbpct=(0, 0, 25), us_rgbpct=(255, 0, 0), cs_tr=(0, 15),
                                  us_tr=(15, 30)):
         return TemporalTrainingProtocol.associative_protocol(period, n_reps, cs_rgbpct, us_rgbpct, cs_tr, us_tr)
+
+if __name__ == "__main__":
+    ttp = TemporalTrainingProtocol.standard_paired_protocol()
+    for t in range(0, 100):
+        val,update = ttp.led_value_and_update(t)
+        print(f"{t}: val: {val}, update: {update}")
 
