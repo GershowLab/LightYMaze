@@ -32,6 +32,8 @@ class CameraCapture:
       #  self.auto_exposure(False)
         self.lens_position = 0.0
         #self.cam.start()
+        self._last_frame_time = 0
+        self._frame_number = 0
 
     def autofocus_once(self):
         self.start()
@@ -113,30 +115,40 @@ class CameraCapture:
         if self.started:
             self.started = False
             self._cam.stop()
-    def capture_frame(self, channels = (2,)):
+
+    def last_frame_number_and_time(self):
+        return self._frame_number, self._last_frame_time
+
+    def capture_frame(self, channels = (2,), flush=True):
         self.start()
-        ret = []
-        with self._cam.captured_request(flush=True) as request:
-            for ch in channels:
-                if self.hflip and self.vflip:
-                    im = request.make_array("main")[self.h-1::-1, self.w-1::-1,ch]
-                else:
-                    if self.hflip:
-                        im = request.make_array("main")[:self.h, self.w - 1::-1,ch]
-                    else:
-                        if self.vflip:
-                            im = request.make_array("main")[self.h - 1::-1, :self.w,ch]
-                        else:
-                            im = request.make_array("main")[:self.h, :self.w,ch]
-                ret.append(im)
-            metadata = request.get_metadata()
-            timestamp = metadata['SensorTimestamp'] / 1e9
-            ret.append(timestamp)
+        im, ts = self.capture_color_frame(flush=flush)
+        if ts > self._last_frame_time:
+            self._last_frame_time = ts
+            self._frame_number += 1
+        ret = [im[:,:,c] for c in channels]
+        ret.append(ts)
         return ret
-    def capture_color_frame(self):
+        # ret = []
+        # with self._cam.captured_request(flush=flush) as request:
+        #     for ch in channels:
+        #         if self.hflip and self.vflip:
+        #             im = request.make_array("main")[self.h-1::-1, self.w-1::-1,ch]
+        #         else:
+        #             if self.hflip:
+        #                 im = request.make_array("main")[:self.h, self.w - 1::-1,ch]
+        #             else:
+        #                 if self.vflip:
+        #                     im = request.make_array("main")[self.h - 1::-1, :self.w,ch]
+        #                 else:
+        #                     im = request.make_array("main")[:self.h, :self.w,ch]
+        #         ret.append(im)
+        #     metadata = request.get_metadata()
+        #     timestamp = metadata['SensorTimestamp'] / 1e9
+        #     ret.append(timestamp)
+        # return ret
+    def capture_color_frame(self, flush = True):
         self.start()
-        ret = []
-        with self._cam.captured_request(flush=True) as request:
+        with self._cam.captured_request(flush=flush) as request:
             if self.hflip and self.vflip:
                 im = request.make_array("main")[self.h-1::-1, self.w-1::-1,:]
             else:

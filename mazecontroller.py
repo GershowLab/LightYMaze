@@ -84,8 +84,15 @@ class MazeController:
         self._initialized = False
         self._decisions = {"dark":0,"light":0,"null":0}
         self._led_settings = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+
+    def toggle_stim_manager(self, turn_on):
+        if turn_on:
+            self._stimulus_manager.turn_on()
+        else:
+            self._stimulus_manager.turn_off()
+
     def set_threshold(self, threshold):
-        if (threshold < 5):
+        if threshold < 5:
             threshold = 5
         if threshold > 200:
             threshold = 200

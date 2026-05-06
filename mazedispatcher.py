@@ -52,10 +52,24 @@ class MazeDispatcher:
             self._composite[y0:(y0+imh),x0:(x0+imw),:] = img
         return self._composite
 
+    def toggle_stim_manager(self, turn_on):
+        [mm.toggle_stim_manager(turn_on) for mm in self._maze_minions]
 
-    # def open_csv(self, fstub):
-    #     for mm in self._maze_minions:
-    #         mm.open_csv(fstub)
+
+    def set_all_leds(self, rgbpct):
+        self.set_leds_all_mazes(self, rgbpct,rgbpct,rgbpct)
+
+    def set_leds_all_mazes(self, led1rgbpct, led2rgbpct, led3rgbpct):
+        [mm.set_leds(led1rgbpct,led2rgbpct,led3rgbpct) for mm in self._maze_minions]
+        if self._light_controller is not None:
+            self._light_controller.update_leds()
+
+    def set_leds_one_maze(self, maze_id, led1rgbpct, led2rgbpct, led3rgbpct, update = True):
+        for mm in self._maze_minions:
+            if mm._maze_id == maze_id:
+                mm.set_leds(led1rgbpct, led2rgbpct, led3rgbpct)
+        if update and self._light_controller is not None:
+            self._light_controller.update_leds()
 
     def open_video(self, fstub):
         for mm in self._maze_minions:
@@ -129,6 +143,8 @@ class MazeMinion:
         self._maze_id = maze_id
         self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad)
 
+    def toggle_stim_manager(self, turn_on):
+        self._maze_controller.toggle_stim_manager(turn_on)
 
     def get_dimensions(self):
         return (self._w, self._h)
@@ -161,11 +177,6 @@ class MazeMinion:
 
     def save_region_sums(self, fstub):
         np.savetxt(f"{fstub}{self._maze_id}regions.txt",self._maze_controller._region_sums)
-    # def open_csv(self, fstub):
-    #     self._maze_controller.open_csv(f"{fstub}{self._maze_id}.csv")
-    #
-    # def close_csv(self):
-    #     self._maze_controller.close_csv()
 
     def get_dataframe(self) -> pd.DataFrame:
         return self._maze_controller.get_dataframe()
@@ -178,6 +189,9 @@ class MazeMinion:
 
     def num_choices(self):
         return self._maze_controller.num_choices()
+
+    def set_leds(self, led1rgb=None, led2rgb=None, led3rgb=None):
+        self._maze_controller.set_leds(led1rgb, led2rgb, led3rgb)
 
     def debug_display(self):
         if self._maze_controller.initialized():
