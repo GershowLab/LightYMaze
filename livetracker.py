@@ -52,9 +52,11 @@ class LiveTracker:
 		self.focus()
 		self.setup_experiment()
 		try:
-			self.run_experiment()
-			self.run_protocol(protocol)
-			self.run_experiment()
+			aborted = self.run_experiment()
+			if not aborted:
+				aborted = self.run_protocol(protocol)
+			if not aborted:
+				self.run_experiment()
 		finally:
 			self.end_experiment()
 
@@ -123,6 +125,7 @@ class LiveTracker:
 
 		old_ledval = None
 		self.light_controller.set_global_brightness(9) #max allowed - could go higher and maybe fry board?
+		aborted = False
 		while not protocol.finished():
 			ledval, update = protocol.led_value_and_update()
 			if old_ledval is not None:
@@ -139,6 +142,7 @@ class LiveTracker:
 					cv2.imshow('all mazes', self.md.get_composite_image())
 					cv2.waitKey(1)
 					if self.experiment_display_window():
+						aborted = True
 						break
 			if ready_for_new_frame:
 				tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0,
@@ -146,6 +150,7 @@ class LiveTracker:
 			im,_ = self.cap.capture_frame()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.md.set_all_leds((0,0,0))
+		return aborted
 
 	# noinspection PyDefaultArgument
 	def experiment_display_window(self, state={'display_maze': 0, 'old_maze': -1}):
@@ -166,6 +171,7 @@ class LiveTracker:
 			if display_maze >= 0 and display_maze != state['old_maze']:
 				if win is not None:
 					cv2.destroyWindow(win)
+			state['display_maze'] = display_maze
 		if k == ord('t') and display_maze >= 0:
 			self.md._maze_minions[display_maze]._maze_controller.decrease_threshold()
 		if k == ord('u') and display_maze >= 0:
@@ -185,8 +191,10 @@ class LiveTracker:
 		self.md.enable_stim_manager(True)
 		self.md.enable_background_update(True)
 		self.md.enable_tracking(True)
+		aborted = False
 		while elapsed_time < experiment_duration:
 			if self.experiment_display_window():
+				aborted = True
 				break
 			#wait for previous frame to finish processing
 			if tt is not None:
@@ -206,6 +214,7 @@ class LiveTracker:
 			for t in tt:
 				t.join()
 		self.light_controller.turn_off_leds()
+		return aborted
 
 	def end_experiment(self):
 		filepath = self.text_dir / f"{self.time_stamp} results.csv"
