@@ -44,7 +44,11 @@ class LiveTracker:
 			protocol = TemporalTrainingProtocol.standard_unpaired_protocol()
 
 		self.focus()
-		self.calibrate_mazes()
+		while True:
+			self.calibrate_mazes()
+			if self.verify_mazes():
+				break
+
 		self.focus()
 		self.setup_experiment()
 		try:
@@ -87,7 +91,7 @@ class LiveTracker:
 		cv2.imshow('clipped mazes', img)
 		cv2.resizeWindow('clipped mazes', self.default_win_size)
 		print("Are you satisfied with the maze locations? y/n q to quit")
-		accepted = False
+		accepted = True
 		for i in range(timeout*10):
 			key = cv2.waitKey(100) & 0xFF
 			if key == ord('q'):

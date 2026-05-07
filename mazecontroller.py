@@ -93,7 +93,8 @@ class MazeController:
             self._stimulus_manager.turn_off()
 
     def enable_background_update (self, enable):
-        self._bak.enable_bg_update(enable)
+        if self._bak is not None:
+            self._bak.enable_bg_update(enable)
 
     def enable_tracking(self, enable):
         self._tracking_enabled = enable
