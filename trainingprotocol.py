@@ -17,6 +17,7 @@ class TrainingProtocol:
             self._t0 = time.monotonic()
         else:
             self._t0 = t
+        self._finished = False
 
     def finished(self, t = None):
         return self._finished
@@ -66,6 +67,7 @@ class TemporalTrainingProtocol(TrainingProtocol):
         if t is None:
             t = time.monotonic()
         self._finished = t - self._t0 > self.duration
+        return self._finished
 
     @staticmethod
     def associative_protocol(period = 30, n_reps = 20, cs_rgbpct = (0, 0, 25), us_rgbpct = (255, 0, 0), cs_tr = (0, 15), us_tr = (0, 15)):
@@ -96,8 +98,10 @@ class TemporalTrainingProtocol(TrainingProtocol):
         return TemporalTrainingProtocol.associative_protocol(period, n_reps, cs_rgbpct, us_rgbpct, cs_tr, us_tr)
 
 if __name__ == "__main__":
-    ttp = TemporalTrainingProtocol.standard_paired_protocol()
-    for t in range(0, 100):
-        val,update = ttp.led_value_and_update(t)
-        print(f"{t}: val: {val}, update: {update}")
+    ttp = TemporalTrainingProtocol.standard_paired_protocol(n_reps=2)
+#    ttp.start()
+    while not ttp.finished():
+        val,update = ttp.led_value_and_update()
+        print(f"val: {val}, update: {update}")
+        time.sleep(1)
 
