@@ -142,7 +142,7 @@ class LiveTracker:
 			im,_ = self.cap.capture_frame()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.md.set_all_leds((0,0,0))
-		
+
 	# noinspection PyDefaultArgument
 	def experiment_display_window(self, state={'display_maze': 0, 'old_maze': -1}):
 		display_maze = state['display_maze']

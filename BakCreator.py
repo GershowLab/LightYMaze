@@ -31,8 +31,6 @@ class BakCreator:
     def enable_bg_update(self, enable):
         self._updatebg = enable
 
-    def disable_bg_update(self):
-
     def set_threshold(self, thresh):
         self._bsub.setVarThreshold(thresh)
 
