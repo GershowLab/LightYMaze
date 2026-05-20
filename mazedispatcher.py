@@ -18,6 +18,8 @@ class MazeDispatcher:
         self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
         self._composite = None
+        self._img = None
+        [self._img_h, self._img_w] = ymg.im_size_px
         self._composite_w = -1
         self._composite_h = -1
         self._panel_w = -1
@@ -25,6 +27,13 @@ class MazeDispatcher:
         self._composite_ncol = np.uint16(3)
         self._composite_nrow = np.uint16(3)
         self._vid_writer = None
+        self._save_raw = False
+
+    def set_save_raw(self, save_raw):
+        if self._vid_writer is None:
+            self._save_raw = save_raw
+        else:
+            print ("Warning: can't change raw/composite option once vid writer is open")
 
     def set_composite_dimensions(self):
         #we will reduce the number of pixels in the image to make it go faster
@@ -83,7 +92,10 @@ class MazeDispatcher:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         if self._composite_w <= 0:
             self.set_composite_dimensions()
-        self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._composite_w, self._composite_h), True)
+        if self._save_raw:
+            self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._img_w, self._img_h), True)
+        else:
+            self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._composite_w, self._composite_h), True)
         if self._vid_writer is not None:
             print(
                 f"{vidfilename} writer open: {self._vid_writer.isOpened()}")  # , backend = {self._vid_writer.getBackendName()}")
@@ -91,7 +103,10 @@ class MazeDispatcher:
             print(f"failed to open {vidfilename}")
 
     def write_video(self):
-        img = self.make_composite_image()
+        if self._save_raw:
+            img = self._img
+        else:
+            img = self.make_composite_image()
         if self._vid_writer is not None:
             self._vid_writer.write(img)
 
@@ -119,14 +134,18 @@ class MazeDispatcher:
             self._frame_number = frame_number
         if frame_time is None:
             frame_time = time.monotonic()
+        if self._img is None:
+            self._img = img.copy()
+        else:
+            self._img[:] = img
         if multi_thread:
-            tt = [mm.new_frame(img, frame_number=frame_number,frame_time=frame_time) for mm in self._maze_minions]
+            tt = [mm.new_frame(self._img, frame_number=frame_number,frame_time=frame_time) for mm in self._maze_minions]
             if wait_for_completion:
                 for t in tt:
                     t.join()
         else:
             for mm in self._maze_minions:
-                mm.new_frame_nothread(img, frame_number=frame_number, frame_time=frame_time)
+                mm.new_frame_nothread(self._img, frame_number=frame_number, frame_time=frame_time)
             tt = None
         if  self._light_controller is not None:
             self._light_controller.update_leds()

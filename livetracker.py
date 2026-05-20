@@ -83,6 +83,7 @@ class LiveTracker:
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
 		im, _ = self.cap.capture_frame()
 		self.ymg.calibrate_geometry_from_image_fiducials(im)
+		self.ymg.align_mazes_to_im(im)
 		x, y, w, h = self.ymg.clip_to_mazes(10)
 		self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 
@@ -110,6 +111,7 @@ class LiveTracker:
 		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller)
 		self.create_data_directories()
 		_,self.t0 = self.cap.last_frame_number_and_time()
+		self.md.set_save_raw(True)
 		self.md.open_video(self.video_dir / f"{self.time_stamp} maze")
 
 	def run_protocol(self, protocol : TrainingProtocol):
