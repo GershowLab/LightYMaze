@@ -93,6 +93,7 @@ class MazeDispatcher:
         if self._composite_w <= 0:
             self.set_composite_dimensions()
         if self._save_raw:
+            print (f"self._img_w, self._img_h = {self._img_w, self._img_h}")
             self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._img_w, self._img_h), True)
 
         else:
