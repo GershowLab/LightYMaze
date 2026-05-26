@@ -203,7 +203,7 @@ class LiveTracker:
 				for t in tt:
 					t.join()
 				self.md.write_video()
-				cv2.imshow('all mazes', self.md.get_composite_image())
+				cv2.imshow('all mazes', self.md.make_composite_image())
 				cv2.waitKey(1)
 
 			num_choices = np.sum(np.asarray(self.md.num_choices()), axis=0)
