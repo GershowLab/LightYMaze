@@ -19,7 +19,7 @@ class MazeDispatcher:
         self._frame_number = 0
         self._composite = None
         self._img = None
-        [self._img_h, self._img_w] = ymg.im_size_px
+        [self._img_h, self._img_w] = np.asarray(ymg.im_size_px, np.uint16)
         self._composite_w = -1
         self._composite_h = -1
         self._panel_w = -1
@@ -95,18 +95,18 @@ class MazeDispatcher:
         if self._save_raw:
             print (f"self._img_w, self._img_h = {self._img_w, self._img_h}")
             self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._img_w, self._img_h), True)
-
         else:
             self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._composite_w, self._composite_h), True)
         if self._vid_writer is not None:
             print(
                 f"{vidfilename} writer open: {self._vid_writer.isOpened()}")  # , backend = {self._vid_writer.getBackendName()}")
+            print (f"vid writer size = {self._vid_writer.get(cv2.CAP_PROP_FRAME_WIDTH),self._vid_writer.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
         else:
             print(f"failed to open {vidfilename}")
 
     def write_video(self):
         if self._save_raw:
-            img = self._img
+            img = np.asarray(self._img, np.uint8)
             print (f"saving video img size = {img.shape[:2]}")
         else:
             img = self.make_composite_image()

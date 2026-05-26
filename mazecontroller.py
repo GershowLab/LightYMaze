@@ -323,6 +323,8 @@ class MazeController:
         if self._vid_writer is not None:
             print(
                 f"{vidfilename} writer open: {self._vid_writer.isOpened()}")  # , backend = {self._vid_writer.getBackendName()}")
+            print (f"vid writer size = {self._vid_writer.get(cv2.CAP_PROP_FRAME_WIDTH),self._vid_writer.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
+
         else:
             print(f"failed to open {vidfilename}")
 
