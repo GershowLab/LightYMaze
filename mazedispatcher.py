@@ -94,6 +94,7 @@ class MazeDispatcher:
             self.set_composite_dimensions()
         if self._save_raw:
             self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._img_w, self._img_h), True)
+
         else:
             self._vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (self._composite_w, self._composite_h), True)
         if self._vid_writer is not None:
@@ -105,10 +106,15 @@ class MazeDispatcher:
     def write_video(self):
         if self._save_raw:
             img = self._img
+            print (f"saving video img size = {img.shape[:2]}")
         else:
             img = self.make_composite_image()
         if self._vid_writer is not None:
             self._vid_writer.write(img)
+            print (f"vid writer size = {self._vid_writer.get(cv2.CAP_PROP_FRAME_WIDTH),self._vid_writer.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
+        else:
+            print ("vid writer is not open")
+
 
     def close_video(self):
         for mm in self._maze_minions:
