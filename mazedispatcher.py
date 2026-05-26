@@ -106,13 +106,12 @@ class MazeDispatcher:
 
     def write_video(self):
         if self._save_raw:
-            img = np.asarray(self._img, np.uint8)
-            print (f"saving video img size = {img.shape[:2]}")
+            img = cv2.cvtColor(np.asarray(self._img, np.uint8), cv2.COLOR_GRAY2BGR)
+            print (f"saving video img size (h,w) = {img.shape[:2]}")
         else:
             img = self.make_composite_image()
         if self._vid_writer is not None:
             self._vid_writer.write(img)
-            print (f"vid writer size = {self._vid_writer.get(cv2.CAP_PROP_FRAME_WIDTH),self._vid_writer.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
         else:
             print ("vid writer is not open")
 
