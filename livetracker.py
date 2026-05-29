@@ -50,7 +50,7 @@ class LiveTracker:
 		self.focus()
 		if not self.calibrate_mazes_aruco():
 			self.calibrate_mazes()
-			
+
 		while True:
 			if self.verify_mazes():
 				break

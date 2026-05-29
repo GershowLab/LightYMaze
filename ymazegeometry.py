@@ -218,19 +218,23 @@ class YMazeGeometry:
         self._maze_mask = maze_mask
         self._region_mask = region_mask
 
-    def calibrate_geometry_aruco(self, frame):
+    def calibrate_geometry_aruco(self, frame, vflip = False):
 
         # https://www.geeksforgeeks.org/computer-vision/detecting-aruco-markers-with-opencv-and-python-1/
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters()
         detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
         corners, ids, rejected = detector.detectMarkers(cv2.bitwise_not(frame))
+
         if ids is None:
             corners, ids, rejected = detector.detectMarkers(frame)
         if ids is None or len(ids) < 2:
-            return False
+            return self.calibrate_geometry_aruco(frame, True)
         pxpts = []
         mmpts = []
+        if vflip:
+            frame = cv2.flip(frame, 0)
+
         delta = self.aruco_size / 2
         dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
         ac = [AffineCalculator(), AffineCalculator(), AffineCalculator(), AffineCalculator()]
@@ -240,6 +244,8 @@ class YMazeGeometry:
         refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
         for c,id in zip(corners, ids):
             pxpts = c.reshape((4,2))
+            if vflip:
+                pxpts[:,1] = frame.shape[0] - pxpts[:,1]
             for a,r in zip(ac,refl):
                 a.add_pair_list(pxpts, self.aruco_centers[id] + dxm*r)
 
