@@ -224,6 +224,8 @@ class YMazeGeometry:
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters()
         detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+        if vflip:
+            frame = cv2.flip(frame, 0)
         corners, ids, rejected = detector.detectMarkers(cv2.bitwise_not(frame))
         print("found", ids)
         if ids is None:
@@ -236,8 +238,7 @@ class YMazeGeometry:
                 return self.calibrate_geometry_aruco(frame, True)
         pxpts = []
         mmpts = []
-        if vflip:
-            frame = cv2.flip(frame, 0)
+
 
         delta = self.aruco_size / 2
         dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
