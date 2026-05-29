@@ -34,6 +34,13 @@ class YMazeGeometry:
         self._mazes = []
         self._setup_mazes()
         # TODO more general affine transformation
+
+    def set_barrel_distortion(self, center = None, alpha = None):
+        if center is not None:
+            self._cam_center = np.asarray(center)
+        if alpha is not None:
+            self._barrel_alpha = alpha
+
     def _setup_mazes(self):
         self._mazes = []
         for j in range(len(self.maze_centers)):

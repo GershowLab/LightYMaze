@@ -35,6 +35,7 @@ class LiveTracker:
 		self.time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 		self.md = None
 		self.t0 = 0
+		self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
 
 	def __del__(self):
 		pass
@@ -47,11 +48,13 @@ class LiveTracker:
 			protocol = TemporalTrainingProtocol.standard_unpaired_protocol()
 
 		self.focus()
-		while True:
+		if not self.calibrate_mazes_aruco():
 			self.calibrate_mazes()
+			
+		while True:
 			if self.verify_mazes():
 				break
-
+			self.calibrate_mazes()
 		self.focus()
 		self.setup_experiment()
 		try:
@@ -80,10 +83,23 @@ class LiveTracker:
 			print("did not create data directory")
 			quit()
 
+	def calibrate_mazes_aruco(self):
+		self.cap.reset_bounding_box()
+		self.ymg = YMazeGeometry()
+		self.ymg.set_image_size((self.cap.h, self.cap.w))
+		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.barrel_alpha)
+		im, _ = self.cap.capture_frame()
+		if self.ymg.calibrate_geometry_aruco(im):
+			x, y, w, h = self.ymg.clip_to_mazes(10)
+			self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)
+			return True
+		return False
+
 	def calibrate_mazes(self):
 		self.cap.reset_bounding_box()
 		self.ymg = YMazeGeometry()
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
+		self.ymg.set_barrel_distortion((self.cap.w/2, self.cap.h/2), self.barrel_alpha)
 		im, _ = self.cap.capture_frame()
 		self.ymg.calibrate_geometry_from_image_fiducials(im)
 		self.ymg.align_mazes_to_im(im)
