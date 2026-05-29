@@ -245,8 +245,8 @@ class YMazeGeometry:
             a.src_barrel_ctr = self._cam_center
             a.src_barrel_alpha = self._barrel_alpha
         refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
-        print(corners.shape)
-        print(ids.shape)
+        print(corners)
+        print(ids)
         for c,id in zip(corners, ids):
             pxpts = c.reshape((4,2))
             if vflip:
