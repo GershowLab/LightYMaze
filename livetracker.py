@@ -29,7 +29,7 @@ class LiveTracker:
 		self.default_win_size = (640, 480)
 		self.ymg = None
 		self.light_controller = LightController()
-		self.brightness = 1
+		self.brightness = 9
 		self.light_controller.set_global_brightness(self.brightness)
 		self.experiment_duration = 3600
 		self.time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
