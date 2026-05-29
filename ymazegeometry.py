@@ -231,13 +231,11 @@ class YMazeGeometry:
         if ids is None:
             corners, ids, rejected = detector.detectMarkers(frame)
             print("found", ids)
-        if ids is None or len(ids) < 2:
+        if ids is None:
             if vflip:
                 return False
             else:
                 return self.calibrate_geometry_aruco(frame, True)
-        pxpts = []
-        mmpts = []
 
 
         delta = self.aruco_size / 2
@@ -247,6 +245,8 @@ class YMazeGeometry:
             a.src_barrel_ctr = self._cam_center
             a.src_barrel_alpha = self._barrel_alpha
         refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
+        print(corners.shape)
+        print(ids.shape)
         for c,id in zip(corners, ids):
             pxpts = c.reshape((4,2))
             if vflip:
