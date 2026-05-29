@@ -6,7 +6,6 @@ import os
 import cv2
 import glob
 from enum import IntEnum
-
 from affinecalculator import AffineCalculator
 
 
@@ -18,6 +17,8 @@ class YMazeGeometry:
         self.maze_spacing = 9  # mm
         self.maze_centers = np.array([[0, -2], [-1, -1], [1, -1], [2, 0], [0, 0], [-2, 0], [-1, 1], [1, 1], [0, 2]])
         self.fiducial_centers = np.array([[0,-13], [-9,0], [0,12]])
+        self.aruco_centers = np.array([[-18,9], [0,-9],[9,0]]) #mm
+        self.aruco_size = 4 #mm
         self.channel_width = 0.7 # mm
         self.circle_dia = 2.5  # mm
         self.circle_offset = 3.138  # mm - circle center, from PCB design - propagates to y-maze
@@ -27,10 +28,11 @@ class YMazeGeometry:
         self._maze_mask = None
         self._region_mask = None
         self._imspace_to_real_space = AffineCalculator()
+        self._cam_center = (2304, 1296)
+        self._barrel_alpha = 0
         self.generate_coordinates()
         self._mazes = []
         self._setup_mazes()
-
         # TODO more general affine transformation
     def _setup_mazes(self):
         self._mazes = []
@@ -38,12 +40,17 @@ class YMazeGeometry:
             self._mazes.append(YMazeFootprint(self, j+1))
 
     def align_mazes_to_im(self, im):
-        sucess = [m.align_to_im(im) for m in self._mazes]
+        padding = 0
+        center_maze = self._mazes[4] #todo: more robust finding center
+        center_im = im[center_maze.image_index(padding)]
+        sucess = [m.align_to_im(im, padding=padding, template_im=center_im) for m in self._mazes]
         pxcenter = np.asarray([m.get_im_center() for m in self._mazes])
         mmcenter = self.maze_spacing*np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
         self.calculate_affine(pxcenter[sucess], mmcenter[sucess])
         self._setup_mazes()
-        [m.align_to_im(im, maxshift=20) for m in self._mazes]
+        center_maze = self._mazes[4]  # todo: more robust finding center
+        center_im = im[center_maze.image_index(padding)]
+        [m.align_to_im(im, padding=padding, maxshift=20, template_im=center_im) for m in self._mazes]
 
         #pxcenter = np.asarray([m.get_im_center() for m in self._mazes])
         #mmcenter = self.maze_spacing * np.asarray([self.maze_centers[m.ID - 1] for m in self._mazes])
@@ -54,7 +61,7 @@ class YMazeGeometry:
 
     def calculate_affine(self, imspacepts, realpts):
         print ("calc affine: create calculator")
-        self._imspace_to_real_space = AffineCalculator(imspacepts, realpts)
+        self._imspace_to_real_space = AffineCalculator(imspacepts, realpts, src_barrel_ctr=self._cam_center, src_barrel_alpha=self._barrel_alpha)
         print("calc affine: generate coordinates")
         self.generate_coordinates()
 
@@ -112,6 +119,7 @@ class YMazeGeometry:
 
     def pixel_grid(self):
         x, y = np.meshgrid(*self.pixel_axes())
+
         return x,y
 
     def generate_coordinates(self):
@@ -202,6 +210,42 @@ class YMazeGeometry:
         #     region_mask[rm > 0] = rm[rm > 0]
         self._maze_mask = maze_mask
         self._region_mask = region_mask
+
+    def calibrate_geometry_aruco(self, frame):
+
+        # https://www.geeksforgeeks.org/computer-vision/detecting-aruco-markers-with-opencv-and-python-1/
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        parameters = cv2.aruco.DetectorParameters()
+        detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+        corners, ids, rejected = detector.detectMarkers(cv2.bitwise_not(frame))
+        if ids is None:
+            corners, ids, rejected = detector.detectMarkers(frame)
+        if ids is None or len(ids) < 2:
+            return False
+        pxpts = []
+        mmpts = []
+        delta = self.aruco_size / 2
+        dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
+        ac = [AffineCalculator(), AffineCalculator(), AffineCalculator(), AffineCalculator()]
+        for a in ac:
+            a.src_barrel_ctr = self._cam_center
+            a.src_barrel_alpha = self._barrel_alpha
+        refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
+        for c,id in zip(corners, ids):
+            pxpts = c.reshape((4,2))
+            for a,r in zip(ac,refl):
+                a.add_pair_list(pxpts, self.aruco_centers[id] + dxm*r)
+
+        for a in ac:
+            a.calculate()
+
+        err = [a.registration_error() for a in ac]
+        print(err)
+        self._imspace_to_real_space = ac[np.argmin(err)]
+        self.generate_coordinates()
+        return True
+
+
 
     def calibrate_geometry_from_image_fiducials(self, frame):
         points = []
@@ -299,6 +343,16 @@ class YMazeGeometry:
             mc[loc[1], loc[0]] = 255
 
         r = cv2.bitwise_or(r, cv2.morphologyEx(mc, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8),iterations=5))
+
+        aruco_corners = np.zeros_like(r)
+        delta = self.aruco_size / 2
+        dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        for ac in self.aruco_centers:
+            for dx in dxm:
+                loc = (np.array(self._imspace_to_real_space.transform_rev(*(ac + dx))) - self.origin).astype(int)
+                if 0 <= loc[0] < aruco_corners.shape[0] and 0 <= loc[1] < aruco_corners.shape[1]:
+                    aruco_corners[loc[1], loc[0]] = 255
+        b = cv2.bitwise_or(b, cv2.morphologyEx(aruco_corners, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8), iterations=5))
 
         img = cv2.merge((b, g, r))
         mc = [self.maze_spacing * np.asarray(mc) for mc in self.maze_centers]
@@ -412,7 +466,7 @@ class YMazeFootprint:
         [s.shift(shift_mm) for s in self.shapes]
 
     def shift_center_px(self, shift_px):
-        pxctr = self.get_im_center() + shift_px
+        pxctr = self.get_im_center() + np.asarray(shift_px)
         shift_mm = np.asarray(self.ymg._imspace_to_real_space.transform_fwd(pxctr[0], pxctr[1])) - self.center
         self.shift_center(shift_mm)
 
@@ -444,12 +498,18 @@ class YMazeFootprint:
         # y2 = np.argmin(np.abs(ya - maxy))
         return (x1,x2,x2,x1),(y1, y1, y2, y2)
 
-    def align_to_im(self, im, padding = 0, maxshift = 40):
+    def align_to_im(self, im, padding = 0, maxshift = 40, template_im = None):
         xi,yi= self.inds_in_imspace_box(*self.imspace_bounding_box(padding))
         rm,mm,inds = self.label_mask_pixel_inds(xi,yi)
+        mm = cv2.morphologyEx(mm, cv2.MORPH_GRADIENT, np.ones((5,5),np.uint8))
         targetim = im[inds]
-        targetim = cv2.Canny(targetim, 50, 100)
+        #targetim = cv2.Canny(targetim, 50, 100)
         #targetim = cv2.morphologyEx(targetim, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8))
+        if template_im is not None:
+            mm = template_im
+        plt.imshow(targetim, cmap='Greens')
+        plt.imshow(mm, cmap='Purples', alpha=0.5)
+        plt.show()
         shift,_ = cv2.phaseCorrelate(np.float32(targetim), np.float32(mm))
 
         if np.linalg.norm(shift)>maxshift:
@@ -460,15 +520,14 @@ class YMazeFootprint:
             sucess = True
         shift = np.asarray(shift)
         self.shift_center_px(-shift)
-        #
-        # r = targetim
-        # g = cv2.threshold(mm,0,255,cv2.THRESH_BINARY)[1].astype(np.uint8)
-        # b = self.label_mask_pixel_inds(xi,yi)[1]
-        # b = cv2.threshold(b, 0, 255, cv2.THRESH_BINARY)[1].astype(np.uint8)
-        # cv2.imshow(f"aligned - {self.ID}", cv2.merge((b,g,r)))
-        # cv2.waitKey(1)
         return sucess
 
+    def image_index (self, padding = 0, shift = np.array((0,0))):
+        xc,yc = self.imspace_bounding_box(padding)
+        xc = np.asarray(xc) + shift[0]
+        yc = np.asarray(yc) + shift[1]
+        xi, yi = self.inds_in_imspace_box(xc,yc)
+        return np.ix_(yi, xi)
 
 
     def inds_in_imspace_box(self, xc = None, yc = None): #xc,yc are corners of box
@@ -505,30 +564,8 @@ class YMazeFootprint:
     def label_mask(self, region_mask, maze_mask, label = None):
        if label is None:
            label = self.ID
-       # xa,ya = self.ymg.pixel_axes()
-       # xc, yc = self.imspace_bounding_box()
-       # # xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
-       # minx = np.min(xc)
-       # maxx = np.max(xc)
-       # miny = np.min(yc)
-       # maxy = np.max(yc)
-       # xi = np.nonzero(np.logical_and(minx <= xa, xa <= maxx))[0]
-       # yi = np.nonzero(np.logical_and(miny <= ya, ya <= maxy))[0]
-
        xi,yi = self.inds_in_imspace_box()
        rm, mm, inds = self.label_mask_pixel_inds(xi, yi, label)
-       #inds = np.ix_(yi, xi)
-       # xaxis = xa[xi]
-       # yaxis = ya[yi]
-       # x_mm = self.ymg.x_mm[inds]
-       # y_mm = self.ymg.y_mm[inds]
-       #
-       # rm = np.zeros_like(x_mm)
-       # mm = np.zeros_like(x_mm)
-       #
-       # for s in self.shapes:
-       #     ii = s.label_mask(rm, xaxis, yaxis, x_mm, y_mm,self.ymg._imspace_to_real_space)
-       #     mm[ii] = label
        region_mask[inds] = rm
        maze_mask[inds] = mm
 

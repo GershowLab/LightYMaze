@@ -12,13 +12,16 @@ from ymazegeometry import YMazeGeometry
 from pathlib import Path
 from lightcontroller import LightController
 from datetime import datetime
-from cameracapture import CameraCapture
 
 
 
 class LiveTracker:
-	def __init__(self, basedir = Path.home()):
-		self.cap = CameraCapture()
+	def __init__(self, basedir = Path.home(), cap = None):
+		if cap is None:
+			from cameracapture import CameraCapture
+			self.cap = CameraCapture()
+		else:
+			self.cap = cap
 		self.basedir = basedir
 		self.text_dir = ''
 		self.video_dir = ''
@@ -63,7 +66,7 @@ class LiveTracker:
 	def focus(self):
 		self.cap.set_focus(self.lens_position)
 		self.cap.focus_window()
-		self.lens_position = self.cap.lens_position
+		self.lens_position = self.cap.get_lens_position()
 
 	def create_data_directories(self):
 		text_basedir = Path.home() / 'ymaze-text-data'
