@@ -33,8 +33,8 @@ class MazeController:
         self._num_regions = np.max(region_map).astype(np.uint8)
         # locs = self._get_region_centers()
         # self._state_machine = StateMachine(locs[0], locs)
-        self._stack_len = 30
-        self._threshold = 15
+        self._stack_len = 100
+        self._threshold = 32
         self._larva_loc: np.ndarray = np.array([-1, -1])
         self._frame_number = 0
         self._vid_writer: cv2.VideoWriter = None

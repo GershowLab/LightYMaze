@@ -12,7 +12,9 @@ basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
 #basedir = Path('G:\\')
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / '2026-05-26_11-59-05' / '2026-05-26_11-59-05 maze all mazes.mp4'
 cap = videocapture.VideoCapture(fstub)
-
+lt = livetracker.LiveTracker(Path.home()/'deleteme', cap)
+lt.full_conditioning_experiment()
+quit()
 im,ts = cap.capture_frame()
 
 cap.reset_bounding_box()

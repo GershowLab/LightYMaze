@@ -63,18 +63,35 @@ class StimulusManager:
     def has_message(self):
         return self._has_message
 
-    def find_transition(self, max_history = 10):
+    def find_transition(self, max_history=10):
         p = self.maze_controller.get_viterbi_path()
-        max_history = min(max_history, len(p)-2)
-        for j in range(max_history):
-            old_loc = p[-(j+2)]
-            new_loc = p[-(j+1)]
-            if old_loc != new_loc:
+        recentp = []
+        #go back to find path after current state to now
+        for loc in p[::-1]:
+            if loc == self.current_location:
+                break
+            recentp.append(loc)
+        for new_loc in recentp[::-1]:
+            if new_loc != self.current_location:
                 for a in self.actions:
+                    old_loc = self.current_location
                     if a.condition_satisfied(old_loc, new_loc):
                         self.current_location = new_loc
                         a.poll(old_loc, new_loc)
                         break
+
+    # def find_transition(self, max_history = 10):
+    #     p = self.maze_controller.get_viterbi_path()
+    #     max_history = min(max_history, len(p)-2)
+    #     for j in range(max_history):
+    #         old_loc = p[-(j+2)]
+    #         new_loc = p[-(j+1)]
+    #         if old_loc != new_loc:
+    #             for a in self.actions:
+    #                 if a.condition_satisfied(old_loc, new_loc):
+    #                     self.current_location = new_loc
+    #                     a.poll(old_loc, new_loc)
+    #                     break
 
     def update(self):
         new_location = self.maze_controller.get_larva_region()

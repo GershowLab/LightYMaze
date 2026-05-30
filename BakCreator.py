@@ -16,17 +16,23 @@ class BakCreator:
         self._bgim = bgim
         self._fgim = np.zeros_like(bgim)
         self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
-        self._bsub.setBackgroundRatio(0.1)
+     #   self._bsub.setBackgroundRatio(0.6)
       #  self._bsub.setNMixtures(5)
         self._bsub.apply(bgim,1) #reset to bgim
         self._learning_rate = -1
         self._nupdates = 0
         self._tims = CircularBuffer(4,np.zeros_like(bgim))
-        self._alpha = 0.1
+        self._alpha = 0.2
         self._exclude_larva_from_update = True
         self._bg_was_updated = False
         self._debug = False
         self._updatebg = True
+        #self._blur_sigma = .3
+        self._blur_ksize = 3
+
+    def _filter(self, im):
+        return cv2.blur(im, (self._blur_ksize, self._blur_ksize), dst=im)
+       # return cv2.medianBlur(im, self._blur_ksize, dst=im)
 
     def enable_bg_update(self, enable):
         self._updatebg = enable
@@ -50,8 +56,16 @@ class BakCreator:
         larva_ind = np.argmax(area) + 1
         return cv2.morphologyEx((labels == larva_ind).astype(np.uint8) * 255, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=10)
 
+    def _reset(self, new_im, frame_num=None, frame_time=None):
+        new_im = self._filter(new_im)
+        self._bsub.apply(new_im,learningRate=1)
+        if frame_num is not None:
+            self._last_update_frame = frame_num
+        if frame_time is not None:
+            self._last_update_time = frame_time
+
     def _update(self, new_im, frame_num=None, frame_time=None):
-        new_im = cv2.blur(new_im, (3,3))
+        new_im = self._filter(new_im)
         updatebg = True
         if (frame_num is not None) and (self._update_frame_interval > 0) and (
                 frame_num - self._last_update_frame < self._update_frame_interval):
@@ -74,10 +88,10 @@ class BakCreator:
         else:
             self._fgim = self._bsub.apply(new_im, learningRate=lr)
 
-        fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
-        self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
+       # fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
+        #self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
         self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-        self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=3)
+        self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=1)
 
         self._bg_was_updated = updatebg
 
