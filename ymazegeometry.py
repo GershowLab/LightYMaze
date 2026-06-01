@@ -229,6 +229,7 @@ class YMazeGeometry:
         numid = np.zeros(4)
         corners = []
         ids = []
+        rej = []
         for j in range(4):
             if flip[j]:
                 im = cv2.flip(frame, 0)
@@ -236,14 +237,18 @@ class YMazeGeometry:
                 im = frame.copy()
             if invert[j]:
                 im = cv2.bitwise_not(im,im)
-            c, id, _ = detector.detectMarkers(im)
+            c, id, r = detector.detectMarkers(im)
+            rej.append(r)
             if id is not None:
                 numid[j] = len(id)
+                if flip[j]:
+                    for k in range(len(c)):
+                        c[k][:,:, 1] = frame.shape[0] - c[k][:,:, 1]
             corners.append(c)
             ids.append(id)
 
         ind = np.argmax(numid)
-        return numid[ind], corners[ind], ids[ind], flip[ind], invert[ind]
+        return numid[ind], corners[ind], ids[ind], flip[ind], invert[ind], rej[ind]
 
     def calibrate_geometry_aruco(self, frame, vflip = False):
 

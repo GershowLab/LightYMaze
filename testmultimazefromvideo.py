@@ -17,9 +17,10 @@ ymg.set_image_size((cap.h, cap.w))
 ymg._cam_center = (cap.w/2, cap.h/2 -200)
 ymg._barrel_alpha = -0.00001*3.2
 im,ts = cap.capture_frame()
-numid, corners,ids, flip, invert = YMazeGeometry.find_arucos(im)
+im = cv2.flip(im,0)
+numid, corners,ids, flip, invert,rej = YMazeGeometry.find_arucos(im)
 if ids is not None:
-    print("Found markers:", ids)
+    print(f"Found markers: {ids}, rejected markers: {rej}")
     print(f"flip, invert = {flip},{invert}")
     im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
     cv2.aruco.drawDetectedMarkers(im, corners, ids)
