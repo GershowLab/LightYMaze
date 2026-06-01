@@ -251,26 +251,38 @@ class YMazeGeometry:
         ind = np.argmax(numid)
         return numid[ind], corners[ind], ids[ind], flip[ind], invert[ind], rej[ind]
 
-    def calibrate_geometry_aruco(self, frame, vflip = False):
+    def aruco_mask(self):
+        delta = self.aruco_size / 2
+        dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        aruco_rects = [Polygon(255,c + dxm) for c in self.aruco_centers]
+        mask = np.zeros(self.im_size_px, dtype=np.uint8)
+        xa,ya = self.pixel_axes()
+        for s in aruco_rects:
+            s.label_mask(mask, xa, ya, self.x_mm, self.y_mm, self._imspace_to_real_space, 255)
+        return mask
+
+    def calibrate_geometry_aruco(self, frame, rerun = False):
 
         # https://www.geeksforgeeks.org/computer-vision/detecting-aruco-markers-with-opencv-and-python-1/
-        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-        parameters = cv2.aruco.DetectorParameters()
-        detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
-        if vflip:
-            frame = cv2.flip(frame, 0)
-        corners, ids, rejected = detector.detectMarkers(cv2.bitwise_not(frame))
-        print("found", ids)
-        if ids is None:
-            corners, ids, rejected = detector.detectMarkers(frame)
-            print("found", ids)
-        if ids is None:
-            if vflip:
-                return False
-            else:
-                return self.calibrate_geometry_aruco(frame, True)
+        # aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        # parameters = cv2.aruco.DetectorParameters()
+        # detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+        # if vflip:
+        #     frame = cv2.flip(frame, 0)
+        # corners, ids, rejected = detector.detectMarkers(cv2.bitwise_not(frame))
+        # print("found", ids)
+        # if ids is None:
+        #     corners, ids, rejected = detector.detectMarkers(frame)
+        #     print("found", ids)
+        # if ids is None:
+        #     if vflip:
+        #         return False
+        #     else:
+        #         return self.calibrate_geometry_aruco(frame, True)
 
-
+        numid, corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(frame)
+        if numid <= 0:
+            return False
         delta = self.aruco_size / 2
         dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
         ac = [AffineCalculator(), AffineCalculator(), AffineCalculator(), AffineCalculator()]
@@ -282,8 +294,6 @@ class YMazeGeometry:
         print(ids)
         for c,id in zip(corners, ids):
             pxpts = c.reshape((4,2))
-            if vflip:
-                pxpts[:,1] = frame.shape[0] - pxpts[:,1]
             for a,r in zip(ac,refl):
                 a.add_pair_list(pxpts, self.aruco_centers[id] + dxm*r)
 
@@ -294,6 +304,12 @@ class YMazeGeometry:
         print(err)
         self._imspace_to_real_space = ac[np.argmin(err)]
         self.generate_coordinates()
+        if numid < 3 and not rerun:
+            mask = cv2.morphologyEx(self.aruco_mask(), cv2.MORPH_DILATE, np.ones((3, 3), np.uint8), iterations = 20)
+            im2 = cv2.bitwise_and(frame, mask)
+            new_num_id,corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(im2)
+            if new_num_id > numid:
+                return self.calibrate_geometry_aruco(im2, rerun = True)
         return True
 
 

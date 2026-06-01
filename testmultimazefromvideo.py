@@ -18,6 +18,27 @@ ymg._cam_center = (cap.w/2, cap.h/2 -200)
 ymg._barrel_alpha = -0.00001*3.2
 im,ts = cap.capture_frame()
 im = cv2.flip(im,0)
+
+ymg.calibrate_geometry_aruco(im)
+
+mask = cv2.morphologyEx(ymg.aruco_mask(), cv2.MORPH_DILATE, np.ones((3, 3), np.uint8), iterations = 20)
+im2 = cv2.bitwise_and(im,mask)
+cv2.imshow('just aruco', im2)
+cv2.waitKey(0)
+
+ymg.calibrate_geometry_aruco(im2)
+img = ymg.diagnostic_image(im)
+cv2.imshow('clipped mazes', img)
+cv2.waitKey(0)
+quit()
+
+im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+im[:,:,0] = ymg.aruco_mask()
+cv2.namedWindow('aruco mask', cv2.WINDOW_KEEPRATIO)
+cv2.imshow('aruco mask', im)
+cv2.waitKey(0)
+quit()
+
 numid, corners,ids, flip, invert,rej = YMazeGeometry.find_arucos(im)
 if ids is not None:
     print(f"Found markers: {ids}, rejected markers: {rej}")
