@@ -175,7 +175,7 @@ class CameraCapture:
         oldnumid = 0
         while True:
             im, ts = self.capture_frame()
-            im = cv2.medianBlur(im,ksize=5)
+           # im = cv2.medianBlur(im,ksize=5)
             numid, corners, ids, flip, invert,rej = YMazeGeometry.find_arucos(im)
             if numid != oldnumid:
                 print("Found markers:", ids)

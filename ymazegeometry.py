@@ -230,6 +230,7 @@ class YMazeGeometry:
         corners = []
         ids = []
         rej = []
+        frame = cv2.medianBlur(frame, 7)
         for j in range(4):
             if flip[j]:
                 im = cv2.flip(frame, 0)
