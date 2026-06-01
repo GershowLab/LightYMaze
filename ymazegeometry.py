@@ -282,7 +282,7 @@ class YMazeGeometry:
 
         numid, corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(frame)
         if numid <= 0:
-            return False
+            return 0
         delta = self.aruco_size / 2
         dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
         ac = [AffineCalculator(), AffineCalculator(), AffineCalculator(), AffineCalculator()]
@@ -310,7 +310,8 @@ class YMazeGeometry:
             new_num_id,corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(im2)
             if new_num_id > numid:
                 return self.calibrate_geometry_aruco(im2, rerun = True)
-        return True
+        print (f"calibration based on {numid} arucos")
+        return numid
 
 
 
