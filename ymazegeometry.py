@@ -25,6 +25,7 @@ class YMazeGeometry:
         self.channel_length = self.circle_offset - np.sqrt(self.circle_dia**2 - self.channel_width**2)/2  # mm - extended so it overlaps circle completely
         self.central_circle_dia = self.channel_width*1.55  # mm -- exclude overlapping channel regions
         self.im_size_px = np.array([1000, 1000]) #h,w
+        self.petri_dia = 65 #mm
         self._maze_mask = None
         self._region_mask = None
         self._imspace_to_real_space = AffineCalculator()
@@ -219,10 +220,16 @@ class YMazeGeometry:
         self._region_mask = region_mask
 
     @staticmethod
-    def find_arucos(frame, adaptive_threshold = False):
+    def find_arucos(frame, adaptive_threshold = False, roi = None):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters()
         detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+        if roi is not None:
+            x0, y0, x1, y1 = roi
+        else:
+            x0, y0 = 0,0
+            y1, x1 = frame.shape
+
 
         flip = [False, False, True, True]
         invert = [False, True, False, True]
@@ -230,7 +237,7 @@ class YMazeGeometry:
         corners = []
         ids = []
         rej = []
-        frame = cv2.medianBlur(frame, 7)
+        frame = cv2.medianBlur(frame[y0:y1,x0:x1], 7)
         if adaptive_threshold:
             frame = cv2.adaptiveThreshold(
                 src=frame,
@@ -251,9 +258,11 @@ class YMazeGeometry:
             rej.append(r)
             if id is not None:
                 numid[j] = len(id)
-                if flip[j]:
-                    for k in range(len(c)):
+                for k in range(len(c)):
+                    if flip[j]:
                         c[k][:,:, 1] = frame.shape[0] - c[k][:,:, 1]
+                    c[k][:,:,0] = c[k][:,:,0] + x0
+                    c[k][:,:,1] = c[k][:,:,1] + y0
             corners.append(c)
             ids.append(id)
 
@@ -270,7 +279,7 @@ class YMazeGeometry:
             s.label_mask(mask, xa, ya, self.x_mm, self.y_mm, self._imspace_to_real_space, 255)
         return mask
 
-    def calibrate_geometry_aruco(self, frame, rerun = False):
+    def calibrate_geometry_aruco(self, frame, rerun = False, roi = None):
 
         # https://www.geeksforgeeks.org/computer-vision/detecting-aruco-markers-with-opencv-and-python-1/
         # aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
@@ -322,12 +331,16 @@ class YMazeGeometry:
         print(err)
         self._imspace_to_real_space = ac[np.argmin(err)]
         self.generate_coordinates()
-        if numid < 3 and not rerun:
-            mask = cv2.morphologyEx(self.aruco_mask(), cv2.MORPH_DILATE, np.ones((3, 3), np.uint8), iterations = 20)
-            im2 = cv2.bitwise_and(frame, mask)
-            new_num_id,corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(im2)
-            if new_num_id > numid:
-                return self.calibrate_geometry_aruco(im2, rerun = True)
+        if numid < 3 and roi is None:
+            circle = Circle(1,np.array((0,0)), radius = self.petri_dia/2)
+            xc, yc = circle.bounding_box()
+            xc, yc = self._imspace_to_real_space.transform_rev(xc, yc)
+            x0 = np.min(xc)
+            y0 = np.min(yc)
+            x1 = np.max(xc)
+            y1 = np.max(yc)
+            roi = (x0,y0,x1,y1)
+            return self.calibrate_geometry_aruco(frame, roi=roi)
         print (f"calibration based on {numid} arucos")
         return numid
 
@@ -577,11 +590,6 @@ class YMazeFootprint:
         x2 = np.max(xc) + padding
         y1 = np.min(yc) - padding
         y2 = np.max(yc) + padding
-        #
-        # x1 = np.argmin(np.abs(xa-minx))
-        # x2 = np.argmin(np.abs(xa-maxx))
-        # y1 = np.argmin(np.abs(ya - miny))
-        # y2 = np.argmin(np.abs(ya - maxy))
         return (x1,x2,x2,x1),(y1, y1, y2, y2)
 
     def align_to_im(self, im, padding = 0, maxshift = 40, template_im = None):
