@@ -25,7 +25,7 @@ class LiveTracker:
 		self.basedir = basedir
 		self.text_dir = ''
 		self.video_dir = ''
-		self.lens_position = 1/.0833
+		self.lens_position = 1/.0768
 		self.default_win_size = (640, 480)
 		self.ymg = None
 		self.light_controller = LightController()
