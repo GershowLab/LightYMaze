@@ -219,7 +219,7 @@ class YMazeGeometry:
         self._region_mask = region_mask
 
     @staticmethod
-    def find_arucos(frame):
+    def find_arucos(frame, adaptive_threshold = False):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters()
         detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
@@ -231,6 +231,15 @@ class YMazeGeometry:
         ids = []
         rej = []
         frame = cv2.medianBlur(frame, 7)
+        if adaptive_threshold:
+            frame = cv2.adaptiveThreshold(
+                src=frame,
+                maxValue=255,
+                adaptiveMethod=cv2.ADAPTIVE_THRESH_MEAN_C,
+                thresholdType=cv2.THRESH_BINARY,
+                blockSize=201,
+                C=1
+            )
         for j in range(4):
             if flip[j]:
                 im = cv2.flip(frame, 0)
@@ -281,6 +290,15 @@ class YMazeGeometry:
         #         return self.calibrate_geometry_aruco(frame, True)
 
         numid, corners, ids,flip,invert,rej = YMazeGeometry.find_arucos(frame)
+        if numid < 3:
+            newnumid, newcorners, newids, newflip, newinvert, newrej = YMazeGeometry.find_arucos(frame, adaptive_threshold = True)
+            if newnumid > numid:
+                numid = newnumid
+                corners = newcorners
+                ids = newids
+                flip = newflip
+                invert = newinvert
+                rej = newrej
         if numid <= 0:
             return 0
         delta = self.aruco_size / 2
