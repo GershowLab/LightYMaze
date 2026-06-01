@@ -47,7 +47,7 @@ class LiveTracker:
 		else:
 			protocol = TemporalTrainingProtocol.standard_unpaired_protocol()
 
-		self.focus()
+		self.focus(aruco = True)
 		if not self.calibrate_mazes_aruco():
 			self.calibrate_mazes()
 
@@ -66,9 +66,12 @@ class LiveTracker:
 		finally:
 			self.end_experiment()
 
-	def focus(self):
+	def focus(self, aruco = False):
 		self.cap.set_focus(self.lens_position)
-		self.cap.focus_window()
+		if aruco:
+			self.cap.aruco_focus_window()
+		else:
+			self.cap.focus_window()
 		self.lens_position = self.cap.get_lens_position()
 
 	def create_data_directories(self):

@@ -74,6 +74,9 @@ class AbstractCapture:
     def focus_window(self):
         pass
 
+    def aruco_focus_window(self):
+        pass
+
     def reset_bounding_box(self):
         pass
 

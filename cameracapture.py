@@ -7,6 +7,9 @@ from picamera2 import Picamera2, Metadata
 from libcamera import Transform, controls
 import cv2
 
+from ymazegeometry import YMazeGeometry
+
+
 class CameraCapture:
     def __init__(self):
         Picamera2.set_logging(Picamera2.ERROR)
@@ -165,6 +168,59 @@ class CameraCapture:
             metadata = request.get_metadata()
             timestamp = metadata['SensorTimestamp'] / 1e9
         return im,timestamp
+
+    def aruco_focus_window(self):
+        winname = 'focus - c to continue'
+        cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
+        oldnumid = 0
+        while True:
+            im, ts = self.capture_frame()
+            numid, corners, ids, flip, invert = YMazeGeometry.find_arucos(im)
+            if numid != oldnumid:
+                print("Found markers:", ids)
+                print(f"flip, invert = {flip},{invert}")
+                oldnumid = numid
+            if ids is not None:
+                im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+                cv2.aruco.drawDetectedMarkers(im, corners, ids)
+            cv2.imshow(winname, im)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):
+                break
+            if key == ord('-'):
+                self.dimmer()
+            if key == ord('+') or key == ord('='):
+                self.brighter()
+
+            if key == ord('h'):
+                self.hflip = not self.hflip
+
+            if key == ord('v'):
+                self.vflip = not self.vflip
+
+            if key == ord('a'):
+                self.auto_exposure()
+
+            if key == ord('T'):
+                self.focus_towards()
+
+            if key == ord('t'):
+                self.move_focus(-0.0005)  # move focus 0.5 mm closer
+
+            if key == ord('w'):
+                self.move_focus(0.0005)  # move focus 0.5 mm farther
+                print('w')
+
+            if key == ord('f'):
+                self.autofocus_once()
+
+            if key == ord('W'):
+                self.focus_away()
+                print('W')
+
+            if key == ord('q'):
+                quit()
+        cv2.destroyWindow(winname)
 
     def focus_window(self):
         winname = 'focus - c to continue'

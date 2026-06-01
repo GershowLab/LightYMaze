@@ -218,6 +218,33 @@ class YMazeGeometry:
         self._maze_mask = maze_mask
         self._region_mask = region_mask
 
+    @staticmethod
+    def find_arucos(frame):
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        parameters = cv2.aruco.DetectorParameters()
+        detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+
+        flip = [False, False, True, True]
+        invert = [False, True, False, True]
+        numid = np.zeros(4)
+        corners = []
+        ids = []
+        for j in range(4):
+            if flip[j]:
+                im = cv2.flip(frame, 0)
+            else:
+                im = frame.copy()
+            if invert[j]:
+                im = cv2.bitwise_not(im,im)
+            c, id, _ = detector.detectMarkers(im)
+            if id is not None:
+                numid[j] = len(id)
+            corners.append(c)
+            ids.append(id)
+
+        ind = np.argmax(numid)
+        return numid[ind], corners[ind], ids[ind], flip[ind], invert[ind]
+
     def calibrate_geometry_aruco(self, frame, vflip = False):
 
         # https://www.geeksforgeeks.org/computer-vision/detecting-aruco-markers-with-opencv-and-python-1/
