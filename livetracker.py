@@ -159,9 +159,9 @@ class LiveTracker:
 			self.light_controller.update_leds()
 			vid_writer.write(img)
 			cv2.imshow('all mazes', img)
-			if cv2.waitKey(1) & 0xFF == ord('q'):
+			if cv2.waitKey(100) & 0xFF == ord('q'): #limit frame rate
 				quit()
-			im, ts = self.cap.capture_frame()
+			im, ts = self.cap.capture_frame(flush=True)
 		vid_writer.release()
 
 	def setup_experiment(self):
