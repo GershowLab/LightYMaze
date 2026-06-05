@@ -2,7 +2,7 @@ from livetracker import LiveTracker
 
 lt = LiveTracker()
 lt.experiment_duration = 300
-lt.brightness = 3
+lt.brightness = 2
 # lt.cap.reset_bounding_box()
 # w = lt.cap.w
 # h = lt.cap.h
