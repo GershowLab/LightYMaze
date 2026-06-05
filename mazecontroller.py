@@ -231,7 +231,9 @@ class MazeController:
 
     def debug_montage(self):
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
-        bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
+        #bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
+        b = self._bak.get_background()
+        bak = cv2.merge((b, self._img, b))
         thresh = self._bak.get_thresholded_image()
 #        thresh = self._bak.get_zscore_image(self._img)
         g = thresh.copy()

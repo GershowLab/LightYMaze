@@ -10,6 +10,10 @@ class VideoCapture(AbstractCapture):
         self.default_bounding_box = (0, 0, self.w, self.h)
         self._frame_dt = frame_delta_time
 
+    def total_frames(self):
+        return int(self._vc.get(cv2.CAP_PROP_FRAME_COUNT))
+
+
     def capture_color_frame(self, flush = True):
         ret, frame = self._vc.read()
         self._frame_number = self._frame_number + 1

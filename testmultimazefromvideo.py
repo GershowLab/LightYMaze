@@ -5,13 +5,31 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import videocapture
+from imagestabilizer import ImageStabilizer
 from ymazegeometry import YMazeGeometry
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
 basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
 #basedir = Path('G:\\')
-fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / '2026-05-26_11-59-05' / '2026-05-26_11-59-05 maze all mazes.mp4'
+#date = '2026-05-26_11-59-05'
+date = '2026-06-04_10-47-54'
+fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / date / (date + ' maze all mazes.mp4')
 cap = videocapture.VideoCapture(fstub)
+
+lt = livetracker.LiveTracker(Path.home()/'deleteme', cap)
+ymg = YMazeGeometry()
+ymg.set_image_size((cap.h, cap.w))
+ymg._cam_center = (cap.w/2, cap.h/2 -200)
+ymg._barrel_alpha = -0.00001*3.2
+im,ts = cap.capture_frame()
+
+ymg.calibrate_geometry_aruco(im)
+
+lt.ymg = ymg
+lt.setup_experiment()
+lt.run_experiment(7000)
+
+quit()
 ymg = YMazeGeometry()
 ymg.set_image_size((cap.h, cap.w))
 ymg._cam_center = (cap.w/2, cap.h/2 -200)
@@ -20,6 +38,32 @@ im,ts = cap.capture_frame()
 im = cv2.flip(im,0)
 
 ymg.calibrate_geometry_aruco(im)
+#
+# t = 1/60
+# H = np.array(((np.cos(t), -np.sin(t), 1), (np.sin(t), np.cos(t), 3)))
+# im2 = cv2.warpAffine(im,H,(im.shape[1],im.shape[0]))
+im0 = im.copy()
+imstab = ImageStabilizer(im)
+for j in range(1,10):
+    imstab.add_roi(ymg.get_bounding_rect(j,percent_scale=50))
+
+for j in range(cap.total_frames()-2):
+    im,ts = cap.capture_frame()
+    im = cv2.flip(im,0)
+    if j%100 == 0:
+        imunreg = cv2.merge((im0.astype(np.uint8), im.astype(np.uint8), im0.astype(np.uint8)))
+        cv2.imshow('unreg', imunreg)
+
+        im = imstab.register(im,0.01)
+        imtest = cv2.merge((im0.astype(np.uint8), im.astype(np.uint8), imstab.template.astype(np.uint8)))
+        cv2.imshow('test', imtest)
+        if cv2.waitKey(1) == ord('q'):
+            quit()
+
+
+
+
+quit()
 
 mask = cv2.morphologyEx(ymg.aruco_mask(), cv2.MORPH_DILATE, np.ones((3, 3), np.uint8), iterations = 20)
 im2 = cv2.bitwise_and(im,mask)

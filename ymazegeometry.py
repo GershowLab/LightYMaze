@@ -205,6 +205,17 @@ class YMazeGeometry:
             self.generate_maze_mask()
         return self._maze_mask, self._region_mask
 
+    def get_bounding_rect(self, mazeID, padding = 0, percent_scale = 100):
+        for m in self._mazes:
+            if m.ID == mazeID:
+                xc,yc = m.imspace_bounding_box(padding, percent_scale)
+                x = np.maximum(np.floor(np.min(xc)),0)
+                y = np.maximum(np.floor(np.min(yc)),0)
+                w = np.minimum(np.ceil(np.max(xc)), self.im_size_px[1]) - x
+                h = np.minimum(np.ceil(np.max(yc)), self.im_size_px[0]) - y
+                return x, y, w, h
+        return (0,0,0,0)
+
     def generate_maze_mask(self):
         maze_mask = np.zeros_like(self.x_mm)
         region_mask = np.zeros_like(maze_mask)
@@ -583,13 +594,21 @@ class YMazeFootprint:
             self.shapes.append(Circle(j+5, circle_center@r + self.center, self.ymg.circle_dia/2))
         self.shapes.append(Circle(1, self.center, self.ymg.central_circle_dia/2))
 
-    def imspace_bounding_box(self, padding = 0):
+    def imspace_bounding_box(self, padding = 0, percent_scale = 100):
         xc, yc = self.bounding_box()
         xc, yc = self.ymg._imspace_to_real_space.transform_rev(xc, yc)
-        x1 = np.min(xc) - padding
-        x2 = np.max(xc) + padding
-        y1 = np.min(yc) - padding
-        y2 = np.max(yc) + padding
+        if padding == 0 and percent_scale != 100:
+            w = np.max(xc) - np.min(xc)
+            h = np.max(yc) - np.min(yc)
+            xpadding = (percent_scale-100)/200 * w
+            ypadding = (percent_scale-100)/200 * h
+        else:
+            xpadding = padding
+            ypadding = padding
+        x1 = np.min(xc) - xpadding
+        x2 = np.max(xc) + xpadding
+        y1 = np.min(yc) - ypadding
+        y2 = np.max(yc) + ypadding
         return (x1,x2,x2,x1),(y1, y1, y2, y2)
 
     def align_to_im(self, im, padding = 0, maxshift = 40, template_im = None):

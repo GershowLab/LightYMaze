@@ -28,7 +28,7 @@ class BakCreator:
         self._debug = False
         self._updatebg = True
         #self._blur_sigma = .3
-        self._blur_ksize = 3
+        self._blur_ksize = 7
 
     def _filter(self, im):
         return cv2.blur(im, (self._blur_ksize, self._blur_ksize), dst=im)

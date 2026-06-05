@@ -6,6 +6,8 @@ import os
 import numpy as np
 
 import cv2
+
+from imagestabilizer import ImageStabilizer
 from mazedispatcher import MazeDispatcher
 from trainingprotocol import TrainingProtocol, TemporalTrainingProtocol
 from ymazegeometry import YMazeGeometry
@@ -36,6 +38,8 @@ class LiveTracker:
 		self.md = None
 		self.t0 = 0
 		self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
+		self.imstab = None
+		self.stabilizer_alpha = 0.01
 
 	def __del__(self):
 		pass
@@ -129,6 +133,11 @@ class LiveTracker:
 				break
 		return accepted
 
+	def create_stabilizer(self, frame):
+		self.imstab = ImageStabilizer(frame)
+		for j in range(1, 10):
+			self.imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
+
 	def setup_experiment(self):
 		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller)
 		self.create_data_directories()
@@ -137,7 +146,8 @@ class LiveTracker:
 		self.md.open_video(self.video_dir / f"{self.time_stamp} maze")
 
 	def run_protocol(self, protocol : TrainingProtocol):
-		im,tstart = self.cap.capture_frame()
+		#im,tstart = self.cap.capture_frame()
+		im,tstart = self.capture_stabilized()
 		frame_num, frame_time = self.cap.last_frame_number_and_time()
 		tt = None
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
@@ -171,7 +181,8 @@ class LiveTracker:
 			if ready_for_new_frame:
 				tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0,
 									   wait_for_completion=False, multi_thread=True)
-			im,_ = self.cap.capture_frame()
+			#im,_ = self.cap.capture_frame()
+			im,_ = self.capture_stabilized()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.md.set_all_leds((0,0,0))
 		return aborted
@@ -202,6 +213,13 @@ class LiveTracker:
 			self.md._maze_minions[display_maze]._maze_controller.increase_threshold()
 		return False
 
+	def capture_stabilized(self):
+		im, ts = self.cap.capture_frame()
+		if self.imstab is None:
+			self.create_stabilizer(im)
+		im = self.imstab.register(im, self.stabilizer_alpha)
+		return im, ts
+
 	def run_experiment(self, experiment_duration = None):
 		self.light_controller.set_global_brightness(self.brightness)
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
@@ -209,7 +227,9 @@ class LiveTracker:
 		if experiment_duration is None:
 			experiment_duration = self.experiment_duration
 		elapsed_time = 0
-		im, t_start = self.cap.capture_frame()
+		#im, t_start = self.cap.capture_frame()
+		im, t_start = self.capture_stabilized()
+
 		tt = None
 		frame_num, frame_time = self.cap.last_frame_number_and_time()
 		self.md.enable_stim_manager(True)
@@ -232,7 +252,8 @@ class LiveTracker:
 			elapsed_time = frame_time - t_start
 			print(f"frame: {frame_num}, elapsed time: {elapsed_time}, to light: {num_choices[0]}, to dark: {num_choices[1]}, null: {num_choices[2]}")
 			tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0, wait_for_completion=False, multi_thread=True)
-			im = self.cap.capture_frame()[0]
+			#im = self.cap.capture_frame()[0]
+			im,_ = self.capture_stabilized()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()
 		if tt is not None:
 			for t in tt:
