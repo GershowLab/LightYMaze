@@ -2,7 +2,7 @@ from livetracker import LiveTracker
 
 lt = LiveTracker()
 lt.experiment_duration = 300
-lt.brightness = 9
+lt.brightness = 3
 # lt.cap.reset_bounding_box()
 # w = lt.cap.w
 # h = lt.cap.h
@@ -14,4 +14,4 @@ lt.brightness = 9
 #         break
 #     lt.calibrate_mazes()
 lt.focus()
-lt.illumination_response_test(active_maze=2)
+lt.illumination_response_test(active_maze=5)
