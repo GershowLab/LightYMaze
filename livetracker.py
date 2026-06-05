@@ -156,13 +156,17 @@ class LiveTracker:
 						1, bottomLeftOrigin=False)
 			intensity = ((cend-cstart)*np.minimum((ts-self.t0)/ self.experiment_duration,1) + cstart).astype(np.uint8)
 			for c in range(3):
-				self.light_controller.set_led(active_maze, c, *intensity)
+				self.light_controller.set_led(active_maze, c+1, *intensity)
 			self.light_controller.update_leds()
 			vid_writer.write(img)
 			cv2.imshow('all mazes', img)
 			if cv2.waitKey(100) & 0xFF == ord('q'): #limit frame rate
+				vid_writer.release()
+				self.light_controller.turn_off_leds()
 				quit()
 			im, ts = self.cap.capture_frame(flush=True)
+		vid_writer.release()
+		self.light_controller.turn_off_leds()
 		vid_writer.release()
 
 	def setup_experiment(self):
