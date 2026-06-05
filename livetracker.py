@@ -138,6 +138,32 @@ class LiveTracker:
 		for j in range(1, 10):
 			self.imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
 
+	def illumination_response_test(self, active_maze = 5, cstart = np.array([0, 0, 0]), cend = np.array([255, 0, 0])):
+		self.create_data_directories()
+		im,ts = self.cap.capture_frame()
+		self.t0 = ts
+		vidfilename = self.video_dir / f"{self.time_stamp} illumination response.mp4"
+		fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+		h,w = im.shape[:2]
+		vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (w,h), True)
+		intensity = cstart
+		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
+		cv2.resizeWindow('all mazes', self.default_win_size)
+		while ts-self.t0 < self.experiment_duration:
+			img = cv2.cvtColor(im,cv2.COLOR_GRAY2BGR)
+			cv2.putText(img, f"{intensity}", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
+						1, bottomLeftOrigin=False)
+			intensity = ((cend-cstart)*np.minimum((ts-self.t0)/ self.experiment_duration,1) + cstart).astype(np.uint8)
+			for c in range(3):
+				self.light_controller.set_led(active_maze, c, *intensity)
+			self.light_controller.update_leds()
+			vid_writer.write(img)
+			cv2.imshow('all mazes', img)
+			if cv2.waitKey(1) & 0xFF == ord('q'):
+				quit()
+			im, ts = self.cap.capture_frame()
+		vid_writer.release()
+
 	def setup_experiment(self):
 		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller)
 		self.create_data_directories()

@@ -17,6 +17,9 @@ fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / date / (dat
 cap = videocapture.VideoCapture(fstub)
 
 lt = livetracker.LiveTracker(Path.home()/'deleteme', cap)
+lt.experiment_duration = 600
+lt.illumination_response_test()
+quit()
 ymg = YMazeGeometry()
 ymg.set_image_size((cap.h, cap.w))
 ymg._cam_center = (cap.w/2, cap.h/2 -200)
