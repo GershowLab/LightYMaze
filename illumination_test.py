@@ -14,4 +14,4 @@ lt.brightness = 9
 #         break
 #     lt.calibrate_mazes()
 lt.focus()
-lt.illumination_response_test()
+lt.illumination_response_test(active_maze=4)
