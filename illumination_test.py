@@ -1,7 +1,8 @@
 from livetracker import LiveTracker
 
 lt = LiveTracker()
-lt.experiment_duration = 600
+lt.experiment_duration = 100
+lt.brightness = 9
 lt.focus(aruco = True)
 lt.calibrate_mazes_aruco()
 while True:
