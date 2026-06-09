@@ -51,7 +51,7 @@ class YMazeGeometry:
     def set_small_arucos(self, small=True):
         if small:
             self.aruco_centers = np.array([[-6, 0], [0, 6], [0, -6]])
-            self.aruco_corners = np.array(((-1,0),(0,1),(1,0),(0-1))) * np.sqrt(2)# mm
+            self.aruco_corners = np.array(((-1,0),(0,1),(1,0),(0,-1))) * np.sqrt(2)# mm
         else:
             self.aruco_centers = np.array([[-18, 9], [0, -9], [9, 0]])  # mm
             self.aruco_corners = np.array(((-2, -2), (2, -2), (2, 2), (-2, 2)))# mm
