@@ -40,6 +40,7 @@ class LiveTracker:
 		self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
 		self.imstab = None
 		self.stabilizer_alpha = 0.01
+		self.stabilized = False
 
 	def __del__(self):
 		pass
@@ -246,6 +247,8 @@ class LiveTracker:
 
 	def capture_stabilized(self):
 		im, ts = self.cap.capture_frame()
+		if not self.stabilized:
+			return im, ts
 		if self.imstab is None:
 			self.create_stabilizer(im)
 		im = self.imstab.register(im, self.stabilizer_alpha)
