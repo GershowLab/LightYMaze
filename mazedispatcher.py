@@ -234,8 +234,11 @@ class MazeMinion:
             winname = f"Maze{self._maze_id} Debug"
             cv2.namedWindow(winname, cv2.WINDOW_NORMAL)
             img = self._maze_controller.debug_montage()
+            h,w = img.shape[:2]
             cv2.imshow(winname, img)
-            return winname
+            return winname, np.array((w,h))
+        else:
+            return None, np.array((0,0))
 
 
 

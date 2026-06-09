@@ -23,7 +23,8 @@ class BakCreator:
         self._nupdates = 0
         self._tims = CircularBuffer(4,np.zeros_like(bgim))
         self._alpha = 0.2
-        self._exclude_larva_from_update = True
+        self._min_area_thresh_update = 200
+        self._exclude_larva_from_update = False
         self._bg_was_updated = False
         self._debug = False
         self._updatebg = True
@@ -120,7 +121,7 @@ class BakCreator:
         t_mask = np.asarray(255*np.any(self._tims.get_stack(), axis=0), np.uint8)
         nnz = np.count_nonzero(self._tims.get_stack())/self._tims.get_stack().shape[0]
         num_new = np.count_nonzero(cv2.bitwise_and(cv2.bitwise_not(t_mask), self._fgim))
-        new_t = num_new >= self._alpha*nnz
+        new_t = num_new >= self._alpha*nnz and num_new >= self._min_area_thresh_update
         if self._debug:
 
             cv2.imshow("fgoverlay", cv2.merge((np.asarray(t_mask, np.uint8), self._fgim, self._fgim)))

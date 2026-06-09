@@ -223,9 +223,9 @@ class LiveTracker:
 	def experiment_display_window(self, state={'display_maze': 0, 'old_maze': -1}):
 		display_maze = state['display_maze']
 		if display_maze >= 0:
-			win = self.md._maze_minions[display_maze].debug_display()
-			if display_maze != state['old_maze']:
-				cv2.resizeWindow(win, self.default_win_size)
+			win,sz = self.md._maze_minions[display_maze].debug_display()
+			if display_maze != state['old_maze'] and win is not None:
+				cv2.resizeWindow(win, sz)
 				state['old_maze'] = display_maze
 		else:
 			win = None

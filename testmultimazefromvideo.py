@@ -12,14 +12,15 @@ from ymazegeometry import YMazeGeometry
 basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
 #basedir = Path('G:\\')
 #date = '2026-05-26_11-59-05'
-date = '2026-06-04_10-47-54'
+#date = '2026-06-04_10-47-54'
+date = '2026-06-09_12-32-47'
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / date / (date + ' maze all mazes.mp4')
 cap = videocapture.VideoCapture(fstub)
 
 lt = livetracker.LiveTracker(Path.home()/'deleteme', cap)
-lt.experiment_duration = 600
-lt.illumination_response_test()
-quit()
+# lt.experiment_duration = 600
+# lt.illumination_response_test()
+# quit()
 ymg = YMazeGeometry()
 ymg.set_image_size((cap.h, cap.w))
 ymg._cam_center = (cap.w/2, cap.h/2 -200)

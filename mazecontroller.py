@@ -51,6 +51,8 @@ class MazeController:
             "LarvaX": -1,
             "LarvaY": -1,
             "LarvaArea": -1,
+            "LarvaMeanArea": -1,
+            "LarvaStdArea": -1,
             "Region": -1,
             "Led1R": 0,
             "Led1G": 0,
@@ -77,7 +79,7 @@ class MazeController:
         self._led_on_max_time = 300 #seconds
         self._last_led_update = time.monotonic()
 
-        self._min_larva_area = 20
+        self._min_larva_area = 400
         self._sum_larva_area = 0
         self._sum_sq_larva_area = 0
         self._num_larva_area = 0
@@ -215,6 +217,8 @@ class MazeController:
                 self._num_larva_area += 1
                 u = self._sum_larva_area/self._num_larva_area
                 v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
+                self._stats["LarvaMeanArea"] = u
+                self._stats["LarvaStdArea"] = np.sqrt(v)
                 if True or la > u - 3*np.sqrt(v):
                     log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
                     log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
@@ -267,6 +271,15 @@ class MazeController:
         msg = f"L{self._decisions['light']} / D{self._decisions['dark']} / N{self._decisions['null']} ({self._last_msg_frame}: {self._last_msg})"
         cv2.putText(img_annotate, msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
                     1, bottomLeftOrigin=False)
+
+        msg = f"area = {self._stats['LarvaArea']:.0f}"
+        msg2 = f"{self._stats['LarvaMeanArea']:.0f} +/- {self._stats['LarvaStdArea']:.1f}"
+        (text_width, text_height), baseline = cv2.getTextSize(msg, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
+        (text_width2, text_height), baseline = cv2.getTextSize(msg2, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
+        #text_width = max(text_width, text_width2)
+        cv2.putText(img_annotate, msg, np.array((w-text_width-5, baseline+text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
+
+        cv2.putText(img_annotate, msg2, np.array((w-text_width2-5, 2*baseline+2*text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
 
         for r in self._regions:
             cv2.putText(img_annotate, f"{int(r.part)}", (r.loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
