@@ -227,6 +227,7 @@ class CameraCapture:
     def focus_window(self):
         winname = 'focus - c to continue'
         cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
+        cv2.resizeWindow(winname, (1024,768))
         while True:
             im, ts = self.capture_frame()
             cv2.imshow(winname, im)
