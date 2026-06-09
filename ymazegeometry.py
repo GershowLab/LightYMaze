@@ -17,8 +17,8 @@ class YMazeGeometry:
         self.maze_spacing = 9  # mm
         self.maze_centers = np.array([[0, -2], [-1, -1], [1, -1], [2, 0], [0, 0], [-2, 0], [-1, 1], [1, 1], [0, 2]])
         self.fiducial_centers = np.array([[0,-13], [-9,0], [0,12]])
-        self.aruco_centers = np.array([[-18,9], [0,-9],[9,0]]) #mm
-        self.aruco_size = 4 #mm
+        self.aruco_centers = np.array([[-18, 9], [0, -9], [9, 0]])  # mm
+        self.aruco_corners = np.array(((-2, -2), (2, -2), (2, 2), (-2, 2)))  # mm
         self.channel_width = 0.7 # mm
         self.circle_dia = 2.5  # mm
         self.circle_offset = 3.138  # mm - circle center, from PCB design - propagates to y-maze
@@ -33,6 +33,7 @@ class YMazeGeometry:
         self._barrel_alpha = 0
         self.generate_coordinates()
         self._mazes = []
+        self.set_small_arucos(True)
         self._setup_mazes()
         # TODO more general affine transformation
 
@@ -46,6 +47,15 @@ class YMazeGeometry:
         self._mazes = []
         for j in range(len(self.maze_centers)):
             self._mazes.append(YMazeFootprint(self, j+1))
+
+    def set_small_arucos(self, small=True):
+        if small:
+            self.aruco_centers = np.array([[-6, 0], [0, 6], [0, -6]])
+            self.aruco_corners = np.array(((-1,0),(0,1),(1,0),(0-1))) * np.sqrt(2)# mm
+        else:
+            self.aruco_centers = np.array([[-18, 9], [0, -9], [9, 0]])  # mm
+            self.aruco_corners = np.array(((-2, -2), (2, -2), (2, 2), (-2, 2)))# mm
+
 
     def align_mazes_to_im(self, im):
         padding = 0
@@ -281,8 +291,9 @@ class YMazeGeometry:
         return numid[ind], corners[ind], ids[ind], flip[ind], invert[ind], rej[ind]
 
     def aruco_mask(self):
-        delta = self.aruco_size / 2
-        dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        # delta = self.aruco_size / 2
+        # dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        dxm = self.aruco_corners
         aruco_rects = [Polygon(255,c + dxm) for c in self.aruco_centers]
         mask = np.zeros(self.im_size_px, dtype=np.uint8)
         xa,ya = self.pixel_axes()
@@ -321,8 +332,9 @@ class YMazeGeometry:
                 rej = newrej
         if numid <= 0:
             return 0
-        delta = self.aruco_size / 2
-        dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
+        # delta = self.aruco_size / 2
+        # dxm = np.array(((-delta,-delta),(delta,-delta),(delta,delta),(-delta,delta)))
+        dxm = self.aruco_corners
         ac = [AffineCalculator(), AffineCalculator(), AffineCalculator(), AffineCalculator()]
         for a in ac:
             a.src_barrel_ctr = self._cam_center
@@ -455,8 +467,9 @@ class YMazeGeometry:
         r = cv2.bitwise_or(r, cv2.morphologyEx(mc, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8),iterations=5))
 
         aruco_corners = np.zeros_like(r)
-        delta = self.aruco_size / 2
-        dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        # delta = self.aruco_size / 2
+        # dxm = np.array(((-delta, -delta), (delta, -delta), (delta, delta), (-delta, delta)))
+        dxm = self.aruco_corners
         for ac in self.aruco_centers:
             for dx in dxm:
                 loc = (np.array(self._imspace_to_real_space.transform_rev(*(ac + dx))) - self.origin).astype(int)
@@ -613,17 +626,37 @@ class YMazeFootprint:
 
     def align_to_im(self, im, padding = 0, maxshift = 40, template_im = None):
         xi,yi= self.inds_in_imspace_box(*self.imspace_bounding_box(padding))
+        if template_im is not None:
+            htemplate, wtemplate = template_im.shape[:2]
+            h = len(yi)
+            w = len(xi)
+            if h < htemplate: #clip template_im in y
+                y0 = (htemplate-h) // 2
+                template_im = template_im[y0:(y0+h), :]
+            if htemplate < h: #clip image selection region in y
+                y0 = (h-htemplate) // 2
+                yi = yi[y0:(y0+htemplate)]
+            if w < wtemplate:  # clip template_im in x
+                x0 = (wtemplate - w) // 2
+                template_im = template_im[:,x0:(x0 + w)]
+            if wtemplate < w:  # clip image selection region in x
+                x0 = (w - wtemplate) // 2
+                xi = xi[x0:(x0 + wtemplate)]
         rm,mm,inds = self.label_mask_pixel_inds(xi,yi)
-        mm = cv2.morphologyEx(mm, cv2.MORPH_GRADIENT, np.ones((5,5),np.uint8))
         targetim = im[inds]
-        #targetim = cv2.Canny(targetim, 50, 100)
-        #targetim = cv2.morphologyEx(targetim, cv2.MORPH_DILATE, np.ones((5, 5), np.uint8))
         if template_im is not None:
             mm = template_im
+        else:
+            mm = cv2.morphologyEx(mm, cv2.MORPH_GRADIENT, np.ones((5,5),np.uint8))
+        h,w = targetim.shape
+        win = cv2.createHanningWindow((w,h), cv2.CV_32F)
+
         plt.imshow(targetim, cmap='Greens')
         plt.imshow(mm, cmap='Purples', alpha=0.5)
         plt.show()
-        shift,_ = cv2.phaseCorrelate(np.float32(targetim), np.float32(mm))
+
+        shift,_ = cv2.phaseCorrelate(np.float32(targetim), np.float32(mm), window=win)
+        shift = np.asarray(shift)
 
         if np.linalg.norm(shift)>maxshift:
             print (f"{self.ID} - shift {shift} is too big")
