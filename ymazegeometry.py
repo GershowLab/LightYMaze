@@ -215,10 +215,14 @@ class YMazeGeometry:
             self.generate_maze_mask()
         return self._maze_mask, self._region_mask
 
+    #finds bounding rectangle x,y,w,h in image coordinates, with top left of image = (0,0),
+    #IE subtracts off origin from pixel space location
     def get_bounding_rect(self, mazeID, padding = 0, percent_scale = 100):
         for m in self._mazes:
             if m.ID == mazeID:
                 xc,yc = m.imspace_bounding_box(padding, percent_scale)
+                xc = xc - self.origin[0]
+                yc = yc - self.origin[1]
                 x = np.maximum(np.floor(np.min(xc)),0)
                 y = np.maximum(np.floor(np.min(yc)),0)
                 w = np.minimum(np.ceil(np.max(xc)), self.im_size_px[1]) - x
