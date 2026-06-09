@@ -223,6 +223,8 @@ class YMazeGeometry:
                 y = np.maximum(np.floor(np.min(yc)),0)
                 w = np.minimum(np.ceil(np.max(xc)), self.im_size_px[1]) - x
                 h = np.minimum(np.ceil(np.max(yc)), self.im_size_px[0]) - y
+                if w <= 0 or h <= 0:
+                    print(f"{m.ID} bounding box error: xc = {xc}, yc = {yc}, self.im_size_px = {self.im_size_px}, (x,y,w,h) = {(x,y,w,h)}")
                 return x, y, w, h
         print ("bounding rect not found for mazeID: ", mazeID)
         return (0,0,0,0)
