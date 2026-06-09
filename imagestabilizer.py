@@ -15,6 +15,9 @@ class ImageStabilizer(object):
 
     def add_roi(self, roi): #x,y,w,h
         roi = np.asarray(roi, np.uint32)
+        if np.any(roi[2:] <= 0):
+            print ("zero passed for roi dimension")
+            return
         self.roi.append(roi)
 #        w,h = roi[2],roi[3]
         self.hw.append(cv2.createHanningWindow(roi[2:], cv2.CV_32F))

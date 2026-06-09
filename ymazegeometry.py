@@ -224,6 +224,7 @@ class YMazeGeometry:
                 w = np.minimum(np.ceil(np.max(xc)), self.im_size_px[1]) - x
                 h = np.minimum(np.ceil(np.max(yc)), self.im_size_px[0]) - y
                 return x, y, w, h
+        print ("bounding rect not found for mazeID: ", mazeID)
         return (0,0,0,0)
 
     def generate_maze_mask(self):
