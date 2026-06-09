@@ -26,7 +26,7 @@ class CameraCapture:
         self.main_configuration = self._cam.create_still_configuration({"format": "BGR888", "size":paa})
         self.ae_on = False
         self.set_bounding_box(*paa)
-        self.exposure = 20000
+        self.exposure = 9000
         self.gain = 2
         self.set_exposure()
         self.hflip = False
@@ -172,6 +172,7 @@ class CameraCapture:
     def aruco_focus_window(self):
         winname = 'focus - c to continue'
         cv2.namedWindow(winname, cv2.WINDOW_KEEPRATIO)
+        cv2.resizeWindow(winname, (1024,768))
         oldnumid = 0
         while True:
             im, ts = self.capture_frame()
