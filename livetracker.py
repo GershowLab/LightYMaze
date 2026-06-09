@@ -142,6 +142,8 @@ class LiveTracker:
 	def illumination_response_test(self, active_maze = 5, cstart = np.array([0, 0, 0]), cend = np.array([255, 0, 0])):
 		self.create_data_directories()
 		self.light_controller.set_global_brightness(self.brightness)
+		cstart = np.asarray(cstart)
+		cend = np.asarray(cend)
 		im,ts = self.cap.capture_frame()
 		self.t0 = ts
 		vidfilename = self.video_dir / f"{self.time_stamp} illumination response.mp4"

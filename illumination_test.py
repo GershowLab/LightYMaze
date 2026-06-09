@@ -1,5 +1,5 @@
 from livetracker import LiveTracker
-
+import numpy as np
 lt = LiveTracker()
 lt.experiment_duration = 300
 lt.brightness = 9
@@ -14,4 +14,4 @@ lt.brightness = 9
 #         break
 #     lt.calibrate_mazes()
 lt.focus()
-lt.illumination_response_test(active_maze=5)
+lt.illumination_response_test(active_maze=5, cend = np.array([0, 0, 255]))
