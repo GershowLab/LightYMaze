@@ -31,7 +31,7 @@ class LiveTracker:
 		self.default_win_size = (640, 480)
 		self.ymg = None
 		self.light_controller = LightController()
-		self.brightness = 9
+		self.brightness = 2
 		self.light_controller.set_global_brightness(self.brightness)
 		self.experiment_duration = 3600
 		self.time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -192,7 +192,7 @@ class LiveTracker:
 		self.md.enable_tracking(False)
 
 		old_ledval = None
-		self.light_controller.set_global_brightness(9) #max allowed - could go higher and maybe fry board?
+		#self.light_controller.set_global_brightness(9) #max allowed - could go higher and maybe fry board?
 		aborted = False
 		while not protocol.finished():
 			ledval, update = protocol.led_value_and_update()
