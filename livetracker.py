@@ -41,6 +41,8 @@ class LiveTracker:
 		self.imstab = None
 		self.stabilizer_alpha = 0.01
 		self.stabilized = False
+		self._choice1rgb = (0,0,0)
+		self._choice2rgb = (0,0,255)
 
 	def __del__(self):
 		pass
@@ -70,6 +72,10 @@ class LiveTracker:
 				self.run_experiment()
 		finally:
 			self.end_experiment()
+
+	def set_light_choices(self, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
+		self._choice1rgb = choice1rgb
+		self._choice2rgb = choice2rgb
 
 	def focus(self, aruco = False):
 		self.cap.set_focus(self.lens_position)
@@ -173,7 +179,7 @@ class LiveTracker:
 		vid_writer.release()
 
 	def setup_experiment(self):
-		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller)
+		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller, choice1rgb=self._choice1rgb, choice2rgb=self._choice2rgb)
 		self.create_data_directories()
 		_,self.t0 = self.cap.last_frame_number_and_time()
 		self.md.set_save_raw(True)
@@ -310,4 +316,5 @@ class LiveTracker:
 if __name__ == "__main__":
 	lt = LiveTracker()
 	lt.experiment_duration = 3600
+	lt.set_light_choices(choice2rgb=(0,0,25))
 	lt.full_conditioning_experiment()

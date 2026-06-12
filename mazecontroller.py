@@ -21,7 +21,7 @@ class MazeController:
     _vid_writer: cv2.VideoWriter
 
     def __init__(self, light_controller: LightController, region_map: np.ndarray, transition_probabilities: np.ndarray,
-                 maze_ID: int, padding : int):
+                 maze_ID: int, padding : int, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
         self._maze_ID = maze_ID
         self._bak: BakCreator = None
         self._light_controller = light_controller
@@ -71,7 +71,9 @@ class MazeController:
         }
         self._df = pd.DataFrame(columns=self._stats.keys())
         self._lock = Lock()
-        self._stimulus_manager = stimulusmanager.StimulusManager(self)
+        self._choice1rgb = choice1rgb
+        self._choice2rgb = choice2rgb
+        self._stimulus_manager = stimulusmanager.StimulusManager(self, choice1rgb=self._choice1rgb, choice2rgb=self._choice2rgb)
         self._last_msg_frame = -1000
         self._last_msg = "no message"
         self._set_regions()

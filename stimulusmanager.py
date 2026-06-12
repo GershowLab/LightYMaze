@@ -18,7 +18,7 @@ class StimulusManager:
     current_location: MazePart
     current_state: State
 
-    def __init__(self, maze_controller):
+    def __init__(self, maze_controller, choice1rgb  = (0,0,0), choice2rgb = (0,0,255)):
         self.current_state = State.PREDECISION_ANY
         self.origin_location = MazePart.INTERSECTION
         self.current_location = MazePart.INTERSECTION
@@ -26,13 +26,15 @@ class StimulusManager:
         self._has_message = False
         self._last_action_time = time.monotonic()
         self._watchdog_interval = 120
+        choice1rgb = np.asarray(choice1rgb, np.uint8)
+        choice2rgb = np.asarray(choice2rgb, np.uint8)
         self.actions = [
             ActionChooseCircle(self, State.CHOOSE1),
             ActionChooseCircle(self, State.CHOOSE2),
             ActionChooseCircle(self, State.CHOOSE3),
-            ActionLeaveCircle(self, MazePart.CIRCLE1),
-            ActionLeaveCircle(self, MazePart.CIRCLE2),
-            ActionLeaveCircle(self, MazePart.CIRCLE3),
+            ActionLeaveCircle(self, MazePart.CIRCLE1, choice1rgb=choice1rgb, choice2rgb=choice2rgb),
+            ActionLeaveCircle(self, MazePart.CIRCLE2, choice1rgb=choice1rgb, choice2rgb=choice2rgb),
+            ActionLeaveCircle(self, MazePart.CIRCLE3, choice1rgb=choice1rgb, choice2rgb=choice2rgb),
             ActionFirstChannelChoice(self, State.PREDECISION1),
             ActionFirstChannelChoice(self, State.PREDECISION2),
             ActionFirstChannelChoice(self, State.PREDECISION3),

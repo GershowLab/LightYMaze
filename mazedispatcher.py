@@ -11,11 +11,11 @@ from threading import Thread
 import matplotlib.pyplot as plt
 
 class MazeDispatcher:
-    def __init__(self, ymg:YMazeGeometry, light_controller:LightController = None):
+    def __init__(self, ymg:YMazeGeometry, light_controller:LightController = None, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
         self._ymg = ymg
         self._maze_mask, self._region_mask = ymg.get_maze_mask()
         self._light_controller = light_controller
-        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller) for i in range(1,1+np.max(self._maze_mask).astype(int))]
+        self._maze_minions = [MazeMinion(i, self._maze_mask, self._region_mask, ymg.generate_connectivity_matrix(0.01), self._light_controller, choice1rgb, choice2rgb) for i in range(1,1+np.max(self._maze_mask).astype(int))]
         self._frame_number = 0
         self._composite = None
         self._img = None
@@ -163,7 +163,7 @@ class MazeDispatcher:
 
 
 class MazeMinion:
-    def __init__(self, maze_id, maze_mask, region_mask, transition_probs, light_controller = None):
+    def __init__(self, maze_id, maze_mask, region_mask, transition_probs, light_controller = None, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
         self._pad = 12
         x,y,w,h = cv2.boundingRect(((maze_mask == maze_id) * 255).astype(np.uint8))
         self._x = np.clip(x-self._pad,0,None)
@@ -171,7 +171,7 @@ class MazeMinion:
         self._w = np.clip(w+2*self._pad,None,maze_mask.shape[1]-self._x)
         self._h = np.clip(h+2*self._pad,None,maze_mask.shape[0]-self._y)
         self._maze_id = maze_id
-        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad)
+        self._maze_controller = MazeController(light_controller, self.get_subim(region_mask).copy(), transition_probs, maze_id, self._pad, choice1rgb, choice2rgb=choice2rgb)
 
     def enable_stim_manager(self, enable):
         self._maze_controller.enable_stim_manager(enable)
