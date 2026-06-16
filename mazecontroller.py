@@ -21,7 +21,7 @@ class MazeController:
     _vid_writer: cv2.VideoWriter
 
     def __init__(self, light_controller: LightController, region_map: np.ndarray, transition_probabilities: np.ndarray,
-                 maze_ID: int, padding : int, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
+                 maze_ID: int, padding : int, choice1rgb = (0,0,0), choice2rgb = (0,0,255), register_images = True):
         self._maze_ID = maze_ID
         self._bak: BakCreator = None
         self._light_controller = light_controller
@@ -89,6 +89,9 @@ class MazeController:
         self._decisions = {"dark":0,"light":0,"null":0}
         self._led_settings = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
         self._tracking_enabled = True
+        self._phase_align_incoming = align_images
+        self._hw_align = None
+        self._img_shift = np.array((0,0))
 
     def enable_stim_manager (self, enable):
         if enable:
@@ -102,6 +105,11 @@ class MazeController:
 
     def enable_tracking(self, enable):
         self._tracking_enabled = enable
+
+    def enable_image_registration(self, enable):
+        self._phase_align_incoming = enable
+        if not enable:
+            self._img_shift = np.array((0,0))
 
     def set_threshold(self, threshold):
         if threshold < 5:
@@ -151,10 +159,26 @@ class MazeController:
             locs.append(np.array([x, y]))
         return locs
 
+    def _align_image_to_background (self, img):
+        if self._bak is None:
+            return img,np.array((0,0))
+        bgim = self._bak.get_background()
+        if self._hw_align is None:
+            h,w = bgim.shape
+            self._hw_align = cv2.createHanningWindow((w,h), cv2.CV_32F)
+        shift,_ = cv2.phaseCorrelate(np.asarray(bgim, np.float32), np.asarray(img, np.float32)) #how much the input image is shifted relative to background
+        transform_matrix = np.float32([[1, 0, -shift[0]], [0, 1, -shift[1]]])
+        img = cv2.warpAffine(img, transform_matrix, (w,h))
+        return img,shift
+
+    def get_shift(self):
+        return np.asarray(self._img_shift)
+
     def new_image(self, img, frame_number=None, capture_time=None):
+        newshift = False
         if self._lock.acquire(blocking=False):
             try:
-                self._img = img  # pass a copy to new_image
+                #self._img = img  # pass a copy to new_image
                 #print (f"img shape = {img.shape}")
                 if frame_number is None:
                     self._frame_number += 1
@@ -170,6 +194,10 @@ class MazeController:
                     self._bak.set_threshold(self._threshold)
                     self._bak.set_update_intervals(self._update_frame_interval, self._update_time_interval)
                     self._initialized = True
+                if self._phase_align_incoming:
+                    img,self._img_shift = self._align_image_to_background(img)
+                    newshift = True
+                self._img = img
 
                 init = self._bak.update_background(img, frame_num=frame_number, frame_time=capture_time)
                 # during initialization period, just update background
@@ -194,7 +222,7 @@ class MazeController:
                     self._led_update = False
             finally:
                 self._lock.release()
-
+        return newshift
     def initialized(self):
         return self._initialized
 
