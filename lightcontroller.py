@@ -26,9 +26,11 @@ try:
         #maze num is 1 to 9; not 0 to 8
         #channel num is 1 to 3 not 0 to 2
         def set_led(self, maze_num, channel_num, red, green, blue, bright_pct = 100):
+            maze_num = np.atleast_1d(maze_num)
             with self.lock:
-                self.strip.set_pixel(3*(maze_num-1)+channel_num-1,np.uint8(red), np.uint8(green), np.uint8(blue), bright_percent=bright_pct)
-                print(f"{maze_num}, {channel_num}: {red},{green},{blue}")
+                for m in maze_num:
+                    self.strip.set_pixel(3*(m-1)+channel_num-1,np.uint8(red), np.uint8(green), np.uint8(blue), bright_percent=bright_pct)
+                    print(f"{m}, {channel_num}: {red},{green},{blue}")
 
         def update_leds(self):
             with self.lock:

@@ -89,7 +89,7 @@ class MazeController:
         self._decisions = {"dark":0,"light":0,"null":0}
         self._led_settings = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
         self._tracking_enabled = True
-        self._phase_align_incoming = align_images
+        self._phase_align_incoming = register_images
         self._hw_align = None
         self._img_shift = np.array((0,0))
 
@@ -163,8 +163,8 @@ class MazeController:
         if self._bak is None:
             return img,np.array((0,0))
         bgim = self._bak.get_background()
+        h, w = bgim.shape
         if self._hw_align is None:
-            h,w = bgim.shape
             self._hw_align = cv2.createHanningWindow((w,h), cv2.CV_32F)
         shift,_ = cv2.phaseCorrelate(np.asarray(bgim, np.float32), np.asarray(img, np.float32)) #how much the input image is shifted relative to background
         transform_matrix = np.float32([[1, 0, -shift[0]], [0, 1, -shift[1]]])

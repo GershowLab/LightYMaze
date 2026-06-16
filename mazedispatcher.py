@@ -74,6 +74,9 @@ class MazeDispatcher:
     def enable_tracking(self, enable):
         [mm.enable_tracking(enable) for mm in self._maze_minions]
 
+    def enable_image_registration(self, enable):
+        [mm.enable_image_registration(enable) for mm in self._maze_minions]
+
     def set_all_leds(self, rgbpct):
         self.set_leds_all_mazes(rgbpct, rgbpct, rgbpct)
 
@@ -204,7 +207,7 @@ class MazeMinion:
             return
         shift = np.round(np.asarray(shift)).astype(np.int16)
         self._x = np.clip(self._x + shift[0], 0, self._src_w - self._w)
-        self._y = np.clip(self._y + shift[1], 0, self._srch_h - self._h)
+        self._y = np.clip(self._y + shift[1], 0, self._src_h - self._h)
 
     def get_debug_im(self, decimate=1, show_frame=True):
         img = self._maze_controller.debug_image(decimate, show_frame)
@@ -228,12 +231,12 @@ class MazeMinion:
     def new_frame(self, img, frame_number=None, frame_time=None):
         # roi = self.get_subim(img).copy()
         # t = Thread(target=self._maze_controller.new_image, args=(roi, frame_number, frame_time))
-        t = Thread(target=self.new_frame_nothread, args=(frame_number, frame_time))
+        t = Thread(target=self.new_frame_nothread, args=(img, frame_number, frame_time))
         t.start()
         return t
 
-    def save_region_sums(self, fstub):
-        np.savetxt(f"{fstub}{self._maze_id}regions.txt", self._maze_controller._region_sums)
+    # def save_region_sums(self, fstub):
+    #     np.savetxt(f"{fstub}{self._maze_id}regions.txt", self._maze_controller._region_sums)
 
     def get_dataframe(self) -> pd.DataFrame:
         return self._maze_controller.get_dataframe()

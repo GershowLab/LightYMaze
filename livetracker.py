@@ -43,6 +43,7 @@ class LiveTracker:
 		self.stabilized = False
 		self._choice1rgb = (0,0,0)
 		self._choice2rgb = (0,0,255)
+		self._register_maze_images = True
 
 	def __del__(self):
 		pass
@@ -145,6 +146,38 @@ class LiveTracker:
 		for j in range(1, 10):
 			self.imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
 
+	def illumination_response_test_discrete(self, active_maze = 5, cvals = np.array(([0, 0, 0], [0,0,25],[0,0,128],[0,0,255])), timestep = 10):
+		self.create_data_directories()
+		self.light_controller.set_global_brightness(self.brightness)
+		cvals = np.asarray(cvals)
+		im, ts = self.cap.capture_frame()
+		self.t0 = ts
+		vidfilename = self.video_dir / f"{self.time_stamp} illumination response.mp4"
+		fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+		h, w = im.shape[:2]
+		vid_writer = cv2.VideoWriter(vidfilename, fourcc, 30.0, (w, h), True)
+		intensity = cvals[0]
+		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
+		cv2.resizeWindow('all mazes', self.default_win_size)
+		while ts - self.t0 < self.experiment_duration:
+			img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+			cv2.putText(img, f"{active_maze} : {intensity} ({self.brightness})", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
+						1, bottomLeftOrigin=False)
+			intensity_ind = np.uint16((ts - self.t0) // timestep)%cvals.shape[0]
+			intensity = cvals[intensity_ind]
+			for c in range(3):
+				self.light_controller.set_led(active_maze, c + 1, *intensity)
+			self.light_controller.update_leds()
+			vid_writer.write(img)
+			cv2.imshow('all mazes', img)
+			if cv2.waitKey(100) & 0xFF == ord('q'):  # limit frame rate
+				vid_writer.release()
+				self.light_controller.turn_off_leds()
+				quit()
+			im, ts = self.cap.capture_frame(flush=True)
+		vid_writer.release()
+		self.light_controller.turn_off_leds()
+		vid_writer.release()
 	def illumination_response_test(self, active_maze = 5, cstart = np.array([0, 0, 0]), cend = np.array([255, 0, 0])):
 		self.create_data_directories()
 		self.light_controller.set_global_brightness(self.brightness)
@@ -161,7 +194,7 @@ class LiveTracker:
 		cv2.resizeWindow('all mazes', self.default_win_size)
 		while ts-self.t0 < self.experiment_duration:
 			img = cv2.cvtColor(im,cv2.COLOR_GRAY2BGR)
-			cv2.putText(img, f"{intensity}", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
+			cv2.putText(img, f"{active_maze} : {intensity}", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
 						1, bottomLeftOrigin=False)
 			intensity = ((cend-cstart)*np.minimum((ts-self.t0)/ self.experiment_duration,1) + cstart).astype(np.uint8)
 			for c in range(3):
@@ -180,6 +213,7 @@ class LiveTracker:
 
 	def setup_experiment(self):
 		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller, choice1rgb=self._choice1rgb, choice2rgb=self._choice2rgb)
+		self.md.enable_image_registration(self._register_maze_images)
 		self.create_data_directories()
 		_,self.t0 = self.cap.last_frame_number_and_time()
 		self.md.set_save_raw(True)
