@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-from PIL.ImageTransform import AffineTransform
-
-from affinecalculator import AffineCalculator
 
 
 class ImageStabilizer(object):

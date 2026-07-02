@@ -13,8 +13,8 @@ basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
 #basedir = Path('G:\\')
 #date = '2026-05-26_11-59-05'
 #date = '2026-06-04_10-47-54' #rotates, old arucos
-#date = '2026-06-09_12-32-47'
-date = '2026-06-12_11-02-16' #bright background
+date = '2026-06-09_12-32-47'
+#date = '2026-06-12_11-02-16' #bright background
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / date / (date + ' maze all mazes.mp4')
 cap = videocapture.VideoCapture(fstub)
 
@@ -27,12 +27,29 @@ ymg.set_image_size((cap.h, cap.w))
 ymg._cam_center = (cap.w/2, cap.h/2 -200)
 ymg._barrel_alpha = -0.00001*3.2
 im,ts = cap.capture_frame()
+#
+# imbl = cv2.GaussianBlur(im, ksize=(7,7), sigmaX=2, sigmaY=2)
+# sx = cv2.Sobel(imbl, cv2.CV_64F, 1, 0, ksize=7)
+# sy = cv2.Sobel(imbl, cv2.CV_64F, 0, 1, ksize=7)
+# s = cv2.convertScaleAbs(cv2.magnitude(sy, sx))
 
 ymg.calibrate_geometry_aruco(im)
+# cv2.imshow('mazes pre shift', ymg.diagnostic_image(im))
+mm1 = cv2.threshold(ymg.get_maze_mask()[0], 0, 255, cv2.THRESH_BINARY)[1]
+
+ymg.fine_tune_alignment(im, padding=0)
+ymg.generate_maze_mask()
+mm2 = cv2.threshold(ymg.get_maze_mask()[0], 0, 255, cv2.THRESH_BINARY)[1]
+#
+# cv2.imshow('mazes', ymg.diagnostic_image(im))
+#
+# cv2.imshow('green is new', cv2.merge((mm1,mm2,mm1)))
+#cv2.waitKey(0)
+
 
 lt.ymg = ymg
 lt.setup_experiment()
-lt.run_experiment(7000)
+lt.run_experiment(7000, multi_thread=True)
 
 quit()
 ymg = YMazeGeometry()

@@ -296,7 +296,7 @@ class LiveTracker:
 		im = self.imstab.register(im, self.stabilizer_alpha)
 		return im, ts
 
-	def run_experiment(self, experiment_duration = None):
+	def run_experiment(self, experiment_duration = None, multi_thread = True):
 		self.light_controller.set_global_brightness(self.brightness)
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 		cv2.resizeWindow('all mazes', self.default_win_size)
@@ -327,7 +327,7 @@ class LiveTracker:
 			num_choices = np.sum(np.asarray(self.md.num_choices()), axis=0)
 			elapsed_time = frame_time - t_start
 			print(f"frame: {frame_num}, elapsed time: {elapsed_time}, to light: {num_choices[0]}, to dark: {num_choices[1]}, null: {num_choices[2]}")
-			tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0, wait_for_completion=False, multi_thread=True)
+			tt = self.md.new_frame(im, frame_number=frame_num, frame_time=frame_time - self.t0, wait_for_completion=False, multi_thread=multi_thread)
 			#im = self.cap.capture_frame()[0]
 			im,_ = self.capture_stabilized()
 			frame_num, frame_time = self.cap.last_frame_number_and_time()

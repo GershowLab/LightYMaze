@@ -15,9 +15,11 @@ class BakCreator:
         self._lock = Lock()
         self._bgim = bgim
         self._fgim = np.zeros_like(bgim)
-        self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=False)
-     #   self._bsub.setBackgroundRatio(0.6)
-      #  self._bsub.setNMixtures(5)
+        self._bsub = cv2.createBackgroundSubtractorMOG2(history=stacklen, varThreshold=60, detectShadows=True)
+        self._bsub.setShadowValue(0)
+        self._bsub.setBackgroundRatio(0.6)
+        self._bsub.setNMixtures(3)
+        self._bsub.setVarInit(5)
         self._bsub.apply(bgim,1) #reset to bgim
         self._learning_rate = -1
         self._nupdates = 0
@@ -89,8 +91,10 @@ class BakCreator:
         else:
             self._fgim = self._bsub.apply(new_im, learningRate=lr)
 
-       # fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
-        #self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
+        self._bsub.getVarThreshold()
+
+        fgbrighter = cv2.morphologyEx(cv2.compare(new_im, self.get_background(), cv2.CMP_GE).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=5)
+        self._fgim = cv2.bitwise_and(self._fgim, fgbrighter, self._fgim)
         self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         self._fgim = cv2.morphologyEx(self._fgim, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8), iterations=1)
 

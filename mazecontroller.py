@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import pandas as pd
+from fontTools.merge.util import bitwise_and
 
 import ymazegeometry
 from BakCreator import BakCreator
@@ -26,6 +27,7 @@ class MazeController:
         self._bak: BakCreator = None
         self._light_controller = light_controller
         self._region_map = region_map.astype(np.uint8)
+        self._region_color = None
         self._maze_mask = cv2.morphologyEx(255 * (self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((3,3), np.uint8), iterations=padding)
         # 255*cv2.morphologyEx((self._region_map > 0).astype(np.uint8), cv2.MORPH_DILATE, np.ones((5,5), np.uint8))
         self._h, self._w = self._region_map.shape  # row x col
@@ -230,31 +232,38 @@ class MazeController:
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
             thresh, connectivity=8
         )
-        area = [stats[i, cv2.CC_STAT_AREA] for i in range(1, num_labels)]
-        #print(area)
-        try:
-            larva_ind = np.argmax(area) + 1
-            #print (larva_ind)
-            self._larva_loc = centroids[larva_ind]
-            self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
-            la = float(area[larva_ind - 1])
-            self._stats["LarvaArea"] = la
-           # print(la)
-            log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
-            if la > self._min_larva_area:
-                self._sum_larva_area += la
-                self._sum_sq_larva_area += la ** 2
-                self._num_larva_area += 1
-                u = self._sum_larva_area/self._num_larva_area
-                v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
-                self._stats["LarvaMeanArea"] = u
-                self._stats["LarvaStdArea"] = np.sqrt(v)
-                if True or la > u - 3*np.sqrt(v):
-                    log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
-                    log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
-            self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
-        except:
-            self._larva_loc = np.array([-1, -1])
+        if num_labels > 1:
+            area = [stats[i, cv2.CC_STAT_AREA] for i in range(1, num_labels)]
+            #print(area)
+            try:
+                larva_ind = np.argmax(area) + 1
+                #print (larva_ind)
+                self._larva_loc = centroids[larva_ind]
+                self._larva_mask = (labels == larva_ind).astype(np.uint8) * 255
+                la = float(area[larva_ind - 1])
+                self._stats["LarvaArea"] = la
+               # print(la)
+                log_p_obs = np.array([-np.log(len(self._regions)) for r in self._regions])
+                if la > self._min_larva_area:
+                    self._sum_larva_area += la
+                    self._sum_sq_larva_area += la ** 2
+                    self._num_larva_area += 1
+                    u = self._sum_larva_area/self._num_larva_area
+                    v = self._sum_sq_larva_area/self._num_larva_area - u ** 2
+                    self._stats["LarvaMeanArea"] = u
+                    self._stats["LarvaStdArea"] = np.sqrt(v)
+                    reg_fracs = np.array([r.fraction_covered(self._larva_mask) for r in self._regions])
+                    p = reg_fracs/np.sum(reg_fracs) + 1e-6
+                    # if np.argmax(p) == 0:
+                    #     print (f"{self._maze_ID}: most prob = center")
+                    log_p_obs = np.log(p)
+                    # if True or la > u - 3*np.sqrt(v):
+                    #     log_p_obs = [r.logP(self._larva_loc) for r in self._regions]
+                    #     log_p_obs = np.array(log_p_obs) - np.log(np.sum(np.exp(log_p_obs)))
+                self._larva_region = self._viterbi.new_obs(log_p_obs) + 1
+            except Exception as e:
+                print(e)
+                self._larva_loc = np.array([-1, -1])
         self._stats["Region"] = self._larva_region
         self._stats["LarvaX"] = float(self._larva_loc[0])
         self._stats["LarvaY"] = float(self._larva_loc[1])
@@ -263,16 +272,66 @@ class MazeController:
     def get_larva_region(self):
         return self._larva_region
 
+    def region_image(self, mask = None):
+        # center = 1 white
+        # 2 = red
+        # 3 = blue
+        # 4 = green
+        # 5 = cyan
+        # 6 = yellow
+        # 7 = magenta
+        if self._region_color is None:
+        #    r = np.zeros_like(self._region_map)
+         #   g = np.zeros_like(self._region_map)
+          #  b = np.zeros_like(self._region_map)
+            inr = (1, 2, 6, 7)
+            ing = (1, 4, 5, 6)
+            inb = (1, 3, 5, 7)
+            inr = np.isin(self._region_map, inr).astype(np.uint8)*255
+            ing = np.isin(self._region_map, ing).astype(np.uint8)*255
+            inb = np.isin(self._region_map, inb).astype(np.uint8)*255
+            self._region_color = cv2.merge((inb,ing,inr))
+
+        if mask is None:
+            return self._region_color
+        else:
+            return cv2.bitwise_xor(self._region_color, cv2.merge((mask,mask,mask)))
+            return cv2.bitwise_and(self._region_color, (128,128,128), mask=mask)
+            return cv2.bitwise_and(self._region_color,mask)*value + cv2.bitwise_and(self._region_color,~mask)*altvalue
+            vim = np.zeros_like(self._region_map)
+            vim[mask] = value
+            vim[~mask] = alt_value
+            return cv2.multiply(self._region_color, cv2.merge((vim,vim,vim)))
+            #return cv2.merge((vim*self._region_color[:,:,0],vim*self._region_color[:,:,1],vim*self._region_color[:,:,2]))
+
+        if mask is not None:
+            r[np.logical_and(mask, inr)] = value
+            r[np.logical_and(~mask, inr)] = alt_value
+            g[np.logical_and(mask, ing)] = value
+            g[np.logical_and(~mask, ing)] = alt_value
+            b[np.logical_and(mask, inb)] = value
+            b[np.logical_and(~mask, inb)] = alt_value
+        else:
+            r[inr] = value
+            g[ing] = value
+            b[inb] = value
+
+
+        return cv2.merge((r,g,b))
+
     def debug_montage(self):
         img = cv2.cvtColor(self._img, cv2.COLOR_GRAY2BGR)
         #bak = cv2.cvtColor(self._bak.get_background(), cv2.COLOR_GRAY2BGR)
         b = self._bak.get_background()
         bak = cv2.merge((b, self._img, b))
         thresh = self._bak.get_thresholded_image()
-#        thresh = self._bak.get_zscore_image(self._img)
-        g = thresh.copy()
-        g[self._maze_mask == 0] = 255
-        thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))
+        thresh = self.region_image(thresh)
+#
+# #        thresh = self._bak.get_zscore_image(self._img)
+#
+#         g = thresh.copy()
+#         g[self._maze_mask == 0] = 255
+#        thresh = cv2.merge((thresh.astype(np.uint8),g.astype(np.uint8),thresh.astype(np.uint8)))
         img_annotate = self.debug_image()
         montage = np.vstack((np.hstack((img, bak)), np.hstack((thresh, img_annotate))))
         return montage
@@ -302,14 +361,14 @@ class MazeController:
         cv2.putText(img_annotate, msg, (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),
                     1, bottomLeftOrigin=False)
 
-        msg = f"area = {self._stats['LarvaArea']:.0f}"
-        msg2 = f"{self._stats['LarvaMeanArea']:.0f} +/- {self._stats['LarvaStdArea']:.1f}"
-        (text_width, text_height), baseline = cv2.getTextSize(msg, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
-        (text_width2, text_height), baseline = cv2.getTextSize(msg2, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
-        #text_width = max(text_width, text_width2)
-        cv2.putText(img_annotate, msg, np.array((w-text_width-5, baseline+text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
-
-        cv2.putText(img_annotate, msg2, np.array((w-text_width2-5, 2*baseline+2*text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
+        #commented out area overlay to speed up processing
+        # msg = f"area = {self._stats['LarvaArea']:.0f}"
+        # msg2 = f"{self._stats['LarvaMeanArea']:.0f} +/- {self._stats['LarvaStdArea']:.1f}"
+        # (text_width, text_height), baseline = cv2.getTextSize(msg, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
+        # (text_width2, text_height), baseline = cv2.getTextSize(msg2, cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, 1)
+        # cv2.putText(img_annotate, msg, np.array((w-text_width-5, baseline+text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
+        #
+        # cv2.putText(img_annotate, msg2, np.array((w-text_width2-5, 2*baseline+2*text_height),dtype=np.uint16), cv2.FONT_HERSHEY_SIMPLEX, 0.5 / decimate, (255, 255, 255),1, bottomLeftOrigin=False)
 
         for r in self._regions:
             cv2.putText(img_annotate, f"{int(r.part)}", (r.loc/decimate).astype(int), cv2.FONT_HERSHEY_SIMPLEX, 0.5/decimate, (255, 255, 255), 1)
