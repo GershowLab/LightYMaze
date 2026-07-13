@@ -15,46 +15,58 @@ from pathlib import Path
 from lightcontroller import LightController
 from datetime import datetime
 
+from ymazeparameters import YMazeParameters, LiveTrackerParameters
 
 
 class LiveTracker:
-	def __init__(self, basedir = Path.home(), cap = None):
+	def __init__(self, basedir = Path.home(), cap = None, live_tracker_params = None):
 		if cap is None:
 			from cameracapture import CameraCapture
 			self.cap = CameraCapture()
 		else:
 			self.cap = cap
+
+		if live_tracker_params is None:
+			self.params = LiveTrackerParameters()
+		else:
+			self.params = live_tracker_params
+
 		self.basedir = basedir
 		self.text_dir = ''
 		self.video_dir = ''
-		self.lens_position = 1/.0768
+		#self.lens_position = 1/.0768
 		self.default_win_size = (640, 480)
 		self.ymg = None
 		self.light_controller = LightController()
-		self.brightness = 2
-		self.light_controller.set_global_brightness(self.brightness)
-		self.experiment_duration = 3600
+		#self.brightness = 2
+		self.light_controller.set_global_brightness(self.params.led_choice_parameters.overall_brightness)
+		#self.experiment_duration = 3600
 		self.time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 		self.md = None
 		self.t0 = 0
-		self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
+		#self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
 		self._imstab = None
-		self.stabilizer_alpha = 0.01
-		self.stabilized = False
-		self._choice1rgb = (0,0,0)
-		self._choice2rgb = (0,0,255)
-		self._register_maze_images = True
+		#self.stabilizer_alpha = 0.01
+		#self.stabilized = False
+		#self._choice1rgb = (0,0,0)
+		#self._choice2rgb = (0,0,255)
+		#self._register_maze_images = True
 
 	def __del__(self):
 		pass
 
 
-	def full_conditioning_experiment(self, paired = True):
-		if paired:
-			protocol = TemporalTrainingProtocol.standard_paired_protocol()
-		else:
-			protocol = TemporalTrainingProtocol.standard_unpaired_protocol()
+	def full_conditioning_experiment(self):
 
+		# if paired:
+		# 	protocol = TemporalTrainingProtocol.standard_paired_protocol()
+		# else:
+		# 	protocol = TemporalTrainingProtocol.standard_unpaired_protocol()
+
+		protocol = TemporalTrainingProtocol.associative_protocol(**self.params.training_parameters.to_dict())
+
+		self.cap.set_focus(self.params.camera_parameters.lens_position)
+		self.cap.set_exposure(self.params.camera_parameters.exposure, self.params.camera_parameters.gain)
 		self.focus(aruco = True)
 		if not self.calibrate_mazes_aruco():
 			self.calibrate_mazes()
@@ -66,25 +78,28 @@ class LiveTracker:
 		self.focus()
 		self.setup_experiment()
 		try:
-			aborted = self.run_experiment()
+			aborted = self.run_experiment(self.params.experiment_parameters.duration_pre_train)
 			if not aborted:
 				aborted = self.run_protocol(protocol)
 			if not aborted:
-				self.run_experiment()
+				self.run_experiment(self.params.experiment_parameters.duration_post_train)
 		finally:
 			self.end_experiment()
 
 	def set_light_choices(self, choice1rgb = (0,0,0), choice2rgb = (0,0,255)):
-		self._choice1rgb = choice1rgb
-		self._choice2rgb = choice2rgb
+		self.params.led_choice_parameters.choice1rgb = choice1rgb
+		self.params.led_choice_parameters.choice2rgb = choice2rgb
+
+	def set_led_choice_brightness(self, brightness):
+		self.params.led_choice_parameters.overall_brightness = brightness
 
 	def focus(self, aruco = False):
-		self.cap.set_focus(self.lens_position)
+		self.cap.set_focus(self.params.camera_parameters.lens_position)
 		if aruco:
 			self.cap.aruco_focus_window()
 		else:
 			self.cap.focus_window()
-		self.lens_position = self.cap.get_lens_position()
+		self.params.camera_parameters.lens_position = self.cap.get_lens_position()
 
 	def create_data_directories(self):
 		text_basedir = Path.home() / 'ymaze-text-data'
@@ -102,7 +117,7 @@ class LiveTracker:
 		self.cap.reset_bounding_box()
 		self.ymg = YMazeGeometry()
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
-		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.barrel_alpha)
+		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.params.camera_parameters.barrel_alpha)
 		im, _ = self.cap.capture_frame()
 		if self.ymg.calibrate_geometry_aruco(im):
 			x, y, w, h = self.ymg.clip_to_mazes(10)
@@ -114,7 +129,7 @@ class LiveTracker:
 		self.cap.reset_bounding_box()
 		self.ymg = YMazeGeometry()
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
-		self.ymg.set_barrel_distortion((self.cap.w/2, self.cap.h/2), self.barrel_alpha)
+		self.ymg.set_barrel_distortion((self.cap.w/2, self.cap.h/2), self.params.camera_parameters.barrel_alpha)
 		im, _ = self.cap.capture_frame()
 		self.ymg.calibrate_geometry_from_image_fiducials(im)
 		self.ymg.align_mazes_to_im(im)
@@ -146,9 +161,9 @@ class LiveTracker:
 		for j in range(1, 10):
 			self._imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
 
-	def illumination_response_test_discrete(self, active_maze = 5, cvals = np.array(([0, 0, 0], [0,0,25],[0,0,128],[0,0,255])), timestep = 10):
+	def illumination_response_test_discrete(self, active_maze = 5, cvals = np.array(([0, 0, 0], [0,0,25],[0,0,128],[0,0,255])), timestep = 10, duration = 120):
 		self.create_data_directories()
-		self.light_controller.set_global_brightness(self.brightness)
+		self.light_controller.set_global_brightness(self.params.led_choice_parameters.overall_brightness)
 		cvals = np.asarray(cvals)
 		im, ts = self.cap.capture_frame()
 		self.t0 = ts
@@ -159,9 +174,9 @@ class LiveTracker:
 		intensity = cvals[0]
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 		cv2.resizeWindow('all mazes', self.default_win_size)
-		while ts - self.t0 < self.experiment_duration:
+		while ts - self.t0 < duration:
 			img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
-			cv2.putText(img, f"{active_maze} : {intensity} ({self.brightness})", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
+			cv2.putText(img, f"{active_maze} : {intensity} ({self.light_controller.get_global_brightness()})", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
 						1, bottomLeftOrigin=False)
 			intensity_ind = np.uint16((ts - self.t0) // timestep)%cvals.shape[0]
 			intensity = cvals[intensity_ind]
@@ -178,9 +193,9 @@ class LiveTracker:
 		vid_writer.release()
 		self.light_controller.turn_off_leds()
 		vid_writer.release()
-	def illumination_response_test(self, active_maze = 5, cstart = np.array([0, 0, 0]), cend = np.array([255, 0, 0])):
+	def illumination_response_test(self, active_maze = 5, cstart = np.array([0, 0, 0]), cend = np.array([255, 0, 0]), duration = 120):
 		self.create_data_directories()
-		self.light_controller.set_global_brightness(self.brightness)
+		self.light_controller.set_global_brightness(self.params.led_choice_parameters.overall_brightness)
 		cstart = np.asarray(cstart)
 		cend = np.asarray(cend)
 		im,ts = self.cap.capture_frame()
@@ -192,11 +207,11 @@ class LiveTracker:
 		intensity = cstart
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 		cv2.resizeWindow('all mazes', self.default_win_size)
-		while ts-self.t0 < self.experiment_duration:
+		while ts-self.t0 < duration:
 			img = cv2.cvtColor(im,cv2.COLOR_GRAY2BGR)
 			cv2.putText(img, f"{active_maze} : {intensity}", (5, h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255),
 						1, bottomLeftOrigin=False)
-			intensity = ((cend-cstart)*np.minimum((ts-self.t0)/ self.experiment_duration,1) + cstart).astype(np.uint8)
+			intensity = ((cend-cstart)*np.minimum((ts-self.t0)/ duration,1) + cstart).astype(np.uint8)
 			for c in range(3):
 				self.light_controller.set_led(active_maze, c+1, *intensity)
 			self.light_controller.update_leds()
@@ -212,8 +227,8 @@ class LiveTracker:
 		vid_writer.release()
 
 	def setup_experiment(self):
-		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller, choice1rgb=self._choice1rgb, choice2rgb=self._choice2rgb)
-		self.md.enable_image_registration(self._register_maze_images)
+		self.md = MazeDispatcher(self.ymg, light_controller=self.light_controller, choice1rgb=self.params.led_choice_parameters.choice1rgb, choice2rgb=self.params.led_choice_parameters.choice2rgb)
+		self.md.enable_image_registration(self.params.experiment_parameters.register_maze_images)
 		self.create_data_directories()
 		_,self.t0 = self.cap.last_frame_number_and_time()
 		self.md.set_save_raw(True)
@@ -289,19 +304,19 @@ class LiveTracker:
 
 	def capture_stabilized(self):
 		im, ts = self.cap.capture_frame()
-		if not self.stabilized:
+		if not self.params.experiment_parameters.stabilize_images:
 			return im, ts
 		if self._imstab is None:
 			self.create_stabilizer(im)
-		im = self._imstab.register(im, self.stabilizer_alpha)
+		im = self._imstab.register(im, self.params.experiment_parameters.stabilizer_alpha)
 		return im, ts
 
 	def run_experiment(self, experiment_duration = None, multi_thread = True):
-		self.light_controller.set_global_brightness(self.brightness)
+		self.light_controller.set_global_brightness(self.params.led_choice_parameters.overall_brightness)
 		cv2.namedWindow('all mazes', cv2.WINDOW_NORMAL)
 		cv2.resizeWindow('all mazes', self.default_win_size)
 		if experiment_duration is None:
-			experiment_duration = self.experiment_duration
+			experiment_duration = self.params.experiment_parameters.duration_pre_train
 		elapsed_time = 0
 		#im, t_start = self.cap.capture_frame()
 		im, t_start = self.capture_stabilized()
@@ -349,6 +364,5 @@ class LiveTracker:
 #TODO argparse
 if __name__ == "__main__":
 	lt = LiveTracker()
-	lt.experiment_duration = 3600
 	lt.set_light_choices(choice2rgb=(0,0,25))
 	lt.full_conditioning_experiment()

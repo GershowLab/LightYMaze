@@ -5,6 +5,9 @@ import numpy as np
 @dataclass
 class BaseParameterClass:
 
+    def to_dict(self):
+        return asdict(self)
+
     def has_param(self, param):
         return hasattr(self, param)
 
@@ -18,6 +21,16 @@ class BaseParameterClass:
     def set_params(self, param_dict):
         for key, value in param_dict.items():
             self.set_param (key, value)
+
+    def apply_param(self, obj, param):
+        if self.has_param(param) and hasattr(obj, param):
+            setattr(obj, param, getattr(self, param))
+
+    def apply_params(self, obj):
+        for key in vars(self).keys():
+            self.apply_param (obj, key)
+
+
 
 @dataclass
 class LedChoiceParameters(BaseParameterClass):
@@ -39,7 +52,7 @@ class ExperimentParameters(BaseParameterClass):
 
 @dataclass
 class CameraParameters(BaseParameterClass):
-    center_pixel : list[int] = field(default_factory=lambda:(2304, 1296))
+  #  center_pixel : list[int] = field(default_factory=lambda:(2304, 1296))
     barrel_alpha : float = -0.000032
     lens_position : float  = 1/.0768
     exposure : int = 9000

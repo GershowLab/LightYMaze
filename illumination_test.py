@@ -1,13 +1,12 @@
 from livetracker import LiveTracker
 import numpy as np
 lt = LiveTracker()
-lt.experiment_duration = 100
-lt.brightness = 5
+lt.set_led_choice_brightness(5)
 lt.focus()
 cvals = np.array(([0, 0, 0], [25,0,0],[128,0,0],[255,0,0],[0,0,0]))
 timestep = 10
 active_maze = (1,3,5,7,9)
-lt.illumination_response_test_discrete(active_maze=active_maze, timestep=timestep, cvals=cvals)
+lt.illumination_response_test_discrete(active_maze=active_maze, timestep=timestep, cvals=cvals, duration=100)
 
 # lt.cap.reset_bounding_box()
 # w = lt.cap.w
