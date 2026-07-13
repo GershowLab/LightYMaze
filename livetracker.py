@@ -38,7 +38,7 @@ class LiveTracker:
 		self.md = None
 		self.t0 = 0
 		self.barrel_alpha = -0.000032 #todo this should not be hardcoded this way
-		self.imstab = None
+		self._imstab = None
 		self.stabilizer_alpha = 0.01
 		self.stabilized = False
 		self._choice1rgb = (0,0,0)
@@ -142,9 +142,9 @@ class LiveTracker:
 		return accepted
 
 	def create_stabilizer(self, frame):
-		self.imstab = ImageStabilizer(frame)
+		self._imstab = ImageStabilizer(frame)
 		for j in range(1, 10):
-			self.imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
+			self._imstab.add_roi(self.ymg.get_bounding_rect(j, percent_scale=50))
 
 	def illumination_response_test_discrete(self, active_maze = 5, cvals = np.array(([0, 0, 0], [0,0,25],[0,0,128],[0,0,255])), timestep = 10):
 		self.create_data_directories()
@@ -291,9 +291,9 @@ class LiveTracker:
 		im, ts = self.cap.capture_frame()
 		if not self.stabilized:
 			return im, ts
-		if self.imstab is None:
+		if self._imstab is None:
 			self.create_stabilizer(im)
-		im = self.imstab.register(im, self.stabilizer_alpha)
+		im = self._imstab.register(im, self.stabilizer_alpha)
 		return im, ts
 
 	def run_experiment(self, experiment_duration = None, multi_thread = True):
