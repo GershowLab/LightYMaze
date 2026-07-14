@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import videocapture
 from imagestabilizer import ImageStabilizer
 from ymazegeometry import YMazeGeometry
+from ymazeparameters import LiveTrackerParameters
 
 #https://opencv.org/reading-and-writing-videos-using-opencv/#h-read-an-image-sequence
 basedir = Path('/Users/gershow/Library/CloudStorage/GoogleDrive-mhg4@nyu.edu/')
@@ -18,7 +19,11 @@ date = '2026-06-09_12-32-47'
 fstub = basedir / 'Shared drives' / 'ugns-larval-behavior' / 'pi5' / date / (date + ' maze all mazes.mp4')
 cap = videocapture.VideoCapture(fstub)
 
-lt = livetracker.LiveTracker(Path.home()/'deleteme', cap)
+ltp = LiveTrackerParameters()
+
+ltp.led_choice_parameters.choice1rgb = (255, 0, 0)
+ltp.led_choice_parameters.choice2rgb = (0, 255, 0)
+lt = livetracker.LiveTracker(Path.home()/'deleteme', cap, live_tracker_params=ltp)
 # lt.experiment_duration = 600
 # lt.illumination_response_test()
 # quit()

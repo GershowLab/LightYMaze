@@ -121,5 +121,18 @@ class LiveTrackerParameters:
                 warnings.warn(f"Duplicate key {key} in parameter list -- can't set by name, use dict instead")
 
     def set_params(self, param_dict):
+        if param_dict is None:
+            return
+
+        if isinstance(param_dict,LiveTrackerParameters) or isinstance(param_dict,BaseParameterClass):
+            param_dict = param_dict.to_dict()
+
+        if not isinstance(param_dict,dict):
+            try:
+                param_dict = vars(param_dict)
+            except:
+                warnings.warn("Could not convert argument to dictionary")
+                return
+
         for key, value in param_dict.items():
             self.set_param(key, value)

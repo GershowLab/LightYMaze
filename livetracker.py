@@ -15,25 +15,26 @@ from pathlib import Path
 from lightcontroller import LightController
 from datetime import datetime
 
-from ymazeparameters import YMazeParameters, LiveTrackerParameters
+from ymazeparameters import  LiveTrackerParameters
 
+import json
 
 class LiveTracker:
 	def __init__(self, basedir = Path.home(), cap = None, live_tracker_params = None):
+		self.params = LiveTrackerParameters()
+		self.params.set_params(live_tracker_params)
+
 		if cap is None:
 			from cameracapture import CameraCapture
 			self.cap = CameraCapture()
+			self.cap.hflip = self.params.camera_parameters.hflip
+			self.cap.vflip = self.params.camera_parameters.vflip
 		else:
 			self.cap = cap
 
-		if live_tracker_params is None:
-			self.params = LiveTrackerParameters()
-		else:
-			self.params = live_tracker_params
-
 		self.basedir = basedir
-		self.text_dir = ''
-		self.video_dir = ''
+		self.text_dir = self.basedir / 'ymaze-text-data'
+		self.video_dir = self.basedir / 'ymaze-video-data'
 		#self.lens_position = 1/.0768
 		self.default_win_size = (640, 480)
 		self.ymg = None
@@ -100,10 +101,23 @@ class LiveTracker:
 		else:
 			self.cap.focus_window()
 		self.params.camera_parameters.lens_position = self.cap.get_lens_position()
+		self.params.camera_parameters.hflip = self.cap.hflip
+		self.params.camera_parameters.vflip = self.cap.vflip
+		self.params.camera_parameters.exposure = self.cap.exposure
+		self.params.camera_parameters.gain = self.cap.gain
 
 	def create_data_directories(self):
-		text_basedir = Path.home() / 'ymaze-text-data'
-		video_basedir = Path.home() / 'ymaze-video-data'
+		text_basedir = self.basedir / 'ymaze-text-data' / self.params.experiment_parameters.genotype
+		video_basedir = self.basedir / 'ymaze-video-data' / self.params.experiment_parameters.genotype
+
+		if len(self.params.experiment_parameters.atr) > 0:
+			text_basedir = text_basedir / self.params.experiment_parameters.atr
+			video_basedir = video_basedir / self.params.experiment_parameters.atr
+
+		if len(self.params.experiment_parameters.other_dir_text) > 0:
+			text_basedir = text_basedir / self.params.experiment_parameters.other_dir_text
+			video_basedir = video_basedir / self.params.experiment_parameters.other_dir_text
+
 		self.time_stamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 		self.text_dir = text_basedir / self.time_stamp
 		self.video_dir = video_basedir / self.time_stamp
@@ -116,6 +130,7 @@ class LiveTracker:
 	def calibrate_mazes_aruco(self):
 		self.cap.reset_bounding_box()
 		self.ymg = YMazeGeometry()
+		self.params.ymaze_parameters.apply_params(self.ymg)
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
 		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.params.camera_parameters.barrel_alpha)
 		im, _ = self.cap.capture_frame()
@@ -233,6 +248,8 @@ class LiveTracker:
 		_,self.t0 = self.cap.last_frame_number_and_time()
 		self.md.set_save_raw(True)
 		self.md.open_video(self.video_dir / f"{self.time_stamp} maze")
+		with open(self.text_dir / f"{self.time_stamp} parameters.json", "w") as text_file:
+			json.dump(self.params.to_dict(), text_file, indent=4, sort_keys=True)
 
 	def run_protocol(self, protocol : TrainingProtocol):
 		#im,tstart = self.cap.capture_frame()
