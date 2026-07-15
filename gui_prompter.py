@@ -4,8 +4,10 @@ from tkinter import filedialog, messagebox
 from pathlib import Path
 from datetime import datetime
 
-EXPERIMENTS_DIR = Path.home() / "drosophila_experiments_gui_data"
-
+from livetracker import LiveTracker
+from ymazeparameters import LiveTrackerParameters
+# EXPERIMENTS_DIR = Path.home() / "drosophila_experiments_gui_data"
+#
 PROMPTS = [
     "experimenter",
     "genotype",
@@ -17,22 +19,23 @@ PROMPTS = [
 
 
 class ExperimentGUI:
-    def __init__(self, root):
+    def __init__(self, root, default_dict, name = "Metadata Form"):
         self.root = root
-        self.root.title("Drosophila Experiment Metadata")
+        self.root.title(name)
         self.root.geometry("620x430")
 
         self.entries = {}
         self.current_file = None
         self.extra_metadata = {}
 
-        EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
+       # EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-        tk.Label(
+        title = tk.Label(
             root,
-            text="Drosophila Experiment Metadata",
-            font=("Arial", 16, "bold"),
-        ).pack(pady=(15, 10))
+            text=name,
+            font=("Arial", 16)
+        )
+        title.pack(pady=10)
 
         form_frame = tk.Frame(root)
         form_frame.pack(fill="both", expand=True, padx=20, pady=5)
@@ -45,10 +48,6 @@ class ExperimentGUI:
                 width=18,
             ).grid(row=row_number, column=0, sticky="nw", padx=5, pady=6)
 
-            if prompt == "notes":
-                entry = tk.Text(form_frame, width=45, height=5)
-            else:
-                entry = tk.Entry(form_frame, width=47)
 
             entry.grid(row=row_number, column=1, sticky="ew", padx=5, pady=6)
             self.entries[prompt] = entry
@@ -90,36 +89,36 @@ class ExperimentGUI:
             widget.insert(0, str(value))
 
     def get_metadata(self):
-        metadata = dict(self.extra_metadata)
+        """Collect all GUI values into one dictionary."""
+        metadata = {}
 
-        for prompt in PROMPTS:
-            metadata[prompt] = self.read_widget(prompt)
+        for prompt, entry in self.entries.items():
+            metadata[prompt] = entry.get().strip()
 
-        if "created_at" not in metadata:
-            metadata["created_at"] = datetime.now().isoformat(timespec="seconds")
+        metadata["last_modified"] = datetime.now().isoformat()
 
-        metadata["last_modified"] = datetime.now().isoformat(timespec="seconds")
         return metadata
 
     def put_metadata_in_form(self, metadata):
-        for prompt in PROMPTS:
-            self.write_widget(prompt, metadata.get(prompt, ""))
+        """Place dictionary values into the GUI fields."""
+        for prompt, entry in self.entries.items():
+            entry.delete(0, tk.END)
 
-        self.extra_metadata = {
-            key: value
-            for key, value in metadata.items()
-            if key not in PROMPTS
-        }
+            value = metadata.get(prompt, "")
+            entry.insert(0, str(value))
 
     def clear_form(self):
-        for prompt in PROMPTS:
-            self.write_widget(prompt, "")
+        """Clear every box and start a new metadata file."""
+        for entry in self.entries.values():
+            entry.delete(0, tk.END)
 
         self.current_file = None
+        self.status_label.config(text="New form")
         self.extra_metadata = {}
         self.status_label.config(text="New form - not saved yet")
 
     def load_json(self):
+        """Choose an existing JSON file and load it into the GUI."""
         filepath = filedialog.askopenfilename(
             title="Select an experiment JSON file",
             initialdir=str(EXPERIMENTS_DIR),
@@ -151,6 +150,10 @@ class ExperimentGUI:
             messagebox.showerror("File error", f"Could not open file:\n{error}")
 
     def save_json(self):
+        """
+        Save over the currently loaded file.
+        If no file is loaded, create a new file.
+        """
         if self.current_file is None:
             self.save_json_as()
             return
@@ -166,6 +169,7 @@ class ExperimentGUI:
             messagebox.showerror("Save error", f"Could not save file:\n{error}")
 
     def save_json_as(self):
+        """Save the form as a new JSON file."""
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
         filepath = filedialog.asksaveasfilename(
@@ -185,10 +189,12 @@ class ExperimentGUI:
 
 def main():
     print("Starting Drosophila metadata GUI...")
-    print(f"Default save folder: {EXPERIMENTS_DIR}")
+    #print(f"Default save folder: {EXPERIMENTS_DIR}")
 
+    ltp = LiveTrackerParameters()
     root = tk.Tk()
-    app = ExperimentGUI(root)
+    app = ExperimentGUI(root, ltp.camera_parameters.to_dict(), "camera parameters")
+
 
     root.after(100, root.lift)
     root.after(150, lambda: root.attributes("-topmost", True))
