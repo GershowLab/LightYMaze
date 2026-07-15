@@ -3,19 +3,17 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 from datetime import datetime
-
-from livetracker import LiveTracker
 from ymazeparameters import LiveTrackerParameters
 # EXPERIMENTS_DIR = Path.home() / "drosophila_experiments_gui_data"
 #
-PROMPTS = [
-    "experimenter",
-    "genotype",
-    "num_larva",
-    "maze_description",
-    "experiment_type",
-    "notes",
-]
+# PROMPTS = [
+#     "experimenter",
+#     "genotype",
+#     "num_larva",
+#     "maze_description",
+#     "experiment_type",
+#     "notes",
+# ]
 
 
 class ExperimentGUI:
@@ -40,7 +38,7 @@ class ExperimentGUI:
         form_frame = tk.Frame(root)
         form_frame.pack(fill="both", expand=True, padx=20, pady=5)
 
-        for row_number, prompt in enumerate(PROMPTS):
+        for row_number, prompt in enumerate(default_dict.keys()):
             tk.Label(
                 form_frame,
                 text=prompt.replace("_", " ").title() + ":",
@@ -72,6 +70,7 @@ class ExperimentGUI:
             anchor="w",
         )
         self.status_label.pack(fill="x", padx=20, pady=(0, 12))
+        self.put_metadata_in_form(default_dict)
 
     def read_widget(self, prompt):
         widget = self.entries[prompt]
@@ -188,15 +187,16 @@ class ExperimentGUI:
 def main():
     print("Starting Drosophila metadata GUI...")
     #print(f"Default save folder: {EXPERIMENTS_DIR}")
+    from ymazeparameters import LiveTrackerParameters
 
     ltp = LiveTrackerParameters()
     root = tk.Tk()
-    app = ExperimentGUI(root, ltp.camera_parameters.to_dict(), "camera parameters")
+    app = ExperimentGUI(root, ltp.experiment_parameters.to_dict(), "camera parameters")
+  #  app2 = ExperimentGUI(root, ltp.led_choice_parameters.to_dict(), "led choice parameters")
 
 
     root.after(100, root.lift)
     root.after(150, lambda: root.attributes("-topmost", True))
-    root.after(400, lambda: root.attributes("-topmost", False))
 
     root.mainloop()
 
