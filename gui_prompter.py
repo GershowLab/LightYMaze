@@ -48,7 +48,7 @@ class ExperimentGUI:
                 width=18,
             ).grid(row=row_number, column=0, sticky="nw", padx=5, pady=6)
 
-
+            entry = tk.Entry(form_frame, width=47)
             entry.grid(row=row_number, column=1, sticky="ew", padx=5, pady=6)
             self.entries[prompt] = entry
 
@@ -68,7 +68,7 @@ class ExperimentGUI:
 
         self.status_label = tk.Label(
             root,
-            text=f"Save folder: {EXPERIMENTS_DIR}",
+            text=f"Save folder: TODO",
             anchor="w",
         )
         self.status_label.pack(fill="x", padx=20, pady=(0, 12))
@@ -114,8 +114,6 @@ class ExperimentGUI:
 
         self.current_file = None
         self.status_label.config(text="New form")
-        self.extra_metadata = {}
-        self.status_label.config(text="New form - not saved yet")
 
     def load_json(self):
         """Choose an existing JSON file and load it into the GUI."""
