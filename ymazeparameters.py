@@ -2,6 +2,9 @@ import warnings
 from dataclasses import dataclass, asdict, field
 import numpy as np
 import tkinter as tk
+from datetime import datetime
+from pathlib import Path
+from tkinter import filedialog, messagebox
 @dataclass
 class BaseParameterClass:
 
@@ -172,9 +175,15 @@ class LiveTrackerParameters:
 class MainGUI:
     def __init__(self, root, ltp):
         self.root = root
+        self.ltp = ltp
+
         self.root.title("Parameters")
-        self.root.geometry("620x430")
+        self.root.geometry("700x520")
+        self.root.protocol("WM_DELETE_WINDOW", self.close)
+
         self.entries = {}
+        self.boolean_vars = {}
+        self.field_types = {}
         self.current_file = None
 
         title = tk.Label(
@@ -185,111 +194,400 @@ class MainGUI:
         title.pack(pady=10)
 
         form_frame = tk.Frame(root)
-        form_frame.pack(fill="both", expand=True, padx=20, pady=5)
+        form_frame.pack(
+            fill="both",
+            expand=True,
+            padx=20,
+            pady=5
+        )
 
-        mp = []
-        for p in ltp.major_parameters:
-            if isinstance(p,str):
-                mp.append(p)
-            else:
-                mp.append(p[1])
+        # Build the main form directly from the current parameter values.
+        major_parameters = self.ltp.get_major_params()
 
-        for row_number, prompt in enumerate(mp):
+        for row_number, (prompt, value) in enumerate(
+            major_parameters.items()
+        ):
             tk.Label(
                 form_frame,
                 text=prompt.replace("_", " ").title() + ":",
                 anchor="w",
-                width=18,
-            ).grid(row=row_number, column=0, sticky="nw", padx=5, pady=6)
+                width=22,
+            ).grid(
+                row=row_number,
+                column=0,
+                sticky="nw",
+                padx=5,
+                pady=6
+            )
 
-            entry = tk.Entry(form_frame, width=47)
-            entry.grid(row=row_number, column=1, sticky="ew", padx=5, pady=6)
-            self.entries[prompt] = entry
+            # Real Boolean values become checkboxes.
+            if isinstance(value, bool):
+                variable = tk.BooleanVar(value=value)
+
+                widget = tk.Checkbutton(
+                    form_frame,
+                    text="Yes",
+                    variable=variable,
+                    onvalue=True,
+                    offvalue=False,
+                )
+
+                widget.grid(
+                    row=row_number,
+                    column=1,
+                    sticky="w",
+                    padx=5,
+                    pady=6
+                )
+
+                self.boolean_vars[prompt] = variable
+                self.field_types[prompt] = bool
+
+            else:
+                widget = tk.Entry(
+                    form_frame,
+                    width=47
+                )
+
+                widget.grid(
+                    row=row_number,
+                    column=1,
+                    sticky="ew",
+                    padx=5,
+                    pady=6
+                )
+
+                self.field_types[prompt] = type(value)
+
+            self.entries[prompt] = widget
 
         form_frame.columnconfigure(1, weight=1)
 
-        button_frame = tk.Frame(root)
-        button_frame.pack(pady=12)
+        # Buttons that open nested parameter panels.
+        panel_button_frame = tk.LabelFrame(
+            root,
+            text="Additional Parameter Panels",
+            padx=10,
+            pady=10
+        )
+        panel_button_frame.pack(
+            fill="x",
+            padx=20,
+            pady=8
+        )
 
-        c = 0
-        for key, value in vars(ltp).items():
-            if isinstance(value,BaseParameterClass):
-                bname = key.replace("_parameters", "").replace("_"," ")
-                tk.Button(button_frame, text=bname, width=12,
-                          command=lambda arg1=value,arg2=bname: self.popup_panel(arg1, arg2)).grid(row=0, column=c, padx=5)
-                c = c+1
+        column = 0
+
+        for key, value in vars(self.ltp).items():
+            if isinstance(value, BaseParameterClass):
+                button_name = (
+                    key.replace("_parameters", "")
+                    .replace("_", " ")
+                    .title()
+                )
+
+                tk.Button(
+                    panel_button_frame,
+                    text=button_name,
+                    width=16,
+                    command=lambda params=value, name=button_name:
+                        self.popup_panel(params, name)
+                ).grid(
+                    row=0,
+                    column=column,
+                    padx=5,
+                    pady=5
+                )
+
+                column += 1
+
+        action_button_frame = tk.Frame(root)
+        action_button_frame.pack(pady=10)
+
+        tk.Button(
+            action_button_frame,
+            text="Save",
+            width=12,
+            command=self.save_json
+        ).grid(row=0, column=0, padx=5)
+
+        tk.Button(
+            action_button_frame,
+            text="Save As",
+            width=12,
+            command=self.save_json_as
+        ).grid(row=0, column=1, padx=5)
+
+        tk.Button(
+            action_button_frame,
+            text="Refresh",
+            width=12,
+            command=self.refresh_from_ltp
+        ).grid(row=0, column=2, padx=5)
+
+        tk.Button(
+            action_button_frame,
+            text="Close",
+            width=12,
+            command=self.close
+        ).grid(row=0, column=3, padx=5)
 
         self.status_label = tk.Label(
             root,
-            text=f"Save folder: TODO",
+            text="No file saved yet",
             anchor="w",
         )
-        self.status_label.pack(fill="x", padx=20, pady=(0, 12))
-        self.put_metadata_in_form(ltp.get_major_params())
+        self.status_label.pack(
+            fill="x",
+            padx=20,
+            pady=(0, 12)
+        )
+
+        self.put_metadata_in_form(
+            self.ltp.get_major_params()
+        )
 
     def popup_panel(self, params, win_name):
-        print(type(params))
-        print(params)
-        ParameterGUI(self.root, params, win_name)
+        """
+        Open a popup using the real nested parameter object.
+
+        Because the exact object is passed into ParameterGUI, changes made
+        in the popup update the same object stored inside self.ltp.
+        """
+        self.apply_major_params()
+
+        panel = ParameterGUI(
+            self.root,
+            params,
+            win_name,
+            modal=True
+        )
+
+        # Wait until the popup closes, then refresh the main form.
+        self.root.wait_window(panel.win)
+        self.refresh_from_ltp()
 
     def read_widget(self, prompt):
-        widget = self.entries[prompt]
-        if isinstance(widget, tk.Text):
-            return widget.get("1.0", tk.END).strip()
-        return widget.get().strip()
+        """
+        Read a value from the correct widget type.
+
+        Boolean checkboxes return real True/False values.
+        """
+        if self.field_types[prompt] is bool:
+            return bool(
+                self.boolean_vars[prompt].get()
+            )
+
+        return self.entries[prompt].get().strip()
 
     def write_widget(self, prompt, value):
+        """Write a value into either a checkbox or an Entry."""
+        if self.field_types[prompt] is bool:
+            self.boolean_vars[prompt].set(
+                bool(value)
+            )
+            return
+
         widget = self.entries[prompt]
-        if isinstance(widget, tk.Text):
-            widget.delete("1.0", tk.END)
-            widget.insert("1.0", str(value))
-        else:
-            widget.delete(0, tk.END)
-            widget.insert(0, str(value))
+        widget.delete(0, tk.END)
+        widget.insert(0, str(value))
 
     def get_metadata(self):
-        """Collect all GUI values into one dictionary."""
-        metadata = {}
+        """Collect all major GUI values."""
+        return {
+            prompt: self.read_widget(prompt)
+            for prompt in self.entries
+        }
 
-        for prompt, entry in self.entries.items():
-            metadata[prompt] = entry.get().strip()
+    def put_metadata_in_form(self, metadata):
+        """Place major parameter values into the main GUI."""
+        for prompt in self.entries:
+            value = metadata.get(prompt, "")
+            self.write_widget(prompt, value)
+
+    def refresh_from_ltp(self):
+        """
+        Reload the main form from the shared LiveTrackerParameters object.
+        """
+        self.put_metadata_in_form(
+            self.ltp.get_major_params()
+        )
+
+        self.status_label.config(
+            text="Refreshed from shared parameters"
+        )
+
+    def apply_major_params(self):
+        """
+        Write the main form values back into LiveTrackerParameters.
+        """
+        metadata = self.get_metadata()
+
+        if hasattr(self.ltp, "set_major_params"):
+            self.ltp.set_major_params(metadata)
+
+        elif hasattr(self.ltp, "set_params"):
+            self.ltp.set_params(metadata)
+
+        else:
+            # Fallback if no setter function exists.
+            for key, value in metadata.items():
+                if hasattr(self.ltp, key):
+                    setattr(self.ltp, key, value)
+
+    def collect_all_metadata(self):
+        """
+        Collect the main parameters and all popup-panel parameters.
+
+        This includes camera parameters, LED parameters, and every other
+        BaseParameterClass stored inside LiveTrackerParameters.
+        """
+        self.apply_major_params()
+
+        metadata = dict(
+            self.ltp.get_major_params()
+        )
+
+        for key, value in vars(self.ltp).items():
+            if isinstance(value, BaseParameterClass):
+                metadata[key] = value.to_dict()
+
+        metadata["last_modified"] = (
+            datetime.now().isoformat(
+                timespec="seconds"
+            )
+        )
 
         return metadata
 
-    def put_metadata_in_form(self, metadata):
-        """Place dictionary values into the GUI fields."""
-        for prompt, entry in self.entries.items():
-            entry.delete(0, tk.END)
+    def save_json(self):
+        """Save all major and nested parameter data."""
+        if self.current_file is None:
+            self.save_json_as()
+            return
 
-            value = metadata.get(prompt, "")
-            entry.insert(0, str(value))
+        try:
+            metadata = self.collect_all_metadata()
 
+            with open(
+                self.current_file,
+                "w",
+                encoding="utf-8"
+            ) as file:
+                json.dump(
+                    metadata,
+                    file,
+                    indent=4
+                )
 
+            self.status_label.config(
+                text=f"Saved: {self.current_file}"
+            )
+
+            messagebox.showinfo(
+                "Saved",
+                f"Parameters saved to:\n"
+                f"{self.current_file}",
+                parent=self.root
+            )
+
+        except (OSError, TypeError) as error:
+            messagebox.showerror(
+                "Save Error",
+                f"Could not save parameters:\n{error}",
+                parent=self.root
+            )
+
+    def save_json_as(self):
+        """Choose a new JSON filename and save all parameters."""
+        save_directory = (
+            Path.home()
+            / "drosophila_experiments_gui_data"
+        )
+
+        save_directory.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d_%H-%M-%S"
+        )
+
+        filepath = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Save experiment parameters",
+            initialdir=str(save_directory),
+            initialfile=(
+                f"{timestamp}_parameters.json"
+            ),
+            defaultextension=".json",
+            filetypes=[
+                ("JSON files", "*.json")
+            ]
+        )
+
+        if not filepath:
+            return
+
+        self.current_file = Path(filepath)
+        self.save_json()
+
+    def close(self):
+        """
+        Apply the main-window values before closing.
+
+        Popup values have already been written directly into their shared
+        parameter objects when their Done buttons were clicked.
+        """
+        self.apply_major_params()
+        self.root.destroy()
+
+import weakref
 
 
 class ParameterGUI:
-    def __init__(self, root, params, name = None, modal = False):
+    """
+    Generic popup for editing a parameter object.
+
+    Requirements for params:
+        params.to_dict() -> dictionary
+        params.set_params(dictionary) -> updates the parameter object
+
+    If multiple ParameterGUI windows receive the same params object, clicking
+    Done in one window updates the shared object and refreshes the other windows.
+    Boolean values are displayed and returned as real Boolean checkboxes.
+    """
+
+    _open_panels = {}
+
+    def __init__(self, root, params, name=None, modal=False):
         self.root = root
+        self.params = params
+        self.modal = modal
+
         self.win = tk.Toplevel(root)
+
         if name is None:
             name = type(params).__name__
+
+        self.name = name
         self.win.title(name)
-
-        #google ai to make modal
-        # # 2. Force focus and freeze the parent window
-        if modal:
-            self.win.focus_set()         # Moves keyboard focus to the new window
-            self.win.grab_set()          # Redirects all user events (clicks/keys) to this window
-
-
         self.win.geometry("620x430")
+        self.win.protocol("WM_DELETE_WINDOW", self.close)
+
+        if modal:
+            self.win.transient(root)
+            self.win.focus_set()
+            self.win.grab_set()
+
+        self.original_settings = params.to_dict().copy()
 
         self.entries = {}
-        self.current_file = None
-        self.extra_metadata = {}
+        self.boolean_vars = {}
+        self.field_types = {}
 
-        self.params = params
-        self.original_settings = params.to_dict()
+        self._register_panel()
 
         title = tk.Label(
             self.win,
@@ -301,95 +599,175 @@ class ParameterGUI:
         form_frame = tk.Frame(self.win)
         form_frame.pack(fill="both", expand=True, padx=20, pady=5)
 
-        for row_number, prompt in enumerate(self.original_settings.keys()):
+        for row_number, (prompt, value) in enumerate(
+            self.original_settings.items()
+        ):
             tk.Label(
                 form_frame,
                 text=prompt.replace("_", " ").title() + ":",
                 anchor="w",
                 width=18,
-            ).grid(row=row_number, column=0, sticky="nw", padx=5, pady=6)
+            ).grid(
+                row=row_number,
+                column=0,
+                sticky="nw",
+                padx=5,
+                pady=6
+            )
 
-            entry = tk.Entry(form_frame, width=47)
-            entry.grid(row=row_number, column=1, sticky="ew", padx=5, pady=6)
-            self.entries[prompt] = entry
+            if isinstance(value, bool):
+                variable = tk.BooleanVar(value=value)
+
+                widget = tk.Checkbutton(
+                    form_frame,
+                    text="Yes",
+                    variable=variable,
+                    onvalue=True,
+                    offvalue=False,
+                )
+                widget.grid(
+                    row=row_number,
+                    column=1,
+                    sticky="w",
+                    padx=5,
+                    pady=6
+                )
+
+                self.boolean_vars[prompt] = variable
+                self.field_types[prompt] = bool
+
+            else:
+                widget = tk.Entry(form_frame, width=47)
+                widget.grid(
+                    row=row_number,
+                    column=1,
+                    sticky="ew",
+                    padx=5,
+                    pady=6
+                )
+
+                self.field_types[prompt] = type(value)
+
+            self.entries[prompt] = widget
 
         form_frame.columnconfigure(1, weight=1)
 
         button_frame = tk.Frame(self.win)
         button_frame.pack(pady=12)
-        tk.Button(button_frame, text="Reset", width=12,
-                  command=self.clear_form).grid(row=0, column=0, padx=5)
-        tk.Button(button_frame, text="Done", width=12,
-                  command=self.close).grid(row=0, column=1, padx=5)
-        # tk.Button(button_frame, text="Save", width=12,
-        #           command=self.save_json).grid(row=0, column=2, padx=5)
-        # # tk.Button(button_frame, text="Save As", width=12,
-        #           command=self.save_json_as).grid(row=0, column=3, padx=5)
+
+        tk.Button(
+            button_frame,
+            text="Reset",
+            width=12,
+            command=self.clear_form
+        ).grid(row=0, column=0, padx=5)
+
+        tk.Button(
+            button_frame,
+            text="Done",
+            width=12,
+            command=self.close
+        ).grid(row=0, column=1, padx=5)
 
         self.status_label = tk.Label(
             self.win,
-            text=f"Save folder: TODO",
+            text="Click Done to apply changes to every open panel.",
             anchor="w",
         )
         self.status_label.pack(fill="x", padx=20, pady=(0, 12))
-        self.put_metadata_in_form(self.original_settings)
+
+        self.refresh_from_params()
+
+    def _panel_key(self):
+        return id(self.params)
+
+    def _register_panel(self):
+        key = self._panel_key()
+
+        if key not in self._open_panels:
+            self._open_panels[key] = weakref.WeakSet()
+
+        self._open_panels[key].add(self)
+
+    def _unregister_panel(self):
+        key = self._panel_key()
+        panels = self._open_panels.get(key)
+
+        if panels is None:
+            return
+
+        panels.discard(self)
+
+        if not panels:
+            self._open_panels.pop(key, None)
+
+    def _refresh_other_panels(self):
+        panels = self._open_panels.get(self._panel_key(), weakref.WeakSet())
+
+        for panel in list(panels):
+            if panel is not self and panel.win.winfo_exists():
+                panel.refresh_from_params()
 
     def read_widget(self, prompt):
-        widget = self.entries[prompt]
-        if isinstance(widget, tk.Text):
-            return widget.get("1.0", tk.END).strip()
-        return widget.get().strip()
+        if self.field_types[prompt] is bool:
+            return bool(self.boolean_vars[prompt].get())
+
+        return self.entries[prompt].get().strip()
 
     def write_widget(self, prompt, value):
+        if self.field_types[prompt] is bool:
+            self.boolean_vars[prompt].set(bool(value))
+            return
+
         widget = self.entries[prompt]
-        if isinstance(widget, tk.Text):
-            widget.delete("1.0", tk.END)
-            widget.insert("1.0", str(value))
-        else:
-            widget.delete(0, tk.END)
-            widget.insert(0, str(value))
+        widget.delete(0, tk.END)
+        widget.insert(0, str(value))
 
     def get_metadata(self):
-        """Collect all GUI values into one dictionary."""
-        metadata = {}
-
-        for prompt, entry in self.entries.items():
-            metadata[prompt] = entry.get().strip()
-
-        # metadata["last_modified"] = datetime.now().isoformat()
-
-        return metadata
+        return {
+            prompt: self.read_widget(prompt)
+            for prompt in self.entries
+        }
 
     def put_metadata_in_form(self, metadata):
-        """Place dictionary values into the GUI fields."""
-        for prompt, entry in self.entries.items():
-            entry.delete(0, tk.END)
-
+        for prompt in self.entries:
             value = metadata.get(prompt, "")
-            entry.insert(0, str(value))
+            self.write_widget(prompt, value)
+
+    def refresh_from_params(self):
+        latest_settings = self.params.to_dict()
+        self.put_metadata_in_form(latest_settings)
+        self.status_label.config(
+            text="Showing the latest shared parameter values."
+        )
 
     def clear_form(self):
-        """Clear every box and start a new metadata file."""
         self.put_metadata_in_form(self.original_settings)
+        self.status_label.config(
+            text="Reset locally. Click Done to apply the reset."
+        )
 
     def update_params(self):
         self.params.set_params(self.get_metadata())
 
     def close(self):
         self.update_params()
-        self.win.destroy()
+        self._refresh_other_panels()
+        self._unregister_panel()
 
+        if self.modal and self.win.grab_current() == self.win:
+            self.win.grab_release()
+
+        self.win.destroy()
 
 
 def main():
     print("Test GUI panels...")
 
     ltp = LiveTrackerParameters()
+
     root = tk.Tk()
     app = MainGUI(root, ltp)
-    # panel1 = ParameterGUI(root, ltp.camera_parameters, "camera parameters")
-    # panel2 = ParameterGUI(root, ltp.led_choice_parameters, "led parameters")
-
 
     root.after(100, root.lift)
     root.after(150, lambda: root.attributes("-topmost", True))
@@ -397,6 +775,7 @@ def main():
     root.mainloop()
 
     print(ltp.camera_parameters.to_dict())
+
 
 if __name__ == "__main__":
     main()
