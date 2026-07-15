@@ -3,42 +3,41 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 from datetime import datetime
-from ymazeparameters import LiveTrackerParameters
-# EXPERIMENTS_DIR = Path.home() / "drosophila_experiments_gui_data"
-#
-# PROMPTS = [
-#     "experimenter",
-#     "genotype",
-#     "num_larva",
-#     "maze_description",
-#     "experiment_type",
-#     "notes",
-# ]
+
+EXPERIMENTS_DIR = Path.home() / "drosophila_experiments_gui_data"
+
+PROMPTS = [
+    "experimenter",
+    "genotype",
+    "num_larva",
+    "maze_description",
+    "experiment_type",
+    "notes",
+]
 
 
 class ExperimentGUI:
-    def __init__(self, root, default_dict, name = "Metadata Form"):
+    def __init__(self, root):
         self.root = root
-        self.root.title(name)
+        self.root.title("Drosophila Experiment Metadata")
         self.root.geometry("620x430")
 
         self.entries = {}
         self.current_file = None
         self.extra_metadata = {}
 
-       # EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
+        EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-        title = tk.Label(
+        tk.Label(
             root,
-            text=name,
-            font=("Arial", 16)
-        )
-        title.pack(pady=10)
+            text="Drosophila Experiment Metadata",
+            font=("Arial", 16, "bold"),
+        ).pack(pady=(15, 10))
 
         form_frame = tk.Frame(root)
         form_frame.pack(fill="both", expand=True, padx=20, pady=5)
 
-        for row_number, prompt in enumerate(default_dict.keys()):
+        for row_number, prompt in enumerate(PROMPTS):
             tk.Label(
                 form_frame,
                 text=prompt.replace("_", " ").title() + ":",
@@ -46,7 +45,11 @@ class ExperimentGUI:
                 width=18,
             ).grid(row=row_number, column=0, sticky="nw", padx=5, pady=6)
 
-            entry = tk.Entry(form_frame, width=47)
+            if prompt == "notes":
+                entry = tk.Text(form_frame, width=45, height=5)
+            else:
+                entry = tk.Entry(form_frame, width=47)
+
             entry.grid(row=row_number, column=1, sticky="ew", padx=5, pady=6)
             self.entries[prompt] = entry
 
@@ -66,11 +69,10 @@ class ExperimentGUI:
 
         self.status_label = tk.Label(
             root,
-            text=f"Save folder: TODO",
+            text=f"Save folder: {EXPERIMENTS_DIR}",
             anchor="w",
         )
         self.status_label.pack(fill="x", padx=20, pady=(0, 12))
-        self.put_metadata_in_form(default_dict)
 
     def read_widget(self, prompt):
         widget = self.entries[prompt]
@@ -88,34 +90,36 @@ class ExperimentGUI:
             widget.insert(0, str(value))
 
     def get_metadata(self):
-        """Collect all GUI values into one dictionary."""
-        metadata = {}
+        metadata = dict(self.extra_metadata)
 
-        for prompt, entry in self.entries.items():
-            metadata[prompt] = entry.get().strip()
+        for prompt in PROMPTS:
+            metadata[prompt] = self.read_widget(prompt)
 
-        metadata["last_modified"] = datetime.now().isoformat()
+        if "created_at" not in metadata:
+            metadata["created_at"] = datetime.now().isoformat(timespec="seconds")
 
+        metadata["last_modified"] = datetime.now().isoformat(timespec="seconds")
         return metadata
 
     def put_metadata_in_form(self, metadata):
-        """Place dictionary values into the GUI fields."""
-        for prompt, entry in self.entries.items():
-            entry.delete(0, tk.END)
+        for prompt in PROMPTS:
+            self.write_widget(prompt, metadata.get(prompt, ""))
 
-            value = metadata.get(prompt, "")
-            entry.insert(0, str(value))
+        self.extra_metadata = {
+            key: value
+            for key, value in metadata.items()
+            if key not in PROMPTS
+        }
 
     def clear_form(self):
-        """Clear every box and start a new metadata file."""
-        for entry in self.entries.values():
-            entry.delete(0, tk.END)
+        for prompt in PROMPTS:
+            self.write_widget(prompt, "")
 
         self.current_file = None
-        self.status_label.config(text="New form")
+        self.extra_metadata = {}
+        self.status_label.config(text="New form - not saved yet")
 
     def load_json(self):
-        """Choose an existing JSON file and load it into the GUI."""
         filepath = filedialog.askopenfilename(
             title="Select an experiment JSON file",
             initialdir=str(EXPERIMENTS_DIR),
@@ -147,10 +151,6 @@ class ExperimentGUI:
             messagebox.showerror("File error", f"Could not open file:\n{error}")
 
     def save_json(self):
-        """
-        Save over the currently loaded file.
-        If no file is loaded, create a new file.
-        """
         if self.current_file is None:
             self.save_json_as()
             return
@@ -166,7 +166,6 @@ class ExperimentGUI:
             messagebox.showerror("Save error", f"Could not save file:\n{error}")
 
     def save_json_as(self):
-        """Save the form as a new JSON file."""
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
         filepath = filedialog.asksaveasfilename(
@@ -186,17 +185,14 @@ class ExperimentGUI:
 
 def main():
     print("Starting Drosophila metadata GUI...")
-    #print(f"Default save folder: {EXPERIMENTS_DIR}")
-    from ymazeparameters import LiveTrackerParameters
+    print(f"Default save folder: {EXPERIMENTS_DIR}")
 
-    ltp = LiveTrackerParameters()
     root = tk.Tk()
-    app = ExperimentGUI(root, ltp.experiment_parameters.to_dict(), "camera parameters")
-  #  app2 = ExperimentGUI(root, ltp.led_choice_parameters.to_dict(), "led choice parameters")
-
+    app = ExperimentGUI(root)
 
     root.after(100, root.lift)
     root.after(150, lambda: root.attributes("-topmost", True))
+    root.after(400, lambda: root.attributes("-topmost", False))
 
     root.mainloop()
 
