@@ -35,7 +35,10 @@ class BaseParameterClass:
 
     def apply_param(self, obj, param):
         if self.has_param(param) and hasattr(obj, param):
-            setattr(obj, param, getattr(self, param))
+            if isinstance(getattr(obj, param), np.ndarray):
+                setattr(obj, param, np.array(getattr(self, param)))
+            else:
+                setattr(obj, param, getattr(self, param))
 
     def apply_params(self, obj):
         for key in vars(self).keys():
@@ -113,7 +116,7 @@ class LiveTrackerParameters:
         return valid_keys,duplicates
 
     def to_dict(self):
-         return {key: asdict(value) for key, value in self.__dict__.items()}
+         return {key: asdict(value) for key, value in self.__dict__.items() if value is dict}
 
     def get_param(self, key, paramset = None):
         if paramset is not None:
