@@ -331,6 +331,7 @@ class YMazeGeometry:
         print(corners)
         print(ids)
         for c,id in zip(corners, ids):
+            print(id)
             pxpts = c.reshape((4,2))
             for a,r in zip(ac,refl):
                 a.add_pair_list(pxpts, self.aruco_centers[id] + dxm*r)
