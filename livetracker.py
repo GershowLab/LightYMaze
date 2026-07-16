@@ -72,6 +72,7 @@ class LiveTracker:
 		if not self.calibrate_mazes_aruco():
 			self.calibrate_mazes()
 
+
 		while True:
 			if self.verify_mazes():
 				break
@@ -141,6 +142,7 @@ class LiveTracker:
 				break
 
 		if self.ymg.calibrate_geometry_aruco(im):
+			self.ymg.fine_tune_alignment(im, padding=0)
 			x, y, w, h = self.ymg.clip_to_mazes(10)
 			self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 			return True
@@ -154,6 +156,8 @@ class LiveTracker:
 		im, _ = self.cap.capture_frame()
 		self.ymg.calibrate_geometry_from_image_fiducials(im)
 		self.ymg.align_mazes_to_im(im)
+		self.ymg.fine_tune_alignment(im, padding=0)
+
 		x, y, w, h = self.ymg.clip_to_mazes(10)
 		self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)
 
