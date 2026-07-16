@@ -130,7 +130,7 @@ class LiveTracker:
 	def calibrate_mazes_aruco(self):
 		self.cap.reset_bounding_box()
 		self.ymg = YMazeGeometry()
-		self.params.ymaze_parameters.apply_params(self.ymg)
+		#self.params.ymaze_parameters.apply_params(self.ymg)
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
 		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.params.camera_parameters.barrel_alpha)
 
