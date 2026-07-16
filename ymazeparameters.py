@@ -1,3 +1,8 @@
+#TODO: JSON data dump
+#(probably also load from file)
+#dimensions
+#weird panel popover issues
+
 import warnings
 from dataclasses import dataclass, asdict, field
 import numpy as np
@@ -90,7 +95,8 @@ class LiveTrackerParameters:
         self.major_parameters = [
             ['experiment_parameters', 'genotype'],
             ['experiment_parameters', 'atr'],
-            ['led_choice_parameters', 'choice2rgb']
+            ['led_choice_parameters', 'choice2rgb'],
+            ['experiment_parameters', 'experimenter_name'],
         ]
 
     def param_list(self):
