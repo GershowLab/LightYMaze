@@ -133,7 +133,13 @@ class LiveTracker:
 		self.params.ymaze_parameters.apply_params(self.ymg)
 		self.ymg.set_image_size((self.cap.h, self.cap.w))
 		self.ymg.set_barrel_distortion((self.cap.w / 2, self.cap.h / 2), self.params.camera_parameters.barrel_alpha)
-		im, _ = self.cap.capture_frame()
+
+		#try to find >= 2 arucos if flickering
+		for j in range(20):
+			im, _ = self.cap.capture_frame()
+			if self.ymg.find_arucos(im, adaptive_threshold=True)[0] > 1:
+				break
+
 		if self.ymg.calibrate_geometry_aruco(im):
 			x, y, w, h = self.ymg.clip_to_mazes(10)
 			self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)

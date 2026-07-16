@@ -330,11 +330,16 @@ class YMazeGeometry:
         refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
         print(corners)
         print(ids)
-        for c,id in zip(corners, ids):
-            print(id)
+        for c,ind in zip(corners, ids):
+            print(ind)
+            try:
+                ind = ind[0]
+            except:
+                pass
+
             pxpts = c.reshape((4,2))
             for a,r in zip(ac,refl):
-                a.add_pair_list(pxpts, self.aruco_centers[id] + dxm*r)
+                a.add_pair_list(pxpts, self.aruco_centers[ind] + dxm*r)
 
         for a in ac:
             a.calculate()
