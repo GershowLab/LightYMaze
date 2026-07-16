@@ -200,6 +200,7 @@ class CameraCapture:
                         im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
                         cv2.aruco.drawDetectedMarkers(im, corners, ids)
                     cv2.imshow(winname, im)
+                nids = np.array(nids)
                 if np.any(nids > 0):
                     e = erange[np.argmax(numid)]
                     nid = np.max(nids)
