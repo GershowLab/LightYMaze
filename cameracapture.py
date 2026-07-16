@@ -6,7 +6,7 @@
 from picamera2 import Picamera2, Metadata
 from libcamera import Transform, controls
 import cv2
-
+import numpy as np
 from ymazegeometry import YMazeGeometry
 
 
@@ -187,6 +187,31 @@ class CameraCapture:
                 cv2.aruco.drawDetectedMarkers(im, corners, ids)
             cv2.imshow(winname, im)
             key = cv2.waitKey(1) & 0xFF
+            if key == ord('u'):
+                nids = []
+                e0 = self.exposure
+                erange = np.linspace(self.exposure/1.2, self.exposure*1.2, 10)
+                for e in erange:
+                    self.set_exposure(e)
+                    im, ts = self.capture_frame(flush=True)
+                    numid, corners, ids, flip, invert, rej = YMazeGeometry.find_arucos(im, adaptive_threshold=True)
+                    nids.append(numid)
+                    if ids is not None:
+                        im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+                        cv2.aruco.drawDetectedMarkers(im, corners, ids)
+                    cv2.imshow(winname, im)
+                if np.any(nids > 0):
+                    e = erange[np.argmax(numid)]
+                    nid = np.max(nids)
+                    self.set_exposure(e)
+                    print(f'{nid} aruco markers found at exposure = {e}')
+                else:
+                    print("No aruco markers found")
+                    self.set_exposure(e0)
+
+
+
+
             if key == ord('c'):
                 break
             if key == ord('-'):
