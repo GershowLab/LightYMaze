@@ -94,7 +94,7 @@ class LiveTrackerParameters:
         self.experiment_parameters = ExperimentParameters()
         self.camera_parameters = CameraParameters()
         self.training_parameters = TrainingParameters()
-        self.ymaze_parameters = YMazeParameters()
+      #  self.ymaze_parameters = YMazeParameters()
         self.major_parameters = [
             ['experiment_parameters', 'genotype'],
             ['experiment_parameters', 'atr'],
