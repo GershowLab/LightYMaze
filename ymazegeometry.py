@@ -328,10 +328,10 @@ class YMazeGeometry:
             a.src_barrel_ctr = self._cam_center
             a.src_barrel_alpha = self._barrel_alpha
         refl = np.array(((1,1),(-1,1),(1,-1),(-1,-1)))
-        print(corners)
-        print(ids)
+       # print(corners)
+       # print(ids)
         for c,ind in zip(corners, ids):
-            print(ind)
+          #  print(ind)
             try:
                 ind = ind[0]
             except:
