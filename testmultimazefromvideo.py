@@ -46,10 +46,10 @@ ymg.fine_tune_alignment(im, padding=0)
 ymg.generate_maze_mask()
 mm2 = cv2.threshold(ymg.get_maze_mask()[0], 0, 255, cv2.THRESH_BINARY)[1]
 #
-# cv2.imshow('mazes', ymg.diagnostic_image(im))
+cv2.imshow('mazes', ymg.diagnostic_image(im))
 #
-# cv2.imshow('green is new', cv2.merge((mm1,mm2,mm1)))
-#cv2.waitKey(0)
+cv2.imshow('green is new', cv2.merge((mm1,mm2,mm1)))
+cv2.waitKey(0)
 
 
 lt.ymg = ymg

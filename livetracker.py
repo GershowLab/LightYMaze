@@ -156,7 +156,17 @@ class LiveTracker:
 		im, _ = self.cap.capture_frame()
 		self.ymg.calibrate_geometry_from_image_fiducials(im)
 		self.ymg.align_mazes_to_im(im)
+		#mm1 = cv2.threshold(self.ymg.get_maze_mask()[0], 0, 255, cv2.THRESH_BINARY)[1]
+
 		self.ymg.fine_tune_alignment(im, padding=0)
+		self.ymg.generate_maze_mask()
+		#mm2 = cv2.threshold(self.ymg.get_maze_mask()[0], 0, 255, cv2.THRESH_BINARY)[1]
+		#
+		#cv2.imshow('mazes', self.ymg.diagnostic_image(im))
+		#
+		#cv2.imshow('green is new', cv2.merge((mm1, mm2, mm1)))
+		#cv2.waitKey(0)
+		#self.ymg.fine_tune_alignment(im, padding=0)
 
 		x, y, w, h = self.ymg.clip_to_mazes(10)
 		self.cap.set_bounding_box_from_im_coordinates(x, y, w, h)
